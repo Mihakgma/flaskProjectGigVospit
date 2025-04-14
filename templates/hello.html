@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+   <meta charset="UTF-8">
+   <title>ПРИВЕТСТВЕННАЯ СТРАНИЦА</title>
+  </head>
+  <body>
+    <h1>ПРИВЕТ, {{ name }}!</h1>
+    <p>Добро пожаловать в простое приложение на Flask от Python 3</p>
+
+  <form method="post" action="/submit">
+  <input type="text" name="name">
+  <input type="submit" value="Подтвердить">
+      </form>
+      <p>ДОБАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯ В БД</p>
+      <form method="post" action="/add_user">
+      <input type="text" name="user_name">
+      <input type="text" name="user_email">
+      <input type="submit" value="Добавить нового юзера...">
+  </form>
+  </body>
+</html>
