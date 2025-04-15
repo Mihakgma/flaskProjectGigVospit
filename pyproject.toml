@@ -1,0 +1,18 @@
+[project]
+name = "flaskprojectgigvospit"
+version = "0.1.0"
+description = "this is education project for trying to create application for hygien education job"
+authors = [
+    {name = "Tabakaev Mihail",email = "mihakgma86@hotmail.com"}
+]
+readme = "README.md"
+requires-python = "3.12.4"
+dependencies = [
+    "flask (>=3.1.0,<4.0.0)",
+    "sqlalchemy (>=2.0.40,<3.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
