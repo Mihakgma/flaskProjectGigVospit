@@ -1,8 +1,8 @@
 from database import db
 from sqlalchemy import ForeignKey, event
-from .role import Role
-from .department import Department
-from .status import Status
+# from .role import Role
+# from .department import Department
+# from .status import Status
 
 user_roles = db.Table('user_roles',
                       db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
@@ -46,4 +46,3 @@ class User(db.Model):
 @event.listens_for(User, 'mapper_configured')  # Или Role, 'after_mapper_configured'
 def create_user_roles_table(mapper, class_):
     user_roles.create(db.engine, checkfirst=True)  # checkfirst - не создает, если уже существует
-
