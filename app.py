@@ -1,7 +1,4 @@
-from flask import (Flask,
-                   render_template,
-                   jsonify,
-                   request)
+from flask import Flask
 from database import init_app
 from routers import routes_bp  # Импортируем blueprint
 
