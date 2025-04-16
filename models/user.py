@@ -1,8 +1,5 @@
 from database import db
 from sqlalchemy import ForeignKey, event
-# from .role import Role
-# from .department import Department
-# from .status import Status
 
 user_roles = db.Table('user_roles',
                       db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
