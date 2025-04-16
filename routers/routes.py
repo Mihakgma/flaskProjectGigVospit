@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, jsonify, request
-from models.user import User  # Импортируем модель User
+from models.models import User  # Импортируем модель User
 from database import db  # Импортируем db
 
 routes_bp = Blueprint('routes', __name__)  # Создаем blueprint
