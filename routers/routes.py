@@ -11,6 +11,21 @@ from werkzeug.security import generate_password_hash
 
 routes_bp = Blueprint('routes', __name__)  # Создаем blueprint
 
+# Словарь с описанием роутов
+ROUTES_INFO = {
+    '/hello/<name>': 'Пример роута с параметром. Отображает приветствие с именем.',
+    '/data': 'Возвращает JSON данные.',
+    '/submit': 'Обрабатывает POST запрос и отображает введенные данные.',
+    '/new_user': 'Создает нового пользователя (упрощенный вариант).',
+    '/users/add': 'Форма для добавления пользователя с ролями, отделом и статусом.',
+    '/users/<int:user_id>': 'Отображает детали пользователя.'
+}
+
+
+@routes_bp.route('/')
+def index():
+    return render_template('index.html', routes=ROUTES_INFO)
+
 
 @routes_bp.route('/hello/<name>')
 def hello(name):
