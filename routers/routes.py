@@ -15,6 +15,8 @@ from models.models import (User,
                            ApplicantType,
                            AttestationType)
 from database import db
+from .forms import AddApplicantForm
+
 from werkzeug.security import generate_password_hash
 from datetime import datetime
 

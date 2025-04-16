@@ -1,41 +1,66 @@
-<!-- templates/add_applicant.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Добавить заявителя</title>
+    <title>Добавление Заявителя</title>
 </head>
 <body>
+<h1>Добавление нового заявителя</h1>
+<form method="POST" action="/add_applicant">
+    {{ form.hidden_tag() }}
 
-<h1>Добавить заявителя</h1>
+    <!-- Поле Имя -->
+    <div class="field">
+        {{ form.first_name.label }}
+        {% if form.first_name.errors %}
+            <ul class="errors">{% for error in form.first_name.errors %}
+                <li>{{ error }}</li>{% endfor %}</ul>
+        {% endif %}
+        {{ form.first_name(class_='input') }}
+    </div>
 
-<form method="post">
-    <!-- ... (поля для ввода данных заявителя) ... -->
-    <label for="contingent_id">Контингент:</label>
-    <select name="contingent_id" id="contingent_id" required>
-        {% for contingent in contingents %}
-            <option value="{{ contingent.id }}">{{ contingent.name }}</option> {# Assuming 'name' field in Contingent #}
-        {% endfor %}
-    </select><br><br>
+    <!-- Поле Фамилия -->
+    <div class="field">
+        {{ form.last_name.label }}
+        {% if form.last_name.errors %}
+            <ul class="errors">{% for error in form.last_name.errors %}
+                <li>{{ error }}</li>{% endfor %}</ul>
+        {% endif %}
+        {{ form.last_name(class_='input') }}
+    </div>
 
-    <!-- ... (аналогично для work_field_id, applicant_type_id, attestation_type_id) ... -->
+    <!-- Поле Email -->
+    <div class="field">
+        {{ form.email.label }}
+        {% if form.email.errors %}
+            <ul class="errors">{% for error in form.email.errors %}
+                <li>{{ error }}</li>{% endfor %}</ul>
+        {% endif %}
+        {{ form.email(class_='input', type='email') }}
+    </div>
 
-        <label for="edited_by_user_id">Отредактировано пользователем:</label>
-    <select name="edited_by_user_id" id="edited_by_user_id" required>
-        {% for user in users %}
-            <option value="{{ user.id }}">{{ user.username }}</option>
-        {% endfor %}
-    </select><br><br>
+    <!-- Поле Телефон -->
+    <div class="field">
+        {{ form.phone_number.label }}
+        {% if form.phone_number.errors %}
+            <ul class="errors">{% for error in form.phone_number.errors %}
+                <li>{{ error }}</li>{% endfor %}</ul>
+        {% endif %}
+        {{ form.phone_number(class_='input', type='tel') }}
+    </div>
 
-    <label for="editing_by_id">Редактирует сейчас:</label>
-    <select name="editing_by_id" id="editing_by_id" required>
-        {% for user in users %}
-            <option value="{{ user.id }}">{{ user.username }}</option>
-        {% endfor %}
-    </select><br><br>
+    <!-- Поле Адрес -->
+    <div class="field">
+        {{ form.address.label }}
+        {% if form.address.errors %}
+            <ul class="errors">{% for error in form.address.errors %}
+                <li>{{ error }}</li>{% endfor %}</ul>
+        {% endif %}
+        {{ form.address(class_='textarea') }}
+    </div>
 
-    <button type="submit">Добавить</button>
+    <!-- Кнопка отправки формы -->
+    <button type="submit">Создать заявку</button>
 </form>
-
 </body>
 </html>
