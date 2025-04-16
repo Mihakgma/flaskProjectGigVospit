@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавить пользователя</title>
+</head>
+<body>
+
+<h1>Добавить пользователя</h1>
+
+<form method="post">
+    <label for="first_name">Имя:</label>
+    <input type="text" id="first_name" name="first_name" required><br><br>
+
+    <label for="last_name">Фамилия:</label>
+    <input type="text" id="last_name" name="last_name" required><br><br>
+
+    <label for="middle_name">Отчество:</label>
+    <input type="text" id="middle_name" name="middle_name"><br><br>
+
+    <label for="username">Имя пользователя:</label>
+    <input type="text" id="username" name="username" required><br><br>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" required><br><br>
+
+    <label for="password">Пароль:</label>
+    <input type="password" id="password" name="password" required><br><br>
+
+    <label for="phone">Телефон:</label>
+    <input type="tel" id="phone" name="phone"><br><br>
+
+    <label for="roles">Роли:</label><br>
+    <select id="roles" name="role_id" multiple required> {# multiple для выбора нескольких ролей #}
+        {% for role in roles %}
+        <option value="{{ role.id }}">{{ role.name }}</option>
+        {% endfor %}
+    </select><br><br>
+
+    <label for="dept_id">Отдел:</label><br>
+    <select id="dept_id" name="dept_id" required>
+        {% for department in departments %}
+        <option value="{{ department.id }}">{{ department.name }}</option>
+        {% endfor %}
+    </select><br><br>
+
+
+    <label for="status_id">Статус:</label><br>
+    <select id="status_id" name="status_id" required>
+        {% for status in statuses %}
+        <option value="{{ status.id }}">{{ status.name }}</option>
+        {% endfor %}
+    </select><br><br>
+
+
+
+
+    <input type="submit" value="Добавить">
+</form>
+
+</body>
+</html>
