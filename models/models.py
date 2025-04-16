@@ -133,11 +133,3 @@ class Applicant(db.Model):
     editing_by_id = db.Column(Integer, ForeignKey('user.id'), nullable=False)
     editing_started_at = db.Column(DateTime, nullable=False)
     contracts = db.relationship('Contract', secondary=applicant_contract, backref='applicants')
-
-# --- Создание таблиц ---
-# @event.listens_for(db.metadata, 'before_create')  # Используйте db.metadata
-# def create_tables(mapper, class_):
-#     if not user_roles.exists():
-#         user_roles.create(db.get_engine())  # используйте db.get_engine()
-#     if not applicant_contract.exists():
-#         applicant_contract.create(db.get_engine())
