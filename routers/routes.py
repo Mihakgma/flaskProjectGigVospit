@@ -1,4 +1,10 @@
-from flask import Blueprint, render_template, jsonify, request, redirect, url_for
+from flask import (Blueprint,
+                   render_template,
+                   jsonify,
+                   request,
+                   redirect,
+                   url_for,
+                   flash)
 from models.models import User, Role, Department, Status
 from database import db
 from werkzeug.security import generate_password_hash
@@ -72,7 +78,8 @@ def add_user():
 
             db.session.add(new_user)
             db.session.commit()
-            return redirect(url_for('user_routes.add_user'))  # Или другая страница после добавления
+            flash('Новый пользователь успешно добавлен!', 'success')  # сообщение об успехе
+            return redirect(url_for('routes.user_details', user_id=new_user.id))  # редирект
 
         except Exception as e:
             db.session.rollback()
@@ -85,3 +92,9 @@ def add_user():
                            roles=roles,
                            departments=departments,
                            statuses=statuses)
+
+
+@routes_bp.route('/users/<int:user_id>')  # новый роут для отображения деталей пользователя
+def user_details(user_id):
+    user = User.query.get_or_404(user_id)
+    return render_template('user_details.html', user=user)

@@ -1,5 +1,5 @@
 from database import db
-from sqlalchemy import ForeignKey, event, Text, Table
+from sqlalchemy import ForeignKey, Text, Table
 from sqlalchemy.types import String, Integer, Boolean, DateTime
 
 
@@ -42,6 +42,8 @@ class User(db.Model):
     phone = db.Column(db.String(20))  # Телефон
     dept_id = db.Column(db.Integer, ForeignKey('department.id'), nullable=False)  # ID отдела
     status_id = db.Column(db.Integer, ForeignKey('status.id'), nullable=False)  # ID статуса
+    department = db.relationship('Department', backref='users', lazy='joined')
+    status = db.relationship('Status', backref='users', lazy='joined')
 
 
 class ApplicantType(db.Model):
@@ -131,7 +133,6 @@ class Applicant(db.Model):
     editing_by_id = db.Column(Integer, ForeignKey('user.id'), nullable=False)
     editing_started_at = db.Column(DateTime, nullable=False)
     contracts = db.relationship('Contract', secondary=applicant_contract, backref='applicants')
-
 
 # --- Создание таблиц ---
 # @event.listens_for(db.metadata, 'before_create')  # Используйте db.metadata
