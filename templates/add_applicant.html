@@ -1,0 +1,41 @@
+<!-- templates/add_applicant.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Добавить заявителя</title>
+</head>
+<body>
+
+<h1>Добавить заявителя</h1>
+
+<form method="post">
+    <!-- ... (поля для ввода данных заявителя) ... -->
+    <label for="contingent_id">Контингент:</label>
+    <select name="contingent_id" id="contingent_id" required>
+        {% for contingent in contingents %}
+            <option value="{{ contingent.id }}">{{ contingent.name }}</option> {# Assuming 'name' field in Contingent #}
+        {% endfor %}
+    </select><br><br>
+
+    <!-- ... (аналогично для work_field_id, applicant_type_id, attestation_type_id) ... -->
+
+        <label for="edited_by_user_id">Отредактировано пользователем:</label>
+    <select name="edited_by_user_id" id="edited_by_user_id" required>
+        {% for user in users %}
+            <option value="{{ user.id }}">{{ user.username }}</option>
+        {% endfor %}
+    </select><br><br>
+
+    <label for="editing_by_id">Редактирует сейчас:</label>
+    <select name="editing_by_id" id="editing_by_id" required>
+        {% for user in users %}
+            <option value="{{ user.id }}">{{ user.username }}</option>
+        {% endfor %}
+    </select><br><br>
+
+    <button type="submit">Добавить</button>
+</form>
+
+</body>
+</html>

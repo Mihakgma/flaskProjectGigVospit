@@ -5,9 +5,18 @@ from flask import (Blueprint,
                    redirect,
                    url_for,
                    flash)
-from models.models import User, Role, Department, Status
+from models.models import (User,
+                           Role,
+                           Department,
+                           Status,
+                           Applicant,
+                           Contingent,
+                           WorkField,
+                           ApplicantType,
+                           AttestationType)
 from database import db
 from werkzeug.security import generate_password_hash
+from datetime import datetime
 
 routes_bp = Blueprint('routes', __name__)  # Создаем blueprint
 
@@ -18,7 +27,9 @@ ROUTES_INFO = {
     '/submit': 'Обрабатывает POST запрос и отображает введенные данные.',
     '/new_user': 'Создает нового пользователя (упрощенный вариант).',
     '/users/add': 'Форма для добавления пользователя с ролями, отделом и статусом.',
-    '/users/<int:user_id>': 'Отображает детали пользователя.'
+    '/users/<int:user_id>': 'Отображает детали пользователя.',
+    '/applicants/add': 'Добавить нового заявителя',
+    '/applicants/<int:applicant_id>': 'Отображает детали заявителя'
 }
 
 
@@ -109,7 +120,57 @@ def add_user():
                            statuses=statuses)
 
 
-@routes_bp.route('/users/<int:user_id>')  # новый роут для отображения деталей пользователя
+@routes_bp.route('/users/<int:user_id>')
 def user_details(user_id):
     user = User.query.get_or_404(user_id)
     return render_template('user_details.html', user=user)
+
+
+@routes_bp.route('/applicants/add', methods=['GET', 'POST'])
+def add_applicant():
+    contingents = Contingent.query.all()
+    work_fields = WorkField.query.all()
+    applicant_types = ApplicantType.query.all()
+    attestation_types = AttestationType.query.all()
+    users = User.query.all()  # Загружаем список пользователей для выбора редактора
+
+    if request.method == 'POST':
+        try:
+            # Получаем данные из формы
+            # ... (получение данных из request.form, аналогично add_user) ...
+            edited_by_user_id = request.form.get('edited_by_user_id')
+            editing_by_id = request.form.get('editing_by_id')  # Поле для выбора текущего редактора
+
+            new_applicant = Applicant(
+                # ... (передача данных в конструктор Applicant) ...
+                edited_by_user_id=int(edited_by_user_id) if edited_by_user_id else None,
+                # Приведение к int, проверка на None
+                edited_time=datetime.utcnow(),
+                is_editing_now=False,
+                editing_by_id=int(editing_by_id) if editing_by_id else None,
+                editing_started_at=datetime.utcnow()
+            )
+
+            db.session.add(new_applicant)
+            db.session.commit()
+
+            flash('Новый заявитель успешно добавлен!', 'success')
+            return redirect(url_for('routes.applicant_details', applicant_id=new_applicant.id))  # редирект
+
+        except Exception as e:
+            db.session.rollback()
+            print(e)
+            return jsonify({'error': str(e)}), 500
+
+    return render_template('add_applicant.html',
+                           contingents=contingents,
+                           work_fields=work_fields,
+                           applicant_types=applicant_types,
+                           attestation_types=attestation_types,
+                           users=users)
+
+
+@routes_bp.route('/applicants/<int:applicant_id>')
+def applicant_details(applicant_id):
+    applicant = Applicant.query.get_or_404(applicant_id)
+    return render_template('applicant_details.html', applicant=applicant)
