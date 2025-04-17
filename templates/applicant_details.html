@@ -1,6 +1,6 @@
 <!-- templates/applicant_details.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <title>Детали заявителя</title>
@@ -15,11 +15,52 @@
   {% endif %}
 {% endwith %}
 
-
 <h1>Детали заявителя</h1>
 
 <p>ID: {{ applicant.id }}</p>
-<!-- ... (отображение остальных полей applicant) ... -->
+<p>Имя: {{ applicant.first_name }}</p>
+<p>Фамилия: {{ applicant.last_name }}</p>
+<p>Отчество: {{ applicant.middle_name }}</p>
+<p>Номер медицинской книжки: {{ applicant.medbook_number }}</p>
+<p>СНИЛС: {{ applicant.snils_number }}</p>
+<p>Номер паспорта: {{ applicant.passport_number }}</p>
+<p>Дата рождения: {{ applicant.birth_date.strftime('%Y-%m-%d') }}</p>
+<p>Адрес регистрации: {{ applicant.registration_address }}</p>
+<p>Адрес проживания: {{ applicant.residence_address }}</p>
+<p>Номер телефона: {{ applicant.phone_number }}</p>
+<p>Email: {{ applicant.email }}</p>
+<p>Контингент: {{ applicant.contingent.name }}</p>
+<p>Сфера деятельности: {{ applicant.work_field.name }}</p>
+<p>Тип заявителя: {{ applicant.applicant_type.name }}</p>
+<p>Тип аттестации: {{ applicant.attestation_type.name }}</p>
+<p>Редактировал:
+    {% if applicant.edited_by %}
+        {{ applicant.edited_by.last_name }} {{ applicant.edited_by.first_name }} (ID: {{ applicant.edited_by.id }})
+    {% else %}
+        Неизвестно
+    {% endif %}
+</p>
+<p>Время редактирования: {{ applicant.edited_time.strftime('%Y-%m-%d %H:%M:%S UTC') }}</p>
+<p>Редактируется сейчас: {{ applicant.is_editing_now }}</p>
+<p>Редактирует:
+    {% if applicant.editing_by %}
+        {{ applicant.editing_by.last_name }} {{ applicant.editing_by.first_name }} (ID: {{ applicant.editing_by.id }})
+    {% else %}
+       Никто
+    {% endif %}
+</p>
+<p>Начало редактирования:
+    {% if applicant.editing_started_at %}
+         {{ applicant.editing_started_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}
+    {% endif %}
+</p>
+
+<p>Контракты:</p>
+<ul>
+    {% for contract in applicant.contracts %}
+        <li><a href="{{ url_for('routes.contract_details', contract_id=contract.id) }}">{{ contract.number }}</a></li>
+    {% endfor %}
+</ul>
 
 
 </body>

@@ -13,12 +13,14 @@ from models.models import (User,
                            Contingent,
                            WorkField,
                            ApplicantType,
-                           AttestationType)
+                           AttestationType,
+                           Contract, Organization)
 from database import db
-# from .forms import AddApplicantForm
 
 from werkzeug.security import generate_password_hash
 from datetime import datetime
+
+from routers.forms import AddApplicantForm, AddContractForm
 
 routes_bp = Blueprint('routes', __name__)  # Создаем blueprint
 
@@ -130,41 +132,63 @@ def user_details(user_id):
 
 @routes_bp.route('/applicants/add', methods=['GET', 'POST'])
 def add_applicant():
+    form = AddApplicantForm()
+
+    # Запросы к базе данных для select полей (ОБЯЗАТЕЛЬНО ПРОВЕРЬТЕ НАЛИЧИЕ ДАННЫХ):
     contingents = Contingent.query.all()
     work_fields = WorkField.query.all()
     applicant_types = ApplicantType.query.all()
     attestation_types = AttestationType.query.all()
-    users = User.query.all()  # Загружаем список пользователей для выбора редактора
+    users = User.query.all()
+
+    form.contingent_id.choices = [(c.id, c.name) for c in contingents]
+    form.work_field_id.choices = [(w.id, w.name) for w in work_fields]
+    form.applicant_type_id.choices = [(a.id, a.name) for a in applicant_types]
+    form.attestation_type_id.choices = [(at.id, at.name) for at in attestation_types]
+    form.edited_by_user_id.choices = [(u.id, f"{u.last_name} {u.first_name}") for u in users]
+    form.editing_by_id.choices = ([(None, '-- Не редактируется --')] +
+                                  [(u.id, f"{u.last_name} {u.first_name}") for u in
+                                   users])  # None для пустого значения
 
     if request.method == 'POST':
-        try:
-            # Получаем данные из формы
-            # ... (получение данных из request.form, аналогично add_user) ...
-            edited_by_user_id = request.form.get('edited_by_user_id')
-            editing_by_id = request.form.get('editing_by_id')  # Поле для выбора текущего редактора
+        if form.validate_on_submit():
+            try:
+                new_applicant = Applicant(
+                    first_name=form.first_name.data,
+                    last_name=form.last_name.data,
+                    middle_name=form.middle_name.data,
+                    medbook_number=form.medbook_number.data,
+                    snils_number=form.snils_number.data,
+                    passport_number=form.passport_number.data,
+                    birth_date=form.birth_date.data,
+                    registration_address=form.registration_address.data,
+                    residence_address=form.residence_address.data,
+                    phone_number=form.phone_number.data,
+                    email=form.email.data,
+                    contingent_id=form.contingent_id.data,
+                    work_field_id=form.work_field_id.data,
+                    applicant_type_id=form.applicant_type_id.data,
+                    attestation_type_id=form.attestation_type_id.data,
+                    edited_by_user_id=form.edited_by_user_id.data,
+                    edited_time=datetime.utcnow(),
+                    is_editing_now=form.is_editing_now.data,
+                    editing_by_id=form.editing_by_id.data or None,  # Обработка None
+                    editing_started_at=datetime.utcnow() if form.editing_by_id.data else None
+                    # Установка времени, если редактируется
+                )
+                db.session.add(new_applicant)
+                db.session.commit()
 
-            new_applicant = Applicant(
-                # ... (передача данных в конструктор Applicant) ...
-                edited_by_user_id=int(edited_by_user_id) if edited_by_user_id else None,
-                # Приведение к int, проверка на None
-                edited_time=datetime.utcnow(),
-                is_editing_now=False,
-                editing_by_id=int(editing_by_id) if editing_by_id else None,
-                editing_started_at=datetime.utcnow()
-            )
+                flash('Новый заявитель успешно добавлен!', 'success')
+                return redirect(url_for('routes.applicant_details', applicant_id=new_applicant.id))
 
-            db.session.add(new_applicant)
-            db.session.commit()
-
-            flash('Новый заявитель успешно добавлен!', 'success')
-            return redirect(url_for('routes.applicant_details', applicant_id=new_applicant.id))  # редирект
-
-        except Exception as e:
-            db.session.rollback()
-            print(e)
-            return jsonify({'error': str(e)}), 500
+            except Exception as e:
+                db.session.rollback()
+                print(f"Ошибка при добавлении заявителя: {e}")
+                flash('Произошла ошибка при добавлении заявителя. Попробуйте позже.', 'danger')
 
     return render_template('add_applicant.html',
+                           form=form,
                            contingents=contingents,
                            work_fields=work_fields,
                            applicant_types=applicant_types,
@@ -176,3 +200,39 @@ def add_applicant():
 def applicant_details(applicant_id):
     applicant = Applicant.query.get_or_404(applicant_id)
     return render_template('applicant_details.html', applicant=applicant)
+
+
+@routes_bp.route('/contracts/add', methods=['GET', 'POST'])
+def add_contract():
+    form = AddContractForm()
+    organizations = Organization.query.all()
+    form.organization_id.choices = [(org.id, org.name) for org in organizations]
+
+    if request.method == 'POST':
+        if form.validate_on_submit():
+            try:
+                new_contract = Contract(
+                    number=form.number.data,
+                    contract_date=form.contract_date.data,
+                    name=form.name.data,
+                    expiration_date=form.expiration_date.data,
+                    is_extended=form.is_extended.data,
+                    organization_id=form.organization_id.data,
+                    additional_info=form.additional_info.data
+                )
+                db.session.add(new_contract)
+                db.session.commit()
+                flash('Новый контракт успешно добавлен!', 'success')
+                return redirect(url_for('routes.contract_details', contract_id=new_contract.id))
+            except Exception as e:
+                db.session.rollback()
+                print(f"Ошибка при добавлении контракта: {e}")
+                flash('Произошла ошибка при добавлении контракта. Попробуйте позже.', 'danger')
+
+    return render_template('add_contract.html', form=form, organizations=organizations)
+
+
+@routes_bp.route('/contracts/<int:contract_id>')
+def contract_details(contract_id):
+    contract = Contract.query.get_or_404(contract_id)
+    return render_template('contract_details.html', contract=contract)

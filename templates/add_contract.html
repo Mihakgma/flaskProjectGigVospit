@@ -2,15 +2,14 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Добавление заявителя</title>
+    <title>Добавление контракта</title>
 </head>
 <body>
 
-<h1>Добавление заявителя</h1>
+<h1>Добавление контракта</h1>
 
 <form method="post">
     {{ form.hidden_tag() }}
-
     {% for field in form if field.widget.input_type != 'hidden' %}
         <div>
             {{ field.label }}
@@ -21,18 +20,17 @@
                     {% endfor %}
                 </ul>
             {% endif %}
-           {% if field.type == "SelectField" %}
-                  <select id="{{ field.id }}" name="{{ field.name }}">
-                      {% for choice in field.choices %}
-                          <option value="{{ choice[0] }}"
-                              {% if choice[0] == field.data %}selected{% endif %}>{{ choice[1] }}
-                          </option>
-                      {% endfor %}
-                  </select>
-              {% else %}
+            {% if field.type == "SelectField" %}
+                <select id="{{ field.id }}" name="{{ field.name }}">
+                    {% for choice in field.choices %}
+                        <option value="{{ choice[0] }}"
+                            {% if choice[0] == field.data %}selected{% endif %}>{{ choice[1] }}
+                        </option>
+                    {% endfor %}
+                </select>
+            {% else %}
                 {{ field(class_="input") }}
-              {% endif %}
-
+            {% endif %}
         </div><br>
     {% endfor %}
 
