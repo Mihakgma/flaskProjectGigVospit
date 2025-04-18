@@ -1,61 +1,82 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <title>Добавить пользователя</title>
 </head>
 <body>
 
+<!-- Всплывающие сообщения об ошибках или успешном выполнении действий -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <ul class="flashes">
+            {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endwith %}
+
 <h1>Добавить пользователя</h1>
 
 <form method="post">
     <label for="first_name">Имя:</label>
-    <input type="text" id="first_name" name="first_name" required><br><br>
+    <input type="text" id="first_name" name="first_name"
+           value="{% if first_name %}{{ first_name }}{% else %}{% endif %}" required><br><br>
 
     <label for="last_name">Фамилия:</label>
-    <input type="text" id="last_name" name="last_name" required><br><br>
+    <input type="text" id="last_name" name="last_name" value="{% if last_name %}{{ last_name }}{% else %}{% endif %}"
+           required><br><br>
 
     <label for="middle_name">Отчество:</label>
-    <input type="text" id="middle_name" name="middle_name"><br><br>
+    <input type="text" id="middle_name" name="middle_name"
+           value="{% if middle_name %}{{ middle_name }}{% else %}{% endif %}"><br><br>
 
-    <label for="username">Имя пользователя:</label>
-    <input type="text" id="username" name="username" required><br><br>
+    <label for="username">Логин:</label>
+    <input type="text" id="username" name="username" value="{% if username %}{{ username }}{% else %}{% endif %}"
+           required><br><br>
 
     <label for="email">Email:</label>
-    <input type="email" id="email" name="email" required><br><br>
+    <input type="email" id="email" name="email" value="{% if email %}{{ email }}{% else %}{% endif %}" required><br><br>
 
     <label for="password">Пароль:</label>
     <input type="password" id="password" name="password" required><br><br>
 
     <label for="phone">Телефон:</label>
-    <input type="tel" id="phone" name="phone"><br><br>
+    <input type="tel" id="phone" name="phone" value="{% if phone %}{{ phone }}{% else %}{% endif %}"><br><br>
 
-    <label for="roles">Роли:</label><br>
-    <select id="roles" name="role_id" multiple required> {# multiple для выбора нескольких ролей #}
-        {% for role in roles %}
-        <option value="{{ role.id }}">{{ role.name }}</option>
-        {% endfor %}
-    </select><br><br>
-
-    <label for="dept_id">Отдел:</label><br>
+    <label for="dept_id">Отдел:</label>
     <select id="dept_id" name="dept_id" required>
-        {% for department in departments %}
-        <option value="{{ department.id }}">{{ department.name }}</option>
+        <option value="">Выберите отдел...</option>
+        {% for dept in departments %}
+            <option value="{{ dept.id }}" {% if dept_id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
         {% endfor %}
     </select><br><br>
 
-
-    <label for="status_id">Статус:</label><br>
+    <label for="status_id">Статус:</label>
     <select id="status_id" name="status_id" required>
+        <option value="">Выберите статус...</option>
         {% for status in statuses %}
-        <option value="{{ status.id }}">{{ status.name }}</option>
+            <option value="{{ status.id }}"
+                    {% if status_id == status.id %}selected{% endif %}>{{ status.name }}</option>
         {% endfor %}
     </select><br><br>
 
+    <label for="role_id">Роли:</label>
+    <div>
+        {% for role in roles %}
+            <input type="checkbox" id="role_{{ role.id }}" name="role_id" value="{{ role.id }}"
+                   {% if role.id|string in role_ids %}checked{% endif %}>
+            <label for="role_{{ role.id }}">{{ role.name }}</label><br>
+        {% endfor %}
+    </div>
+    <br>
 
+    <!-- Новое поле Info -->
+    <label for="info">Дополнительно:</label>
+    <textarea id="info" name="info" rows="4" cols="50">{% if info %}{{ info }}{% else %}{% endif %}</textarea><br><br>
 
-
-    <input type="submit" value="Добавить">
+    <button type="submit">Создать пользователя</button>
 </form>
 
 </body>

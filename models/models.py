@@ -44,6 +44,10 @@ class User(db.Model):
     status_id = db.Column(db.Integer, ForeignKey('status.id'), nullable=False)  # ID статуса
     department = db.relationship('Department', backref='users', lazy='joined')
     status = db.relationship('Status', backref='users', lazy='joined')
+    is_logged_in = db.Column(db.Boolean, default=None, nullable=True)
+    logged_in_time = db.Column(db.DateTime, default=None, nullable=True)
+    last_commit_time = db.Column(db.DateTime, default=None, nullable=True)
+    info = db.Column(db.Text(length=300), default=None, nullable=True)
 
 
 class ApplicantType(db.Model):

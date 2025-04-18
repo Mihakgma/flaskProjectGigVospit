@@ -19,6 +19,7 @@ from database import db
 
 from werkzeug.security import generate_password_hash
 from datetime import datetime
+from sqlalchemy.exc import IntegrityError
 
 from routers.forms import AddApplicantForm, AddContractForm
 
@@ -76,7 +77,7 @@ def new_user():
 def add_user():
     if request.method == 'POST':
         try:
-            # получаем все поля из формы
+            # Получаем все поля из формы
             first_name = request.form.get('first_name')
             last_name = request.form.get('last_name')
             middle_name = request.form.get('middle_name')
@@ -84,9 +85,31 @@ def add_user():
             email = request.form.get('email')
             password = request.form.get('password')
             phone = request.form.get('phone')
-            role_ids = request.form.getlist('role_id')  # получаем список выбранных ролей
+            role_ids = request.form.getlist('role_id')  # Список выбранных ролей
             dept_id = request.form.get('dept_id')
             status_id = request.form.get('status_id')
+
+            # Проверка уникальности имени пользователя и адреса электронной почты
+            existing_username = User.query.filter_by(username=username).first()
+            existing_email = User.query.filter_by(email=email).first()
+
+            if existing_username or existing_email:
+                error_message = ''
+                if existing_username:
+                    error_message += f'Пользователь с именем {username} уже существует.<br>'
+                if existing_email:
+                    error_message += f'Адрес электронной почты {email} уже используется.<br>'
+
+                flash(error_message, 'danger')
+                return render_template('add_user.html',
+                                       first_name=first_name,
+                                       last_name=last_name,
+                                       middle_name=middle_name,
+                                       username=username,
+                                       email=email,
+                                       phone=phone,
+                                       dept_id=dept_id,
+                                       status_id=status_id)
 
             hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
 
@@ -108,8 +131,13 @@ def add_user():
 
             db.session.add(new_user)
             db.session.commit()
-            flash('Новый пользователь успешно добавлен!', 'success')  # сообщение об успехе
-            return redirect(url_for('routes.user_details', user_id=new_user.id))  # редирект
+            flash('Новый пользователь успешно добавлен!', 'success')
+            return redirect(url_for('routes.user_details', user_id=new_user.id))
+
+        except IntegrityError as e:
+            db.session.rollback()
+            flash(f'Ошибка целостности данных: {str(e)}', 'danger')
+            return render_template('add_user.html')
 
         except Exception as e:
             db.session.rollback()
