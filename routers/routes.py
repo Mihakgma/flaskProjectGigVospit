@@ -18,7 +18,7 @@ from models.models import (User,
 from database import db
 
 from werkzeug.security import generate_password_hash
-from datetime import datetime
+# from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 
 from routers.forms import AddApplicantForm, AddContractForm
@@ -178,8 +178,35 @@ def add_applicant():
                                   [(u.id, f"{u.last_name} {u.first_name}") for u in
                                    users])  # None для пустого значения
 
+    # Проверяем наличие обязательных полей
+    # required_fields = ['first_name',
+    #                    'last_name',
+    #                    'medbook_number',
+    #                    'snils_number',
+    #                    'birth_date',
+    #                    'contingent_id',
+    #                    'work_field_id',
+    #                    'applicant_type_id',
+    #                    'attestation_type_id']  # замените на ваши необходимые поля
+    # missing_fields = []
+    # for field_name in required_fields:
+    #     value = request.form.get(field_name)
+    #     if not value:
+    #         missing_fields.append(field_name)
+    #
+    # if missing_fields:
+    #     flash(f'Заполнены не все обязательные поля: {", ".join(missing_fields)}')
+    #     return render_template('add_applicant.html', form=form)
+
     if request.method == 'POST':
         if form.validate_on_submit():
+            print("Form data:", form.data)  # ОТЛАДОЧНАЯ СТРОКА...
+            print("contingent_id:", form.contingent_id.data)
+            print("work_field_id:", form.work_field_id.data)
+            print("applicant_type_id:", form.applicant_type_id.data)
+            print("attestation_type_id:", form.attestation_type_id.data)
+            print("edited_by_user_id:", form.edited_by_user_id.data)
+            print("editing_by_id:", form.editing_by_id.data)
             try:
                 new_applicant = Applicant(
                     first_name=form.first_name.data,
@@ -197,11 +224,11 @@ def add_applicant():
                     work_field_id=form.work_field_id.data,
                     applicant_type_id=form.applicant_type_id.data,
                     attestation_type_id=form.attestation_type_id.data,
-                    edited_by_user_id=form.edited_by_user_id.data,
-                    edited_time=datetime.utcnow(),
-                    is_editing_now=form.is_editing_now.data,
-                    editing_by_id=form.editing_by_id.data or None,  # Обработка None
-                    editing_started_at=datetime.utcnow() if form.editing_by_id.data else None
+                    # edited_by_user_id=form.edited_by_user_id.data,
+                    # edited_time=datetime.utcnow(),
+                    # is_editing_now=form.is_editing_now.data,
+                    # editing_by_id=form.editing_by_id.data or None,  # Обработка None
+                    # editing_started_at=datetime.utcnow() if form.editing_by_id.data else None
                     # Установка времени, если редактируется
                 )
                 db.session.add(new_applicant)

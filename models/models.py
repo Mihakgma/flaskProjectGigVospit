@@ -119,8 +119,8 @@ class Applicant(db.Model):
     first_name = db.Column(String(80), nullable=False)
     last_name = db.Column(String(80), nullable=False)
     middle_name = db.Column(String(80), nullable=True)
-    medbook_number = db.Column(String(50), nullable=True)
-    snils_number = db.Column(String(14), nullable=True)  # 11 цифр + 3 разделителя
+    medbook_number = db.Column(String(50), nullable=False)
+    snils_number = db.Column(String(14), nullable=False)  # 11 цифр + 3 разделителя
     passport_number = db.Column(String(20), nullable=True)  # 10 цифр (или 4+6)
     birth_date = db.Column(DateTime, nullable=False)
     registration_address = db.Column(String(200), nullable=True)
@@ -131,9 +131,9 @@ class Applicant(db.Model):
     work_field_id = db.Column(Integer, ForeignKey('work_field.id'), nullable=False)
     applicant_type_id = db.Column(Integer, ForeignKey('applicant_type.id'), nullable=False)
     attestation_type_id = db.Column(Integer, ForeignKey('attestation_type.id'), nullable=False)
-    edited_by_user_id = db.Column(Integer, ForeignKey('user.id'), nullable=False)
-    edited_time = db.Column(DateTime, nullable=False)
-    is_editing_now = db.Column(Boolean, nullable=False)
+    edited_by_user_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
+    edited_time = db.Column(DateTime, nullable=True)
+    is_editing_now = db.Column(Boolean, nullable=True)
     editing_by_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
     editing_started_at = db.Column(DateTime, nullable=True)
     contracts = db.relationship('Contract', secondary=applicant_contract, backref='applicants')
