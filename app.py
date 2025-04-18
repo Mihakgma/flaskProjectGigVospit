@@ -17,9 +17,9 @@ def create_app():
     init_app(app)  # Инициализируем базу данных
 
     app.register_blueprint(routes_bp, url_prefix='/')  # Регистрируем blueprint
-    csrf = CSRFProtect()
-    csrf.init_app(app)  # Инициализация CSRFProtect
-    app.config['WTF_CSRF_TIME_LIMIT'] = None
+    # csrf = CSRFProtect()
+    # csrf.init_app(app)  # Инициализация CSRFProtect
+    # app.config['WTF_CSRF_TIME_LIMIT'] = None
     return app
 
 
