@@ -119,8 +119,8 @@ class Applicant(db.Model):
     first_name = db.Column(String(80), nullable=False)
     last_name = db.Column(String(80), nullable=False)
     middle_name = db.Column(String(80), nullable=True)
-    medbook_number = db.Column(String(50), nullable=False)
-    snils_number = db.Column(String(14), nullable=False)  # 11 цифр + 3 разделителя
+    medbook_number = db.Column(String(50), unique=True, nullable=False)
+    snils_number = db.Column(String(14), unique=True, nullable=False)  # 11 цифр + 3 разделителя
     passport_number = db.Column(String(20), nullable=True)  # 10 цифр (или 4+6)
     birth_date = db.Column(DateTime, nullable=False)
     registration_address = db.Column(String(200), nullable=True)
@@ -137,3 +137,7 @@ class Applicant(db.Model):
     editing_by_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
     editing_started_at = db.Column(DateTime, nullable=True)
     contracts = db.relationship('Contract', secondary=applicant_contract, backref='applicants')
+    contingent = db.relationship('Contingent', backref='applicants', lazy='joined')
+    work_field = db.relationship('WorkField', backref='applicants', lazy='joined')
+    applicant_type = db.relationship('ApplicantType', backref='applicants', lazy='joined')
+    attestation_type = db.relationship('AttestationType', backref='applicants', lazy='joined')

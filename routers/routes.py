@@ -173,10 +173,10 @@ def add_applicant():
     form.work_field_id.choices = [(w.id, w.name) for w in work_fields]
     form.applicant_type_id.choices = [(a.id, a.name) for a in applicant_types]
     form.attestation_type_id.choices = [(at.id, at.name) for at in attestation_types]
-    form.edited_by_user_id.choices = [(u.id, f"{u.last_name} {u.first_name}") for u in users]
-    form.editing_by_id.choices = ([(None, '-- Не редактируется --')] +
-                                  [(u.id, f"{u.last_name} {u.first_name}") for u in
-                                   users])  # None для пустого значения
+    # form.edited_by_user_id.choices = [(u.id, f"{u.last_name} {u.first_name}") for u in users]
+    # form.editing_by_id.choices = ([(None, '-- Не редактируется --')] +
+    #                               [(u.id, f"{u.last_name} {u.first_name}") for u in
+    #                                users])  # None для пустого значения
 
     # Проверяем наличие обязательных полей
     # required_fields = ['first_name',
@@ -205,8 +205,8 @@ def add_applicant():
             print("work_field_id:", form.work_field_id.data)
             print("applicant_type_id:", form.applicant_type_id.data)
             print("attestation_type_id:", form.attestation_type_id.data)
-            print("edited_by_user_id:", form.edited_by_user_id.data)
-            print("editing_by_id:", form.editing_by_id.data)
+            # print("edited_by_user_id:", form.edited_by_user_id.data)
+            # print("editing_by_id:", form.editing_by_id.data)
             try:
                 new_applicant = Applicant(
                     first_name=form.first_name.data,
