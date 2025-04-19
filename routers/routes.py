@@ -18,7 +18,7 @@ from models.models import (User,
 from database import db
 
 from werkzeug.security import generate_password_hash
-# from datetime import datetime
+from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 
 from routers.forms import AddApplicantForm, AddContractForm
@@ -167,46 +167,15 @@ def add_applicant():
     work_fields = WorkField.query.all()
     applicant_types = ApplicantType.query.all()
     attestation_types = AttestationType.query.all()
-    users = User.query.all()
+    users = User.query.all()  # Это нужно для выбора пользователя, если требуется
 
     form.contingent_id.choices = [(c.id, c.name) for c in contingents]
     form.work_field_id.choices = [(w.id, w.name) for w in work_fields]
     form.applicant_type_id.choices = [(a.id, a.name) for a in applicant_types]
     form.attestation_type_id.choices = [(at.id, at.name) for at in attestation_types]
-    # form.edited_by_user_id.choices = [(u.id, f"{u.last_name} {u.first_name}") for u in users]
-    # form.editing_by_id.choices = ([(None, '-- Не редактируется --')] +
-    #                               [(u.id, f"{u.last_name} {u.first_name}") for u in
-    #                                users])  # None для пустого значения
-
-    # Проверяем наличие обязательных полей
-    # required_fields = ['first_name',
-    #                    'last_name',
-    #                    'medbook_number',
-    #                    'snils_number',
-    #                    'birth_date',
-    #                    'contingent_id',
-    #                    'work_field_id',
-    #                    'applicant_type_id',
-    #                    'attestation_type_id']  # замените на ваши необходимые поля
-    # missing_fields = []
-    # for field_name in required_fields:
-    #     value = request.form.get(field_name)
-    #     if not value:
-    #         missing_fields.append(field_name)
-    #
-    # if missing_fields:
-    #     flash(f'Заполнены не все обязательные поля: {", ".join(missing_fields)}')
-    #     return render_template('add_applicant.html', form=form)
 
     if request.method == 'POST':
         if form.validate_on_submit():
-            print("Form data:", form.data)  # ОТЛАДОЧНАЯ СТРОКА...
-            print("contingent_id:", form.contingent_id.data)
-            print("work_field_id:", form.work_field_id.data)
-            print("applicant_type_id:", form.applicant_type_id.data)
-            print("attestation_type_id:", form.attestation_type_id.data)
-            # print("edited_by_user_id:", form.edited_by_user_id.data)
-            # print("editing_by_id:", form.editing_by_id.data)
             try:
                 new_applicant = Applicant(
                     first_name=form.first_name.data,
@@ -224,18 +193,31 @@ def add_applicant():
                     work_field_id=form.work_field_id.data,
                     applicant_type_id=form.applicant_type_id.data,
                     attestation_type_id=form.attestation_type_id.data,
-                    # edited_by_user_id=form.edited_by_user_id.data,
-                    # edited_time=datetime.utcnow(),
-                    # is_editing_now=form.is_editing_now.data,
-                    # editing_by_id=form.editing_by_id.data or None,  # Обработка None
-                    # editing_started_at=datetime.utcnow() if form.editing_by_id.data else None
-                    # Установка времени, если редактируется
+                    edited_time=datetime.utcnow(),
+                    # edited_by_user_id=form.edited_by_user_id.data, # Не нужно, т.к. edited_by определяется автоматически
+                    # is_editing_now = form.is_editing_now.data, # Не нужно устанавливать здесь
+                    # editing_by_id = form.editing_by_id.data, # Не нужно устанавливать здесь
+                    # editing_started_at = form.editing_started_at.data # Не нужно устанавливать здесь
                 )
                 db.session.add(new_applicant)
                 db.session.commit()
 
                 flash('Новый заявитель успешно добавлен!', 'success')
                 return redirect(url_for('routes.applicant_details', applicant_id=new_applicant.id))
+
+            except IntegrityError as e:
+                db.session.rollback()
+                if 'UNIQUE constraint failed' in str(e):
+                    if 'medbook_number' in str(e):
+                        flash('Заявитель с таким номером медкнижки уже существует.', 'danger')
+                    elif 'snils_number' in str(e):
+                        flash('Заявитель с таким СНИЛС уже существует.', 'danger')
+                    else:  # Для других потенциальных уникальных полей
+                        flash('Произошла ошибка, связанная с уникальностью данных. Проверьте введенную информацию.',
+                              'danger')
+                else:
+                    print(f"Ошибка при добавлении заявителя: {e}")
+                    flash('Произошла ошибка при добавлении заявителя. Попробуйте позже.', 'danger')
 
             except Exception as e:
                 db.session.rollback()
@@ -248,7 +230,8 @@ def add_applicant():
                            work_fields=work_fields,
                            applicant_types=applicant_types,
                            attestation_types=attestation_types,
-                           users=users)
+                           users=users  # Если требуется для других целей на странице
+                           )
 
 
 @routes_bp.route('/applicants/<int:applicant_id>')
