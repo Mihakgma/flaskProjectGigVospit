@@ -1,9 +1,15 @@
+import os
+
 from flask_sqlalchemy import SQLAlchemy
 
-db = SQLAlchemy()  # Создаем экземпляр SQLAlchemy
+db = SQLAlchemy()
 
 
 def init_app(app):
     db.init_app(app)
     with app.app_context():
-        db.create_all()
+        if not os.path.exists(
+                app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')):  # Проверяем существование файла БД
+            db.create_all()
+            from functions.default_data_autofill import init_db_and_load_data
+            init_db_and_load_data(db=db, data_dir="json/default_db_data")
