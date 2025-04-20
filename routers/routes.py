@@ -4,7 +4,9 @@ from flask import (Blueprint,
                    request,
                    redirect,
                    url_for,
-                   flash)
+                   flash, session)
+
+from functions.access_control import role_required
 from models.models import (User,
                            Role,
                            Department,
@@ -17,7 +19,7 @@ from models.models import (User,
                            Contract, Organization)
 from database import db
 
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
 
@@ -48,9 +50,10 @@ ROUTES_INFO = [
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
+@role_required('admin')
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('main.index'))  # Или другой роут главной страницы
+        return redirect(url_for('routes.index'))  # Или другой роут главной страницы
 
     form = RegistrationForm()
     form.populate_role_choices()  # Здесь заполняются варианты выбора ролей
@@ -73,19 +76,25 @@ def register():
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('main.index'))  # Или другой роут главной страницы
-
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user and user.check_password(form.password.data):  # Теперь это сработает
-            login_user(user, remember=form.remember.data)
-            next_page = request.args.get('next')
-            flash('Вы успешно вошли!', 'success')
-            return redirect(next_page) if next_page else redirect(url_for('routes.index'))
-        else:
-            flash('Неверное имя пользователя или пароль', 'danger')
+        username = form.username.data
+        password = form.password.data
+        remember_me = form.remember_me.data
+
+        user = User.query.filter_by(username=username).first()
+        if user is None or not check_password_hash(user.password, password):
+            flash('Неверный логин или пароль.')
+            return render_template('login.html', title='Авторизация', form=form)
+
+        session['user'] = {
+            'id': user.id,
+            'username': user.username,
+            'roles': [role.code for role in user.roles]
+        }
+        login_user(user, remember=remember_me)
+        next_page = request.args.get('next')
+        return redirect(next_page or url_for('routes.index'))
     return render_template('login.html', title='Авторизация', form=form)
 
 
@@ -99,22 +108,6 @@ def logout():
 @routes_bp.route('/')
 def index():
     return render_template('index.html', routes=ROUTES_INFO)
-
-
-@routes_bp.route('/hello/<name>')
-def hello(name):
-    return render_template('hello.html', name=name)
-
-
-@routes_bp.route('/data')
-def data():
-    return jsonify({'ключ': 'значение'})
-
-
-@routes_bp.route('/submit', methods=['POST'])
-def submit():
-    name = request.form['name']
-    return f'Введенные Вами данные: <{name}>'
 
 
 @routes_bp.route('/new_user', methods=['POST'])
@@ -132,6 +125,7 @@ def new_user():
 
 
 @routes_bp.route('/users/add', methods=['GET', 'POST'])
+@role_required('admin')
 def add_user():
     form = UserAddForm()
     form.dept_id.choices = [(d.id, d.name) for d in Department.query.all()]

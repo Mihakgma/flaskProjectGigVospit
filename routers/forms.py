@@ -11,12 +11,10 @@ from wtforms import (StringField,
 from wtforms.validators import (DataRequired,
                                 Length,
                                 Email,
-                                Optional,
-                                EqualTo,
-                                ValidationError)
+                                Optional)
 
 from functions import validate_birth_date
-from models import User, Role
+from wtforms.widgets import CheckboxInput
 
 
 class AddApplicantForm(FlaskForm):
@@ -59,7 +57,7 @@ class AddContractForm(FlaskForm):
 class LoginForm(FlaskForm):
     username = StringField('Имя пользователя', validators=[DataRequired()])
     password = PasswordField('Пароль', validators=[DataRequired()])
-    remember = BooleanField('Запомнить меня')
+    remember_me = BooleanField('Запомнить меня')
     submit = SubmitField('Войти')
 
 
@@ -92,12 +90,12 @@ class RegistrationForm(FlaskForm):
     ])
     password = PasswordField('Пароль', validators=[DataRequired(), Length(min=8)])
     confirm_password = PasswordField('Подтверждение пароля', validators=[DataRequired(), EqualTo('password')])
-    role = SelectField('Роль', coerce=int, validators=[DataRequired()])
+    roles = SelectMultipleField('Роли', choices=[], widget=CheckboxInput())
     submit = SubmitField('Зарегистрироваться')
 
     def populate_role_choices(self):
         roles = Role.query.all()
-        self.role.choices = [(role.id, role.name) for role in roles]  # Используем ID роли
+        self.roles.choices = [(role.id, role.name) for role in Role.query.all()]
 
 
 class UserAddForm(FlaskForm):
