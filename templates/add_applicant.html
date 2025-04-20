@@ -16,28 +16,28 @@
 
     <!-- Цикл по полям формы -->
     {% for field in form %}
-    <div>
-        {{ field.label }}
-        {% if field.errors %}
-            <ul class="errors">
-                {% for error in field.errors %}
-                    <li>{{ error }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+        <div>
+            {{ field.label }}
+            {% if field.errors %}
+                <ul class="errors">
+                    {% for error in field.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
 
-        {% if field.type == "SelectField" %}
-            <select id="{{ field.id }}" name="{{ field.name }}">
-                {% for choice in field.choices %}
-                    <option value="{{ choice[0] }}"
-                        {% if choice[0] == field.data %}selected{% endif %}>{{ choice[1] }}
-                    </option>
-                {% endfor %}
-            </select>
-        {% else %}
-            {{ field(class_="input") }}
-        {% endif %}
-    </div><br>
+            {% if field.type == "SelectField" %}
+                <select id="{{ field.id }}" name="{{ field.name }}">
+                    {% for choice in field.choices %}
+                        <option value="{{ choice[0] }}"
+                                {% if choice[0] == field.data %}selected{% endif %}>{{ choice[1] }}
+                        </option>
+                    {% endfor %}
+                </select>
+            {% else %}
+                {{ field(class_="input") }}
+            {% endif %}
+        </div><br>
     {% endfor %}
 
     <input type="submit" value="Добавить">
