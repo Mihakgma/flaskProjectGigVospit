@@ -125,7 +125,7 @@ def new_user():
 
 
 @routes_bp.route('/users/add', methods=['GET', 'POST'])
-@role_required('admin')
+@role_required(['admin'])
 def add_user():
     form = UserAddForm()
     form.dept_id.choices = [(d.id, d.name) for d in Department.query.all()]
