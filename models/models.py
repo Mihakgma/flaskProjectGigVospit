@@ -1,6 +1,9 @@
+from werkzeug.security import check_password_hash
+
 from database import db
 from sqlalchemy import ForeignKey, Text, Table
 from sqlalchemy.types import String, Integer, Boolean, DateTime
+from flask_login import UserMixin  # Для интеграции с Flask-Login
 
 
 # --- Модели ---
@@ -8,6 +11,7 @@ from sqlalchemy.types import String, Integer, Boolean, DateTime
 class Role(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
+    code = db.Column(db.String(10), unique=True, nullable=False)
     description = db.Column(Text)
 
     def __repr__(self):
@@ -31,23 +35,34 @@ class Department(db.Model):
         return f'<Department {self.name}>'
 
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     last_name = db.Column(db.String(80), nullable=False)  # Фамилия
     first_name = db.Column(db.String(80), nullable=False)  # Имя
-    middle_name = db.Column(db.String(80))  # Отчество
+    middle_name = db.Column(db.String(80), nullable=True)  # Отчество
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=False)  # Пароль
-    phone = db.Column(db.String(20))  # Телефон
-    dept_id = db.Column(db.Integer, ForeignKey('department.id'), nullable=False)  # ID отдела
-    status_id = db.Column(db.Integer, ForeignKey('status.id'), nullable=False)  # ID статуса
+    phone = db.Column(db.String(20), nullable=True)  # Телефон
+    dept_id = db.Column(db.Integer, ForeignKey('department.id'), nullable=True)  # ID отдела
+    status_id = db.Column(db.Integer, ForeignKey('status.id'), nullable=True)  # ID статуса
     department = db.relationship('Department', backref='users', lazy='joined')
     status = db.relationship('Status', backref='users', lazy='joined')
     is_logged_in = db.Column(db.Boolean, default=None, nullable=True)
     logged_in_time = db.Column(db.DateTime, default=None, nullable=True)
     last_commit_time = db.Column(db.DateTime, default=None, nullable=True)
     info = db.Column(db.Text(length=300), default=None, nullable=True)
+
+    def get_id(self):  # Необходимо для Flask-Login
+        return str(self.id)
+
+    def check_password(self, password):
+        """
+        Проверяет, совпадает ли введённый пароль с сохранённым хешированным паролем.
+        :param password: Пароль, введённый пользователем
+        :return: True, если пароль верный, False в противном случае
+        """
+        return check_password_hash(self.password, password)
 
 
 class ApplicantType(db.Model):

@@ -21,21 +21,79 @@ from werkzeug.security import generate_password_hash
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
 
-from routers.forms import AddApplicantForm, AddContractForm
+from routers.forms import (AddApplicantForm,
+                           AddContractForm,
+                           LoginForm,
+                           RegistrationForm,
+                           UserAddForm)
+
+from flask_login import (login_user,
+                         logout_user,
+                         current_user,
+                         login_required)
 
 routes_bp = Blueprint('routes', __name__)  # Создаем blueprint
+auth_bp = Blueprint('auth', __name__)  # Создаем blueprint
+logout_bp = Blueprint('logout', __name__)  # Создаем blueprint
 
 # Словарь с описанием роутов
-ROUTES_INFO = {
-    # '/hello/<name>': 'Пример роута с параметром. Отображает приветствие с именем.',
-    # '/data': 'Возвращает JSON данные.',
-    # '/submit': 'Обрабатывает POST запрос и отображает введенные данные.',
-    # '/new_user': 'Создает нового пользователя (упрощенный вариант).',
-    '/users/add': 'Форма для добавления пользователя с ролями, отделом и статусом.',
-    '/users/<int:user_id>': 'Отображает детали пользователя.',
-    '/applicants/add': 'Добавить нового заявителя',
-    '/applicants/<int:applicant_id>': 'Отображает детали заявителя'
-}
+ROUTES_INFO = [
+    {'path': '/users/add', 'title': 'Форма для добавления пользователя с ролями, отделом и статусом.'},
+    {'path': '/users/<int:user_id>', 'title': 'Отображает детали пользователя.'},
+    {'path': '/applicants/add', 'title': 'Добавить нового заявителя'},
+    {'path': '/applicants/<int:applicant_id>', 'title': 'Отображает детали заявителя'},
+    {'path': '/auth/register', 'title': 'Регистрация нового пользователя', 'route': 'auth.register'},
+    {'path': '/auth/login', 'title': 'Войти в систему', 'route': 'auth.login'}
+]
+
+
+@auth_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))  # Или другой роут главной страницы
+
+    form = RegistrationForm()
+    form.populate_role_choices()  # Здесь заполняются варианты выбора ролей
+
+    if form.validate_on_submit():
+        hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
+        user = User(last_name=form.last_name.data,
+                    first_name=form.first_name.data,
+                    username=form.username.data,
+                    email=form.email.data,
+                    password=hashed_password,
+                    roles=[Role.query.get(form.role.data)])
+        db.session.add(user)
+        db.session.commit()
+        flash('Вы успешно зарегистрировались! Теперь вы можете войти.', 'success')
+        return redirect(url_for('auth.login'))  # Перенаправляем на страницу входа
+
+    return render_template('register.html', title='Регистрация', form=form)
+
+
+@auth_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))  # Или другой роут главной страницы
+
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and user.check_password(form.password.data):  # Теперь это сработает
+            login_user(user, remember=form.remember.data)
+            next_page = request.args.get('next')
+            flash('Вы успешно вошли!', 'success')
+            return redirect(next_page) if next_page else redirect(url_for('routes.index'))
+        else:
+            flash('Неверное имя пользователя или пароль', 'danger')
+    return render_template('login.html', title='Авторизация', form=form)
+
+
+@logout_bp.route('/logout')
+@login_required  # Защищаем роут logout
+def logout():
+    logout_user()
+    return redirect(url_for('routes.index'))  # Или другой роут главной страницы
 
 
 @routes_bp.route('/')
@@ -75,81 +133,63 @@ def new_user():
 
 @routes_bp.route('/users/add', methods=['GET', 'POST'])
 def add_user():
-    if request.method == 'POST':
+    form = UserAddForm()
+    form.dept_id.choices = [(d.id, d.name) for d in Department.query.all()]
+    form.status_id.choices = [(s.id, s.name) for s in Status.query.all()]
+    form.role_ids.choices = [(r.id, r.name) for r in Role.query.all()]
+
+    if form.validate_on_submit():
         try:
-            # Получаем все поля из формы
-            first_name = request.form.get('first_name')
-            last_name = request.form.get('last_name')
-            middle_name = request.form.get('middle_name')
-            username = request.form.get('username')
-            email = request.form.get('email')
-            password = request.form.get('password')
-            phone = request.form.get('phone')
-            role_ids = request.form.getlist('role_id')  # Список выбранных ролей
-            dept_id = request.form.get('dept_id')
-            status_id = request.form.get('status_id')
+            existing_user = User.query.filter_by(username=form.username.data).first()
+            if existing_user:
+                flash('Имя пользователя уже существует.', 'danger')
+                return render_template('add_user.html', form=form)
 
-            # Проверка уникальности имени пользователя и адреса электронной почты
-            existing_username = User.query.filter_by(username=username).first()
-            existing_email = User.query.filter_by(email=email).first()
-
-            if existing_username or existing_email:
-                error_message = ''
-                if existing_username:
-                    error_message += f'Пользователь с именем {username} уже существует.<br>'
-                if existing_email:
-                    error_message += f'Адрес электронной почты {email} уже используется.<br>'
-
-                flash(error_message, 'danger')
-                return render_template('add_user.html',
-                                       first_name=first_name,
-                                       last_name=last_name,
-                                       middle_name=middle_name,
-                                       username=username,
-                                       email=email,
-                                       phone=phone,
-                                       dept_id=dept_id,
-                                       status_id=status_id)
-
-            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+            hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
 
             new_user = User(
-                first_name=first_name,
-                last_name=last_name,
-                middle_name=middle_name,
-                username=username,
-                email=email,
+                first_name=form.first_name.data,
+                last_name=form.last_name.data,
+                middle_name=form.middle_name.data,
+                username=form.username.data,
+                email=form.email.data,
                 password=hashed_password,
-                phone=phone,
-                dept_id=dept_id,
-                status_id=status_id
+                phone=form.phone.data,
+                dept_id=form.dept_id.data,
+                status_id=form.status_id.data,
+                user_code=form.user_code.data  # Не забудьте про user_code!
             )
 
-            # Добавляем роли к пользователю
-            roles = Role.query.filter(Role.id.in_(role_ids)).all()
-            new_user.roles.extend(roles)
+            selected_roles = Role.query.filter(Role.id.in_(form.role_ids.data)).all()
+            new_user.roles.extend(selected_roles)
 
             db.session.add(new_user)
             db.session.commit()
+
             flash('Новый пользователь успешно добавлен!', 'success')
             return redirect(url_for('routes.user_details', user_id=new_user.id))
 
         except IntegrityError as e:
             db.session.rollback()
-            flash(f'Ошибка целостности данных: {str(e)}', 'danger')
-            return render_template('add_user.html')
+            if 'UNIQUE constraint failed' in str(e):
+                if 'username' in str(e):
+                    flash('Пользователь с таким именем пользователя уже существует.', 'danger')
+                elif 'email' in str(e):
+                    flash('Пользователь с таким email уже существует.', 'danger')
+                elif 'user_code' in str(e):  # Проверяем на уникальность user_code
+                    flash('Пользователь с таким кодом пользователя уже существует.', 'danger')
+                else:  # обрабатываем все остальные UNIQUE constraint failed ошибки
+                    flash(f'Ошибка базы данных: {e.orig.msg}', 'danger')
+            else:
+                flash(f'Ошибка базы данных: {e.orig.msg}', 'danger')
+            return render_template('add_user.html', form=form)
 
         except Exception as e:
             db.session.rollback()
-            return jsonify({'error': str(e)}), 500
+            flash(f'Произошла непредвиденная ошибка: {str(e)}', 'danger')
+            return render_template('add_user.html', form=form)
 
-    roles = Role.query.all()
-    departments = Department.query.all()
-    statuses = Status.query.all()
-    return render_template('add_user.html',
-                           roles=roles,
-                           departments=departments,
-                           statuses=statuses)
+    return render_template('add_user.html', form=form)
 
 
 @routes_bp.route('/users/<int:user_id>')

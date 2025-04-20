@@ -1,20 +1,13 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Стартовая страница</title>
+    <title>Главная страница</title>
 </head>
 <body>
-
-<h1>Доступные роуты:</h1>
-<ul>
-    {% for route, description in routes.items() %}
-        <li>
-            <a href="{{ route }}">{{ route }}</a>: {{ description }}
-        </li>
+    <h1>Главное меню:</h1>
+    {% for item in routes %}
+        <p><a href="{% if item.route %}{{ url_for(item.route) }}{% else %}/{{ item.path }}{% endif %}">{{ item.title }}</a></p>
     {% endfor %}
-</ul>
-
 </body>
 </html>

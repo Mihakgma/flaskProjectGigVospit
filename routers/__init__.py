@@ -1,3 +1,4 @@
-__all__ = ['routes_bp']
+__all__ = ['routes_bp',
+           'auth_bp']
 
-from .routes import routes_bp
+from .routes import routes_bp, auth_bp

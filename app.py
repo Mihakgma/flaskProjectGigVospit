@@ -1,11 +1,16 @@
 import secrets
-from waitress import serve
+# from waitress import serve
 
 from flask import Flask
 from database import init_app
-from routers import routes_bp  # Импортируем blueprint
+from models import User
+from routers import auth_bp  # Импортируем blueprint
 
-from flask_wtf.csrf import CSRFProtect
+from flask_migrate import Migrate
+from flask_login import LoginManager
+
+# from flask_wtf.csrf import CSRFProtect
+migrate = Migrate()
 
 
 def create_app():
@@ -14,7 +19,17 @@ def create_app():
 
     app.config.from_object('config.Config')  # Конфигурация из отдельного файла (см. ниже)
     app.secret_key = secrets.token_urlsafe(16)
-    init_app(app)  # Инициализируем базу данных
+    login_manager = LoginManager()
+    login_manager.login_view = 'auth.login'  # Роут для входа, если пользователь не авторизован
+    login_manager.init_app(app)
+    init_app(app)
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+
+    from routers import routes_bp  # Импортируем blueprint
 
     app.register_blueprint(routes_bp, url_prefix='/')  # Регистрируем blueprint
     # csrf = CSRFProtect()

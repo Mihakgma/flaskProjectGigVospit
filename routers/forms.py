@@ -4,10 +4,19 @@ from wtforms import (StringField,
                      SubmitField,
                      BooleanField,
                      DateField,
-                     TextAreaField)
-from wtforms.validators import DataRequired, Length, Email, Optional
+                     TextAreaField,
+                     PasswordField,
+                     IntegerField,
+                     SelectMultipleField)
+from wtforms.validators import (DataRequired,
+                                Length,
+                                Email,
+                                Optional,
+                                EqualTo,
+                                ValidationError)
 
 from functions import validate_birth_date
+from models import User, Role
 
 
 class AddApplicantForm(FlaskForm):
@@ -45,3 +54,78 @@ class AddContractForm(FlaskForm):
     organization_id = SelectField('Организация', coerce=int, validators=[DataRequired()])
     additional_info = TextAreaField('Дополнительная информация')
     submit = SubmitField('Добавить контракт')
+
+
+class LoginForm(FlaskForm):
+    username = StringField('Имя пользователя', validators=[DataRequired()])
+    password = PasswordField('Пароль', validators=[DataRequired()])
+    remember = BooleanField('Запомнить меня')
+    submit = SubmitField('Войти')
+
+
+from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
+from wtforms.fields import StringField, PasswordField, SelectField, SubmitField
+from models import User, Role  # Предположительно, модели расположены в отдельном модуле
+
+
+class RegistrationForm(FlaskForm):
+    last_name = StringField('Фамилия', validators=[DataRequired(), Length(max=80)])
+    first_name = StringField('Имя', validators=[DataRequired(), Length(max=80)])
+    middle_name = StringField('Отчество', validators=[Length(max=80)], default='')
+    username = StringField('Логин', validators=[
+        DataRequired(),
+        Length(min=2, max=20),
+        # Валидатор уникальности логина
+        lambda form, field: (
+                                    User.query.filter_by(username=field.data).first() and
+                                    ValidationError('Это имя пользователя уже занято. Пожалуйста, выберите другое.')
+                            ) or True
+    ])
+    email = StringField('Электронная почта', validators=[
+        DataRequired(),
+        Email(),
+        # Валидатор уникальности email
+        lambda form, field: (
+                                    User.query.filter_by(email=field.data).first() and
+                                    ValidationError('Этот email уже занят. Пожалуйста, выберите другой.')
+                            ) or True
+    ])
+    password = PasswordField('Пароль', validators=[DataRequired(), Length(min=8)])
+    confirm_password = PasswordField('Подтверждение пароля', validators=[DataRequired(), EqualTo('password')])
+    role = SelectField('Роль', coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Зарегистрироваться')
+
+    def populate_role_choices(self):
+        roles = Role.query.all()
+        self.role.choices = [(role.id, role.name) for role in roles]  # Используем ID роли
+
+
+class UserAddForm(FlaskForm):
+    first_name = StringField('Имя', validators=[DataRequired()])
+    last_name = StringField('Фамилия', validators=[DataRequired()])
+    middle_name = StringField('Отчество')
+    username = StringField('Имя пользователя', validators=[DataRequired(), Length(min=2, max=20)])
+    user_code = StringField('Код пользователя', validators=[DataRequired(), Length(min=2, max=20)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Пароль', validators=[DataRequired(), Length(min=8)])
+    confirm_password = PasswordField('Подтвердите пароль', validators=[DataRequired(), EqualTo('password')])
+    phone = StringField('Телефон')
+    dept_id = IntegerField('Отдел', validators=[DataRequired()])
+    status_id = IntegerField('Статус', validators=[DataRequired()])
+    role_ids = SelectMultipleField('Роли', coerce=int)
+    submit = SubmitField('Добавить пользователя')
+
+    def validate_username(self, username):
+        user = User.query.filter_by(username=username.data).first()
+        if user:
+            raise ValidationError('Это имя пользователя уже занято.')
+
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user:
+            raise ValidationError('Этот email уже занят.')
+
+    def validate_user_code(self, user_code):
+        user = User.query.filter_by(user_code=user_code.data).first()
+        if user:
+            raise ValidationError('Этот код пользователя уже занят.')

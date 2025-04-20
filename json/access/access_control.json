@@ -1,0 +1,22 @@
+{
+  "admin": [
+    "main.index",
+    "auth.register",
+    "users.list_users",
+    "users.add_user",
+    "users.edit_user",
+    "users.delete_user"
+  ],
+  "moder": [
+    "main.index",
+    "users.list_users",
+    "users.edit_user"
+  ],
+  "oper": [
+    "main.index"
+  ],
+  "view": [
+    "main.index",
+    "users.list_users"
+  ]
+}
