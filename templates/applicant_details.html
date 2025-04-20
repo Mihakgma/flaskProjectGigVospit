@@ -21,7 +21,7 @@
         Не указано
     {% endif %}
 </p>
-<p>Время редактирования: {{ applicant.edited_time.strftime('%Y-%m-%d %H:%M:%S UTC') if applicant.edited_time else 'Не указано' }}</p>
+<p>Время редактирования: {{ applicant.edited_time.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%d.%m.%Y %H:%M:%S') if applicant.edited_time else 'Не указано' }}</p>
 <p>Редактируется сейчас: {{ 'Да' if applicant.is_editing_now else 'Нет' }}</p>
 <p>Редактирует:
     {% if applicant.editing_by %}

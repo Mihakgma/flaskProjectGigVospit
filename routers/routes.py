@@ -18,7 +18,7 @@ from models.models import (User,
 from database import db
 
 from werkzeug.security import generate_password_hash
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
 
 from routers.forms import AddApplicantForm, AddContractForm
@@ -27,10 +27,10 @@ routes_bp = Blueprint('routes', __name__)  # Создаем blueprint
 
 # Словарь с описанием роутов
 ROUTES_INFO = {
-    '/hello/<name>': 'Пример роута с параметром. Отображает приветствие с именем.',
-    '/data': 'Возвращает JSON данные.',
-    '/submit': 'Обрабатывает POST запрос и отображает введенные данные.',
-    '/new_user': 'Создает нового пользователя (упрощенный вариант).',
+    # '/hello/<name>': 'Пример роута с параметром. Отображает приветствие с именем.',
+    # '/data': 'Возвращает JSON данные.',
+    # '/submit': 'Обрабатывает POST запрос и отображает введенные данные.',
+    # '/new_user': 'Создает нового пользователя (упрощенный вариант).',
     '/users/add': 'Форма для добавления пользователя с ролями, отделом и статусом.',
     '/users/<int:user_id>': 'Отображает детали пользователя.',
     '/applicants/add': 'Добавить нового заявителя',
@@ -237,7 +237,9 @@ def add_applicant():
 @routes_bp.route('/applicants/<int:applicant_id>')
 def applicant_details(applicant_id):
     applicant = Applicant.query.get_or_404(applicant_id)
-    return render_template('applicant_details.html', applicant=applicant)
+    return render_template('applicant_details.html',
+                           applicant=applicant,
+                           timezone=timezone)
 
 
 @routes_bp.route('/contracts/add', methods=['GET', 'POST'])
