@@ -158,3 +158,9 @@ class Applicant(db.Model):
     work_field = db.relationship('WorkField', backref='applicants', lazy='joined')
     applicant_type = db.relationship('ApplicantType', backref='applicants', lazy='joined')
     attestation_type = db.relationship('AttestationType', backref='applicants', lazy='joined')
+
+    @property
+    def full_name(self):
+        """ Возвращает полное имя заявителя """
+        parts = [self.last_name, self.first_name, self.middle_name]
+        return ' '.join([part for part in parts if part]).strip()

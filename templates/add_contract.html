@@ -1,41 +1,22 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Добавление контракта</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-<h1>Добавление контракта</h1>
-
-<form method="post">
-    {{ form.hidden_tag() }}
-    {% for field in form if field.widget.input_type != 'hidden' %}
+{% block content %}
+    <!-- Твой основной контент формы -->
+    <h1>Добавить контракт</h1>
+    <form method="POST">
+        {{ form.hidden_tag() }}
         <div>
-            {{ field.label }}
-            {% if field.errors %}
-                <ul class="errors">
-                    {% for error in field.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-            {% if field.type == "SelectField" %}
-                <select id="{{ field.id }}" name="{{ field.name }}">
-                    {% for choice in field.choices %}
-                        <option value="{{ choice[0] }}"
-                            {% if choice[0] == field.data %}selected{% endif %}>{{ choice[1] }}
-                        </option>
-                    {% endfor %}
-                </select>
-            {% else %}
-                {{ field(class_="input") }}
-            {% endif %}
-        </div><br>
-    {% endfor %}
-
-    <input type="submit" value="Добавить">
-</form>
-
-</body>
-</html>
+            {{ form.number.label }} {{ form.number(size=30) }}<br>
+            {{ form.contract_date.label }} {{ form.contract_date() }}<br>
+            {{ form.name.label }} {{ form.name(size=30) }}<br>
+            {{ form.expiration_date.label }} {{ form.expiration_date() }}<br>
+            {{ form.is_extended.label }} {{ form.is_extended() }}<br>
+            {{ form.additional_info.label }} {{ form.additional_info(cols=30, rows=10) }}<br>
+            {{ form.applicants.label }}<br>
+            {{ form.applicants() }}<br>
+            {{ form.organization_id.label }}<br>
+            {{ form.organization_id() }}<br>
+            {{ form.submit() }}
+        </div>
+    </form>
+{% endblock %}

@@ -10,7 +10,7 @@ from wtforms import (StringField,
 from wtforms.validators import (DataRequired,
                                 Length,
                                 Email,
-                                Optional)
+                                Optional, InputRequired)
 from wtforms_sqlalchemy.fields import (QuerySelectField,
                                        QuerySelectMultipleField)
 
@@ -65,7 +65,7 @@ class LoginForm(FlaskForm):
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from wtforms.fields import StringField, PasswordField, SubmitField
 from models import User, Role, Department, Status, \
-    Organization  # Предположительно, модели расположены в отдельном модуле
+    Organization, Applicant  # Предположительно, модели расположены в отдельном модуле
 
 
 class RegistrationForm(FlaskForm):
@@ -175,3 +175,20 @@ class OrganizationAddForm(FlaskForm):
         organization = Organization.query.filter_by(inn=field.data).first()
         if organization:
             raise ValidationError("Организация с указанным ИНН уже зарегистрирована.")
+
+
+class AddContractForm(FlaskForm):
+    number = StringField('Номер договора', validators=[InputRequired()])
+    contract_date = DateField('Дата подписания', format='%Y-%m-%d', validators=[InputRequired()])
+    name = StringField('Название договора')
+    expiration_date = DateField('Срок окончания', format='%Y-%m-%d')
+    is_extended = BooleanField('Продлён')
+    additional_info = TextAreaField('Дополнительная информация')
+    applicants = SelectMultipleField('Заявители', coerce=int, choices=[])
+    organization_id = SelectField('Организация', coerce=int, choices=[])  # Поле для выбора организации
+    submit = SubmitField('Сохранить')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.applicants.choices = [(a.id, a.full_name) for a in Applicant.query.all()]
+        self.organization_id.choices = [(o.id, o.name) for o in Organization.query.all()]

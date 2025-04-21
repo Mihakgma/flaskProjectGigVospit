@@ -300,8 +300,6 @@ def applicant_details(applicant_id):
 @routes_bp.route('/contracts/add', methods=['GET', 'POST'])
 def add_contract():
     form = AddContractForm()
-    organizations = Organization.query.all()
-    form.organization_id.choices = [(org.id, org.name) for org in organizations]
 
     if request.method == 'POST':
         if form.validate_on_submit():
@@ -312,9 +310,14 @@ def add_contract():
                     name=form.name.data,
                     expiration_date=form.expiration_date.data,
                     is_extended=form.is_extended.data,
-                    organization_id=form.organization_id.data,
+                    organization_id=form.organization_id.data,  # Присваиваем выбранную организацию
                     additional_info=form.additional_info.data
                 )
+
+                # Подключаем выбранных заявителей к контракту
+                applicants = Applicant.query.filter(Applicant.id.in_(form.applicants.data)).all()
+                new_contract.applicants.extend(applicants)
+
                 db.session.add(new_contract)
                 db.session.commit()
                 flash('Новый контракт успешно добавлен!', 'success')
@@ -324,7 +327,7 @@ def add_contract():
                 print(f"Ошибка при добавлении контракта: {e}")
                 flash('Произошла ошибка при добавлении контракта. Попробуйте позже.', 'danger')
 
-    return render_template('add_contract.html', form=form, organizations=organizations)
+    return render_template('add_contract.html', form=form)
 
 
 @routes_bp.route('/contracts/<int:contract_id>')
