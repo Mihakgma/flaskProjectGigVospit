@@ -88,7 +88,7 @@ ROUTES_INFO = [
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
-@role_required('admin')
+# @role_required('admin')
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('routes.index'))
