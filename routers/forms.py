@@ -92,12 +92,14 @@ class RegistrationForm(FlaskForm):
     ])
     password = PasswordField('Пароль', validators=[DataRequired(), Length(min=8)])
     confirm_password = PasswordField('Подтверждение пароля', validators=[DataRequired(), EqualTo('password')])
-    roles = SelectMultipleField('Роли', choices=[], widget=CheckboxInput())
+    roles = SelectMultipleField('Роли', choices=[], coerce=int,
+                                widget=CheckboxInput())  # Коэрсируем строки в целые числа
     submit = SubmitField('Зарегистрироваться')
 
     def populate_role_choices(self):
-        # roles = Role.query.all()
-        self.roles.choices = [(role.id, role.name) for role in Role.query.all()]
+        """Метод для наполнения списка доступных ролей"""
+        roles = Role.query.all()
+        self.roles.choices = [(role.id, role.name) for role in roles]
 
 
 class UserAddForm(FlaskForm):

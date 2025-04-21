@@ -1,23 +1,27 @@
-from functools import wraps
-from flask import redirect, session, flash, url_for
+# from functools import wraps
+# from flask import redirect, session, flash, url_for
+import functools
+from flask import abort
+from flask_login import current_user
 
 
 # Сам декоратор проверки доступа
-def role_required(*roles):
-    def decorator(f):
-        @wraps(f)
-        def decorated_function(*args, **kwargs):
-            if not session.get('user'):
-                return redirect(url_for('auth.login'))  # перенаправляет на вход, если пользователь не вошел
+def role_required(*role_names):
+    def decorator(original_route):
+        @functools.wraps(original_route)
+        def decorated_route(*args, **kwargs):
+            if not current_user.is_authenticated:
+                abort(401)
+            print(current_user.roles.__dict__.keys())
 
-            user_roles = session['user'].get('roles', [])  # получаем роли пользователя
-            if any(role in roles for role in user_roles):
-                print("access granted")
-                return f(*args, **kwargs)
-            else:
-                flash("У вас недостаточно прав для доступа к этому ресурсу.")
-                return redirect('/')
+            user_roles = set(current_user.roles.codes)
+            missing_roles = set(role_names) - user_roles
 
-        return decorated_function
+            if missing_roles:
+                abort(401, message="Missing role(s): {}".format(', '.join(missing_roles)))
+
+            return original_route(*args, **kwargs)
+
+        return decorated_route
 
     return decorator

@@ -5,6 +5,7 @@ from flask import (Blueprint,
                    redirect,
                    url_for,
                    flash, session)
+import logging
 
 from functions.access_control import role_required
 from models.models import (User,
@@ -76,27 +77,49 @@ ROUTES_INFO = [
 ]
 
 
+# @routes_bp.before_request
+# def before_request():
+#     print(session)
+
+
+# @auth_bp.before_request
+# def before_request():
+#     print(session)
+
+
 @auth_bp.route('/register', methods=['GET', 'POST'])
-# @role_required('admin')
+@role_required('admin')
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('routes.index'))  # Или другой роут главной страницы
+        return redirect(url_for('routes.index'))
 
     form = RegistrationForm()
-    form.populate_role_choices()  # Здесь заполняются варианты выбора ролей
+    form.populate_role_choices()  # Загружаем роли для выбора
 
     if form.validate_on_submit():
         hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
-        user = User(last_name=form.last_name.data,
-                    first_name=form.first_name.data,
-                    username=form.username.data,
-                    email=form.email.data,
-                    password=hashed_password,
-                    roles=[Role.query.get(form.role.data)])
-        db.session.add(user)
-        db.session.commit()
-        flash('Вы успешно зарегистрировались! Теперь вы можете войти.', 'success')
-        return redirect(url_for('auth.login'))  # Перенаправляем на страницу входа
+
+        # Создаем новый экземпляр пользователя
+        new_user = User(
+            last_name=form.last_name.data,
+            first_name=form.first_name.data,
+            username=form.username.data,
+            email=form.email.data,
+            password=hashed_password
+        )
+
+        # Присваиваем выбранные роли
+        new_user.roles.extend(Role.query.filter(Role.id.in_(form.roles.data)).all())
+
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            flash('Вы успешно зарегистрировались!', category='success')
+            return redirect(url_for('auth.login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Возникла ошибка при регистрации. Попробуйте снова позже.', category='danger')
+            logging.error(str(e))  # Логирование исключения
 
     return render_template('register.html', title='Регистрация', form=form)
 
@@ -126,7 +149,7 @@ def login():
 
 
 @logout_bp.route('/logout')
-@login_required  # Защищаем роут logout
+# @login_required  # Защищаем роут logout
 def logout():
     logout_user()
     return redirect(url_for('routes.index'))  # Или другой роут главной страницы
@@ -135,6 +158,12 @@ def logout():
 @routes_bp.route('/')
 def index():
     return render_template('index.html', routes=ROUTES_INFO)
+
+
+@routes_bp.route('/users')
+def users():
+    users = User.query.all()
+    return render_template('users.html', users=users)
 
 
 @routes_bp.route('/users/add', methods=['GET', 'POST'])
@@ -214,6 +243,7 @@ def user_details(user_id):
 
 
 @routes_bp.route('/applicants/add', methods=['GET', 'POST'])
+# @role_required(['admin'])
 def add_applicant():
     form = AddApplicantForm()
 
