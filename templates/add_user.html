@@ -1,83 +1,103 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Добавить пользователя</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block content %}
 
-<!-- Всплывающие сообщения об ошибках или успешном выполнении действий -->
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <ul class="flashes">
-            {% for category, message in messages %}
-                <li class="{{ category }}">{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-{% endwith %}
+    <div class="container">
+        <h1>Добавить пользователя</h1>
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.first_name.label(class="form-control-label") }}
+                {{ form.first_name(class="form-control") }}
+                {% for error in form.first_name.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.last_name.label(class="form-control-label") }}
+                {{ form.last_name(class="form-control") }}
+                {% for error in form.last_name.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.middle_name.label(class="form-control-label") }}
+                {{ form.middle_name(class="form-control") }}
+                {% for error in form.middle_name.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.username.label(class="form-control-label") }}
+                {{ form.username(class="form-control") }}
+                {% for error in form.username.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.email.label(class="form-control-label") }}
+                {{ form.email(class="form-control") }}
+                {% for error in form.email.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.password.label(class="form-control-label") }}
+                {{ form.password(class="form-control") }}
+                {% for error in form.password.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.phone.label(class="form-control-label") }}
+                {{ form.phone(class="form-control") }}
+                {% for error in form.phone.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.dept_id.label(class="form-control-label") }}
+                {{ form.dept_id(class="form-control") }}
+                {% for error in form.dept_id.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.status_id.label(class="form-control-label") }}
+                {{ form.status_id(class="form-control") }}
+                {% for error in form.status_id.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <div class="form-group">
+                {{ form.roles.label }}
+                {% for subfield in form.roles %}
+                    <div class="form-check">
+                        {{ subfield }}
+                        {{ subfield.label(class_="form-check-label") }}
+                    </div>
+                    {% if subfield.errors %}
+                        <ul class="errors">
+                            {% for error in subfield.errors %}
+                                <li><span class="text-danger">{{ error }}</span></li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                {% endfor %}
+            </div>
 
-<h1>Добавить пользователя</h1>
 
-<form method="post">
-    <label for="first_name">Имя:</label>
-    <input type="text" id="first_name" name="first_name"
-           value="{% if first_name %}{{ first_name }}{% else %}{% endif %}" required><br><br>
+            <div class="form-group">
+                {{ form.info.label(class="form-control-label") }}
+                {{ form.info(class="form-control") }}
+                {% for error in form.info.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
 
-    <label for="last_name">Фамилия:</label>
-    <input type="text" id="last_name" name="last_name" value="{% if last_name %}{{ last_name }}{% else %}{% endif %}"
-           required><br><br>
-
-    <label for="middle_name">Отчество:</label>
-    <input type="text" id="middle_name" name="middle_name"
-           value="{% if middle_name %}{{ middle_name }}{% else %}{% endif %}"><br><br>
-
-    <label for="username">Логин:</label>
-    <input type="text" id="username" name="username" value="{% if username %}{{ username }}{% else %}{% endif %}"
-           required><br><br>
-
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email" value="{% if email %}{{ email }}{% else %}{% endif %}" required><br><br>
-
-    <label for="password">Пароль:</label>
-    <input type="password" id="password" name="password" required><br><br>
-
-    <label for="phone">Телефон:</label>
-    <input type="tel" id="phone" name="phone" value="{% if phone %}{{ phone }}{% else %}{% endif %}"><br><br>
-
-    <label for="dept_id">Отдел:</label>
-    <select id="dept_id" name="dept_id" required>
-        <option value="">Выберите отдел...</option>
-        {% for dept in departments %}
-            <option value="{{ dept.id }}" {% if dept_id == dept.id %}selected{% endif %}>{{ dept.name }}</option>
-        {% endfor %}
-    </select><br><br>
-
-    <label for="status_id">Статус:</label>
-    <select id="status_id" name="status_id" required>
-        <option value="">Выберите статус...</option>
-        {% for status in statuses %}
-            <option value="{{ status.id }}"
-                    {% if status_id == status.id %}selected{% endif %}>{{ status.name }}</option>
-        {% endfor %}
-    </select><br><br>
-
-    <label for="role_id">Роли:</label>
-    <div>
-        {% for role in roles %}
-            <input type="checkbox" id="role_{{ role.id }}" name="role_id" value="{{ role.id }}"
-                   {% if role.id|string in role_ids %}checked{% endif %}>
-            <label for="role_{{ role.id }}">{{ role.name }}</label><br>
-        {% endfor %}
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
     </div>
-    <br>
 
-    <!-- Новое поле Info -->
-    <label for="info">Дополнительно:</label>
-    <textarea id="info" name="info" rows="4" cols="50">{% if info %}{{ info }}{% else %}{% endif %}</textarea><br><br>
-
-    <button type="submit">Создать пользователя</button>
-</form>
-
-</body>
-</html>
+{% endblock %}

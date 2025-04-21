@@ -6,12 +6,13 @@ from wtforms import (StringField,
                      DateField,
                      TextAreaField,
                      PasswordField,
-                     IntegerField,
                      SelectMultipleField)
 from wtforms.validators import (DataRequired,
                                 Length,
                                 Email,
                                 Optional)
+from wtforms_sqlalchemy.fields import (QuerySelectField,
+                                       QuerySelectMultipleField)
 
 from functions import validate_birth_date
 from wtforms.widgets import CheckboxInput
@@ -62,8 +63,9 @@ class LoginForm(FlaskForm):
 
 
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
-from wtforms.fields import StringField, PasswordField, SelectField, SubmitField
-from models import User, Role  # Предположительно, модели расположены в отдельном модуле
+from wtforms.fields import StringField, PasswordField, SubmitField
+from models import User, Role, Department, Status, \
+    Organization  # Предположительно, модели расположены в отдельном модуле
 
 
 class RegistrationForm(FlaskForm):
@@ -94,7 +96,7 @@ class RegistrationForm(FlaskForm):
     submit = SubmitField('Зарегистрироваться')
 
     def populate_role_choices(self):
-        roles = Role.query.all()
+        # roles = Role.query.all()
         self.roles.choices = [(role.id, role.name) for role in Role.query.all()]
 
 
@@ -103,14 +105,19 @@ class UserAddForm(FlaskForm):
     last_name = StringField('Фамилия', validators=[DataRequired()])
     middle_name = StringField('Отчество')
     username = StringField('Имя пользователя', validators=[DataRequired(), Length(min=2, max=20)])
-    user_code = StringField('Код пользователя', validators=[DataRequired(), Length(min=2, max=20)])
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Пароль', validators=[DataRequired(), Length(min=8)])
-    confirm_password = PasswordField('Подтвердите пароль', validators=[DataRequired(), EqualTo('password')])
+    # confirm_password = PasswordField('Подтвердите пароль', validators=[DataRequired(), EqualTo('password')])
     phone = StringField('Телефон')
-    dept_id = IntegerField('Отдел', validators=[DataRequired()])
-    status_id = IntegerField('Статус', validators=[DataRequired()])
-    role_ids = SelectMultipleField('Роли', coerce=int)
+    dept_id = QuerySelectField('Отдел',
+                               query_factory=lambda: Department.query.all(),
+                               get_label='name', allow_blank=True, blank_text='Выберите отдел')
+
+    status_id = QuerySelectField('Статус',
+                                 query_factory=lambda: Status.query.all(),
+                                 get_label='name', allow_blank=True, blank_text='Выберите статус')
+    roles = SelectMultipleField('Роли', choices=[], widget=CheckboxInput())
+    info = TextAreaField('Дополнительно')  # Добавьте поле info
     submit = SubmitField('Добавить пользователя')
 
     def validate_username(self, username):
@@ -123,7 +130,48 @@ class UserAddForm(FlaskForm):
         if user:
             raise ValidationError('Этот email уже занят.')
 
-    def validate_user_code(self, user_code):
-        user = User.query.filter_by(user_code=user_code.data).first()
-        if user:
-            raise ValidationError('Этот код пользователя уже занят.')
+    def populate_role_choices(self):
+        roles = Role.query.all()
+        self.roles.choices = [(role.id, role.name) for role in Role.query.all()]
+
+
+class OrganizationAddForm(FlaskForm):
+    name = StringField('Название организации', validators=[
+        DataRequired(message="Обязательно введите название"),
+        Length(max=200, message="Максимальное количество символов: 200")
+    ])
+
+    inn = StringField('ИНН', validators=[
+        DataRequired(message="Обязательно введите ИНН"),
+        Length(min=10, max=12, message="ИНН должен содержать 10 или 12 цифр")
+    ])
+
+    address = StringField('Адрес', validators=[
+        Optional(),  # Адрес необязателен
+        Length(max=200, message="Максимальное количество символов: 200")
+    ])
+
+    phone_number = StringField('Номер телефона', validators=[
+        Optional(),  # Телефон необязателен
+        Length(max=20, message="Максимальное количество символов: 20")
+    ])
+
+    email = StringField('Email', validators=[
+        Optional(),  # Email необязателен
+        Email(message="Некорректный адрес электронной почты"),
+        Length(max=120, message="Максимальное количество символов: 120")
+    ])
+
+    is_active = BooleanField('Организация активна?', default=True)
+
+    additional_info = TextAreaField('Дополнительная информация', validators=[
+        Optional()  # Дополнительная информация необязательна
+    ])
+
+    submit = SubmitField('Сохранить')
+
+    # Валидатор для проверки уникальности ИНН
+    def validate_inn(self, field):
+        organization = Organization.query.filter_by(inn=field.data).first()
+        if organization:
+            raise ValidationError("Организация с указанным ИНН уже зарегистрирована.")

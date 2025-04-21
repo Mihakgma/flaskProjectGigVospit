@@ -31,7 +31,7 @@ def create_app():
 
     from routers import routes_bp  # Импортируем blueprint
 
-    app.register_blueprint(routes_bp, url_prefix='/')  # Регистрируем blueprint
+    app.register_blueprint(routes_bp)
     # csrf = CSRFProtect()
     # csrf.init_app(app)  # Инициализация CSRFProtect
     # app.config['WTF_CSRF_TIME_LIMIT'] = None

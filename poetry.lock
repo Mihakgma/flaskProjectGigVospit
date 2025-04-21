@@ -705,6 +705,22 @@ MarkupSafe = "*"
 email = ["email-validator"]
 
 [[package]]
+name = "wtforms-sqlalchemy"
+version = "0.3"
+description = "SQLAlchemy tools for WTForms"
+optional = false
+python-versions = ">=3.6"
+groups = ["main"]
+files = [
+    {file = "WTForms-SQLAlchemy-0.3.tar.gz", hash = "sha256:7ca42824ad7c453a036f502b42d9c17d4ad8398ff9248a62ed538d1ce0bc41c3"},
+    {file = "WTForms_SQLAlchemy-0.3-py3-none-any.whl", hash = "sha256:90195d7592bf256d82498c42c79d416832e4a4e6fbca4f1e745a018f66d26c47"},
+]
+
+[package.dependencies]
+SQLAlchemy = ">=0.7.10"
+WTForms = ">=1.0.5"
+
+[[package]]
 name = "zipp"
 version = "3.20.2"
 description = "Backport of pathlib-compatible object wrapper for zip files"
@@ -727,4 +743,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "3.8.10"
-content-hash = "8b2d546cad021dea68fb5cb6d0bb7c692037063f9d703a52c01b3bc93bce9199"
+content-hash = "aee7611a6eb664e9a022831ec91e412b006551000255e6a75ab7fa9a43ab3ffa"

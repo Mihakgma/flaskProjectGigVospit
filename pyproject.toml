@@ -19,6 +19,7 @@ email-validator = "2.2.0"
 sqlalchemy = "2.0.40"
 flask-login = "0.6.3"
 flask-migrate = "4.1.0"
+wtforms-sqlalchemy = "0.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{ organization.name }}</h1>
+    <p>ИНН: {{ organization.inn }}</p>
+    <p>Адрес: {{ organization.address }}</p>
+    <p>Телефон: {{ organization.phone_number }}</p>
+    <p>Email: {{ organization.email }}</p>
+    <p>Статус: {% if organization.is_active %}Активна{% else %}Неактивна{% endif %}</p>
+    <p>Дополнительная информация: {{ organization.additional_info }}</p>
+
+{% endblock %}

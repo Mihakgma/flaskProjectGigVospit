@@ -92,7 +92,7 @@ class AttestationType(db.Model):
 class Organization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(String(200), nullable=False)
-    inn = db.Column(String(12))  # 10 или 12 цифр для РФ
+    inn = db.Column(String(12), unique=True)  # 10 или 12 цифр для РФ
     address = db.Column(String(200))
     phone_number = db.Column(String(20))
     email = db.Column(String(120))

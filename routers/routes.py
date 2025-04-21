@@ -27,7 +27,7 @@ from routers.forms import (AddApplicantForm,
                            AddContractForm,
                            LoginForm,
                            RegistrationForm,
-                           UserAddForm)
+                           UserAddForm, OrganizationAddForm)
 
 from flask_login import (login_user,
                          logout_user,
@@ -40,10 +40,30 @@ logout_bp = Blueprint('logout', __name__)  # Создаем blueprint
 
 # Словарь с описанием роутов
 ROUTES_INFO = [
-    {'path': '/users/add', 'title': 'Форма для добавления пользователя с ролями, отделом и статусом.'},
-    {'path': '/users/<int:user_id>', 'title': 'Отображает детали пользователя.'},
-    {'path': '/applicants/add', 'title': 'Добавить нового заявителя'},
-    {'path': '/applicants/<int:applicant_id>', 'title': 'Отображает детали заявителя'},
+    {'path': '/users/add',
+     'title': 'Форма для добавления пользователя с ролями, отделом и статусом.',
+     'route': 'routes.add_user',
+     },
+    {'path': '/users/<int:user_id>',
+     'title': 'Отображает детали пользователя.',
+     # 'route': 'routes.user_details'
+     },
+    {'path': '/applicants/add',
+     'title': 'Добавить нового заявителя',
+     'route': 'routes.add_applicant'
+     },
+    {'path': '/applicants/<int:applicant_id>',
+     'title': 'Отображает детали заявителя',
+     # 'route': 'routes.applicant_details',
+     },
+    {'path': '/organizations/add',
+     'title': 'Добавление новой организации',
+     'route': 'routes.add_organization'
+     },
+    {'path': '/organizations/<int:organization_id>',
+     'title': 'Отображает детали организации',
+     # 'route': 'routes.organization_details',
+     },
     {'path': '/auth/register', 'title': 'Регистрация нового пользователя', 'route': 'auth.register'},
     {'path': '/auth/login', 'title': 'Войти в систему', 'route': 'auth.login'}
 ]
@@ -110,27 +130,11 @@ def index():
     return render_template('index.html', routes=ROUTES_INFO)
 
 
-@routes_bp.route('/new_user', methods=['POST'])
-def new_user():
-    try:
-        name = request.form['user_name']
-        email = request.form['user_email']
-        new_user = User(username=name, email=email)
-        db.session.add(new_user)
-        db.session.commit()
-        return jsonify(new_user.dict), 201  # Код 201 Created
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-
 @routes_bp.route('/users/add', methods=['GET', 'POST'])
 # @role_required(['admin'])
 def add_user():
     form = UserAddForm()
-    form.dept_id.choices = [(d.id, d.name) for d in Department.query.all()]
-    form.status_id.choices = [(s.id, s.name) for s in Status.query.all()]
-    form.role_ids.choices = [(r.id, r.name) for r in Role.query.all()]
+    form.populate_role_choices()
 
     if form.validate_on_submit():
         try:
@@ -141,6 +145,12 @@ def add_user():
 
             hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
 
+            role_objects = []
+            for role_id in form.roles.data:
+                role = Role.query.get(role_id)
+                if role is not None:
+                    role_objects.append(role)
+
             new_user = User(
                 first_name=form.first_name.data,
                 last_name=form.last_name.data,
@@ -149,15 +159,16 @@ def add_user():
                 email=form.email.data,
                 password=hashed_password,
                 phone=form.phone.data,
-                dept_id=form.dept_id.data,
-                status_id=form.status_id.data,
-                user_code=form.user_code.data  # Не забудьте про user_code!
+                dept_id=form.dept_id.data.id,
+                status_id=form.status_id.data.id,
+                info=form.info.data,
+                roles=role_objects
             )
 
-            selected_roles = Role.query.filter(Role.id.in_(form.role_ids.data)).all()
-            new_user.roles.extend(selected_roles)
+            # selected_roles = Role.query.filter(Role.id.in_(form.role_ids.data)).all()
 
-            db.session.add(new_user)
+            db.session.add(new_user)  # Сначала добавьте пользователя
+
             db.session.commit()
 
             flash('Новый пользователь успешно добавлен!', 'success')
@@ -176,14 +187,17 @@ def add_user():
                     flash(f'Ошибка базы данных: {e.orig.msg}', 'danger')
             else:
                 flash(f'Ошибка базы данных: {e.orig.msg}', 'danger')
-            return render_template('add_user.html', form=form)
+            return render_template('add_user.html',
+                                   form=form)
 
         except Exception as e:
             db.session.rollback()
             flash(f'Произошла непредвиденная ошибка: {str(e)}', 'danger')
-            return render_template('add_user.html', form=form)
+            return render_template('add_user.html',
+                                   form=form)
 
-    return render_template('add_user.html', form=form)
+    return render_template('add_user.html',
+                           form=form)
 
 
 @routes_bp.route('/users/<int:user_id>')
@@ -310,3 +324,55 @@ def add_contract():
 def contract_details(contract_id):
     contract = Contract.query.get_or_404(contract_id)
     return render_template('contract_details.html', contract=contract)
+
+
+@routes_bp.route('/organizations/add', methods=['GET', 'POST'])
+# @login_required
+def add_organization():
+    form = OrganizationAddForm()
+
+    if form.validate_on_submit():
+        try:
+            org = Organization(
+                name=form.name.data,
+                inn=form.inn.data,
+                address=form.address.data,
+                phone_number=form.phone_number.data,
+                email=form.email.data,
+                is_active=form.is_active.data,
+                additional_info=form.additional_info.data
+            )
+            db.session.add(org)
+            db.session.commit()
+            flash('Организация успешно добавлена!', 'success')
+            return redirect(url_for('routes.organization_details',
+                                    organization_id=org.id))
+
+        except IntegrityError as e:
+            db.session.rollback()
+            if 'UNIQUE constraint failed' in str(e):
+                if 'inn' in str(e):
+                    flash('Организация с таким ИНН уже существует.', 'danger')
+                else:  # Для других потенциальных уникальных полей
+                    flash('Произошла ошибка, связанная с уникальностью данных. Проверьте введённую информацию.',
+                          'danger')
+            else:
+                print(f"Ошибка при добавлении организации: {e}")
+                flash('Произошла ошибка при добавлении организации. Попробуйте позже.', 'danger')
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Ошибка при добавлении организации: {e}")
+            flash('Произошла ошибка при добавлении организации. Попробуйте позже.', 'danger')
+    return render_template('add_organization.html',
+                           form=form,
+                           title="Добавить организацию")
+
+
+@routes_bp.route('/organizations/<int:organization_id>')
+# @login_required
+def organization_details(organization_id):
+    organization = Organization.query.get_or_404(organization_id)
+    return render_template('organization_details.html',
+                           organization=organization,
+                           title="Детали организации")

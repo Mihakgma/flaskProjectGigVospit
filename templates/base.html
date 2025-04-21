@@ -11,7 +11,7 @@
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="/">YourAppName</a>
+    <a class="navbar-brand" href="{{ url_for('routes.index') }}">Учет записавшихся на ОГВиА</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -25,6 +25,30 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('routes.users') }}">Пользователи</a>
                 </li>
+                <li class="nav-item dropdown"> {# Выпадающее меню для действий с пользователями #}
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
+                       data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Действия с пользователями
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                        <a class="dropdown-item" href="{{ url_for('routes.add_user') }}">Добавить пользователя</a>
+                        {# Ссылка на добавление #}
+                        <a class="dropdown-item" href="#">Другое действие</a> {# Другие действия с пользователями #}
+                    </div>
+                </li>
+                <li class="nav-item dropdown"> {# Выпадающее меню для организаций #}
+                    <a class="nav-link dropdown-toggle" href="#" id="organizationsDropdown" role="button"
+                       data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Организации
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="organizationsDropdown">
+                        <a class="dropdown-item" href="{{ url_for('routes.add_organization') }}">Добавить
+                            организацию</a>
+                        <a class="dropdown-item" href="#">Список организаций</a>
+                        {# Добавьте роут для списка организаций #}
+                    </div>
+                </li>
+
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('auth.logout') }}">Выйти</a>
                 </li>
@@ -36,8 +60,6 @@
                     <a class="nav-link" href="{{ url_for('auth.register') }}">Регистрация</a>
                 </li>
             {% endif %}
-
-
         </ul>
     </div>
 </nav>

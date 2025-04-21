@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Добавить организацию</h1>
+
+    <!-- Блок для отображения сообщений -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="alert alert-warning">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <form method="post">
+        {{ form.hidden_tag() }}
+        {{ form.name.label }} {{ form.name() }}<br>
+        {{ form.inn.label }} {{ form.inn() }}<br>
+        {{ form.address.label }} {{ form.address() }}<br>
+        {{ form.phone_number.label }} {{ form.phone_number() }}<br>
+        {{ form.email.label }} {{ form.email() }}<br>
+        {{ form.is_active.label }} {{ form.is_active() }}<br>
+        {{ form.additional_info.label }} {{ form.additional_info() }}<br>
+        {{ form.submit() }}
+    </form>
+{% endblock %}
