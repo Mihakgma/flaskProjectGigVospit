@@ -109,6 +109,8 @@ class Contract(db.Model):
     is_extended = db.Column(Boolean, nullable=False)
     organization_id = db.Column(Integer, ForeignKey('organization.id'))
     additional_info = db.Column(Text)
+    # Определяем отношение один ко многим с таблицей Organization
+    organization = db.relationship('Organization', backref='contracts')
 
 
 # --- Таблицы связей ---

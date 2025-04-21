@@ -64,6 +64,13 @@ ROUTES_INFO = [
      'title': 'Отображает детали организации',
      # 'route': 'routes.organization_details',
      },
+    {'path': '/contracts/add',
+     'title': 'Добавление нового контракта',
+     'route': 'routes.add_contract'
+     },
+    {'path': '/contracts/<int:contract_id>',
+     'title': 'Отображает детали контракта',
+     },
     {'path': '/auth/register', 'title': 'Регистрация нового пользователя', 'route': 'auth.register'},
     {'path': '/auth/login', 'title': 'Войти в систему', 'route': 'auth.login'}
 ]
