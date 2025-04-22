@@ -1,14 +1,18 @@
 {
   "1": {
     "name": "очно",
-    "additional_info": ""
+    "additional_info": "..."
   },
   "2": {
     "name": "заочно",
-    "additional_info": ""
+    "additional_info": "..."
   },
   "3": {
-    "name": "гиг. тест",
-    "additional_info": ""
+    "name": "гиг.тест",
+    "additional_info": "..."
+  },
+  "4": {
+    "name": "иное",
+    "additional_info": "все остальные типы аттестации"
   }
 }
