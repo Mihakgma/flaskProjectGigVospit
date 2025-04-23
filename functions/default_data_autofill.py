@@ -1,5 +1,6 @@
 from models.models import (Role, Status, Department, ApplicantType,
-                           Contingent, WorkField, AttestationType)
+                           Contingent, WorkField, AttestationType,
+                           Organization)
 
 import json
 import os
@@ -23,6 +24,7 @@ def load_initial_data(data_dir, db):
         "status.json": Status,
         "department.json": Department,
         "role.json": Role,
+        "organization.json": Organization
     }
 
     for filename, Model in model_map.items():
