@@ -24,6 +24,7 @@ class Role(db.Model):
 class Status(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
+    code = db.Column(String(7), nullable=False, unique=True)
     description = db.Column(Text)
 
     def __repr__(self):
@@ -79,6 +80,7 @@ class ApplicantType(db.Model):
 class Contingent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(30), nullable=False)
+    code = db.Column(String(5), nullable=False, unique=True)
     additional_info = db.Column(Text)
     vizits = db.relationship('Vizit', back_populates='contingent')
 

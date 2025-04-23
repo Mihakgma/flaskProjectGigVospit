@@ -1,18 +1,22 @@
 {
   "1": {
     "name": "ОКГ",
+    "code": "okg",
     "additional_info": "коммунальная гигиена"
   },
   "2": {
     "name": "ОГДиП",
+    "code": "ogdip",
     "additional_info": "дети и подростки"
   },
   "3": {
     "name": "ОГП",
+    "code": "ogp",
     "additional_info": "питание"
   },
   "4": {
     "name": "Иное",
+    "code": "other",
     "additional_info": "прочие разделы..."
   }
 }

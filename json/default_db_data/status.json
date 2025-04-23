@@ -1,22 +1,27 @@
 {
   "1": {
     "name": "Активен",
+    "code": "active",
     "description": "работает"
   },
   "2": {
     "name": "На больничном",
+    "code": "illness",
     "description": ""
   },
   "3": {
     "name": "В отпуске",
+    "code": "vac",
     "description": ""
   },
   "4": {
     "name": "Заблокирован",
+    "code": "block",
     "description": ""
   },
   "5": {
     "name": "На подтверждении",
+    "code": "draft",
     "description": ""
   }
 }
