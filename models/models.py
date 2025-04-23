@@ -85,6 +85,7 @@ class Contingent(db.Model):
 class WorkField(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    code = db.Column(String(10), nullable=False, unique=True)
     additional_info = db.Column(Text)
     vizits = db.relationship('Vizit', back_populates='work_field')
 
