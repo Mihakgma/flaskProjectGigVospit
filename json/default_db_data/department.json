@@ -1,29 +1,38 @@
 {
   "1": {
-    "name": "ОКГ"
+    "name": "ОКГ",
+    "code": "okg"
   },
   "2": {
-    "name": "ОГДиП"
+    "name": "ОГДиП",
+    "code": "ogdip"
   },
   "3": {
-    "name": "ОГП"
+    "name": "ОГП",
+    "code": "ogp"
   },
   "4": {
-    "name": "ОГиФТ"
+    "name": "ОГиФТ",
+    "code": "ogift"
   },
   "5": {
-    "name": "ООДЦ"
+    "name": "ООДЦ",
+    "code": "oodc"
   },
   "6": {
-    "name": "ОГВиА"
+    "name": "ОГВиА",
+    "code": "ogvia"
   },
   "7": {
-    "name": "СГМ"
+    "name": "СГМ",
+    "code": "sgm"
   },
   "8": {
-    "name": "АДМ"
+    "name": "АДМ",
+    "code": "adm"
   },
   "9": {
-    "name": "ОЖД"
+    "name": "ОЖД",
+    "code": "ozhd"
   }
 }
