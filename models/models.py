@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from werkzeug.security import check_password_hash
 
 from database import db
@@ -5,8 +7,9 @@ from sqlalchemy import ForeignKey, Text, Table
 from sqlalchemy.types import String, Integer, Boolean, DateTime
 from flask_login import UserMixin  # Для интеграции с Flask-Login
 
+from sqlalchemy.orm import validates
+from sqlalchemy.exc import IntegrityError
 
-# --- Модели ---
 
 class Role(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -69,35 +72,48 @@ class ApplicantType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(String(10), nullable=False)
     additional_info = db.Column(Text)
+    vizits = db.relationship('Vizit', back_populates='applicant_type')
 
 
 class Contingent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(30), nullable=False)
     additional_info = db.Column(Text)
+    vizits = db.relationship('Vizit', back_populates='contingent')
 
 
 class WorkField(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     additional_info = db.Column(Text)
+    vizits = db.relationship('Vizit', back_populates='work_field')
 
 
 class AttestationType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(String(10), nullable=False)
     additional_info = db.Column(Text)
+    vizits = db.relationship("Vizit", back_populates="attestation_type")
 
 
 class Organization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(String(200), nullable=False)
-    inn = db.Column(String(12), unique=True)  # 10 или 12 цифр для РФ
+    inn = db.Column(String(12), unique=True)
     address = db.Column(String(200))
     phone_number = db.Column(String(20))
     email = db.Column(String(120))
     is_active = db.Column(Boolean, nullable=False)
     additional_info = db.Column(Text)
+
+    @validates('inn')
+    def validate_inn(self, key, inn):
+        if inn is not None:  # Проверяем только если inn не Null
+            inn = str(inn).strip()  # Преобразуем в строку и удаляем пробелы
+            if not (10 <= len(inn) <= 12) or not inn.isdigit():
+                raise IntegrityError("ИНН должен содержать от 10 до 12 цифр.")
+
+        return inn
 
 
 class Contract(db.Model):
@@ -111,22 +127,21 @@ class Contract(db.Model):
     additional_info = db.Column(Text)
     # Определяем отношение один ко многим с таблицей Organization
     organization = db.relationship('Organization', backref='contracts')
+    vizits = db.relationship("Vizit", back_populates="contract")
 
-
-# --- Таблицы связей ---
 
 user_roles = Table('user_roles', db.metadata,
                    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
                    db.Column('role_id', db.Integer, db.ForeignKey('role.id'))
                    )
 
+# --- Relationships (после объявления таблиц связей) ---
 applicant_contract = Table(
     'applicant_contract', db.metadata,
     db.Column('applicant_id', db.Integer, db.ForeignKey('applicant.id'), primary_key=True),
-    db.Column('contract_id', db.Integer, db.ForeignKey('contract.id'), primary_key=True)
+    db.Column('contract_id', db.Integer, db.ForeignKey('contract.id'), primary_key=True),
+    db.Column('vizit_id', db.Integer, db.ForeignKey('vizit.id'), primary_key=True)  # Добавляем vizit_id
 )
-
-# --- Relationships (после объявления таблиц связей) ---
 
 User.roles = db.relationship('Role', secondary=user_roles, backref=db.backref('users', lazy=True))
 
@@ -134,8 +149,8 @@ User.roles = db.relationship('Role', secondary=user_roles, backref=db.backref('u
 class Applicant(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(String(80), nullable=False)
-    last_name = db.Column(String(80), nullable=False)
     middle_name = db.Column(String(80), nullable=True)
+    last_name = db.Column(db.String(80), nullable=False)
     medbook_number = db.Column(String(50), unique=True, nullable=False)
     snils_number = db.Column(String(14), unique=True, nullable=False)  # 11 цифр + 3 разделителя
     passport_number = db.Column(String(20), nullable=True)  # 10 цифр (или 4+6)
@@ -144,23 +159,40 @@ class Applicant(db.Model):
     residence_address = db.Column(String(200), nullable=True)
     phone_number = db.Column(String(20), nullable=True)
     email = db.Column(String(120), nullable=True)
-    contingent_id = db.Column(Integer, ForeignKey('contingent.id'), nullable=False)
-    work_field_id = db.Column(Integer, ForeignKey('work_field.id'), nullable=False)
-    applicant_type_id = db.Column(Integer, ForeignKey('applicant_type.id'), nullable=False)
-    attestation_type_id = db.Column(Integer, ForeignKey('attestation_type.id'), nullable=False)
     edited_by_user_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
     edited_time = db.Column(DateTime, nullable=True)
     is_editing_now = db.Column(Boolean, nullable=True)
     editing_by_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
     editing_started_at = db.Column(DateTime, nullable=True)
     contracts = db.relationship('Contract', secondary=applicant_contract, backref='applicants')
-    contingent = db.relationship('Contingent', backref='applicants', lazy='joined')
-    work_field = db.relationship('WorkField', backref='applicants', lazy='joined')
-    applicant_type = db.relationship('ApplicantType', backref='applicants', lazy='joined')
-    attestation_type = db.relationship('AttestationType', backref='applicants', lazy='joined')
+    vizits = db.relationship('Vizit', back_populates='applicant')
 
     @property
     def full_name(self):
         """ Возвращает полное имя заявителя """
         parts = [self.last_name, self.first_name, self.middle_name]
         return ' '.join([part for part in parts if part]).strip()
+
+
+class Vizit(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    applicant_id = db.Column(db.Integer, db.ForeignKey('applicant.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # Дата оформления
+    contingent_id = db.Column(db.Integer, db.ForeignKey('contingent.id'), nullable=True)
+    attestation_type_id = db.Column(db.Integer, db.ForeignKey('attestation_type.id'), nullable=True)
+    work_field_id = db.Column(db.Integer, db.ForeignKey('work_field.id'), nullable=True)
+    applicant_type_id = db.Column(db.Integer, db.ForeignKey('applicant_type.id'), nullable=True)
+    applicant = db.relationship('Applicant', back_populates='vizits')
+    contingent = db.relationship('Contingent', back_populates='vizits')
+    attestation_type = db.relationship('AttestationType', back_populates='vizits')
+    work_field = db.relationship('WorkField', back_populates='vizits')
+    applicant_type = db.relationship('ApplicantType', back_populates='vizits')
+
+
+class ApplicantContract(db.Model):  # Вспомогательная модель
+    __table__ = applicant_contract
+
+
+Contract.vizits = db.relationship('Vizit',
+                                  secondary=applicant_contract,
+                                  backref=db.backref('contracts', lazy=True))

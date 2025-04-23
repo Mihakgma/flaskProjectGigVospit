@@ -2,21 +2,21 @@ import secrets
 from waitress import serve
 
 from flask import Flask
-from database import init_app
+from database import init_app, db
 from models import User
 from routers import auth_bp  # Импортируем blueprint
 
-from flask_migrate import Migrate
+# from flask_script import Manager
 from flask_login import LoginManager
+from flask_migrate import Migrate
 
 # from flask_wtf.csrf import CSRFProtect
-migrate = Migrate()
 
 
 def create_app():
     app = Flask(__name__)
     # ... (ваша конфигурация)
-
+    migrate = Migrate(app, db)
     app.config.from_object('config.Config')  # Конфигурация из отдельного файла (см. ниже)
     app.secret_key = secrets.token_urlsafe(16)
     login_manager = LoginManager()

@@ -16,13 +16,13 @@ if str(project_dir) not in sys.path:
 
 def load_initial_data(data_dir, db):
     model_map = {
-        "applicant_type.json": ApplicantType,
-        "attestation_type.json": AttestationType,
         "contingent.json": Contingent,
+        "attestation_type.json": AttestationType,
+        "work_field.json": WorkField,
+        "applicant_type.json": ApplicantType,
+        "status.json": Status,
         "department.json": Department,
         "role.json": Role,
-        "status.json": Status,
-        "work_field.json": WorkField,
     }
 
     for filename, Model in model_map.items():
@@ -46,9 +46,9 @@ def load_initial_data(data_dir, db):
             print(f"File not found: {filepath}")
 
 
-def init_db_and_load_data(db, data_dir="initial_data"):
+def db_load_data(db, data_dir="initial_data"):
     try:
-        db.create_all()
+        # db.create_all()
         load_initial_data(data_dir, db)
         print("Database initialized and data loaded successfully.")
     except Exception as e:

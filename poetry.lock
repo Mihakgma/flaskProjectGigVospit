@@ -161,6 +161,20 @@ dev = ["flake8", "pytest", "tox"]
 docs = ["sphinx"]
 
 [[package]]
+name = "flask-script"
+version = "2.0.6"
+description = "Scripting support for Flask"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "Flask-Script-2.0.6.tar.gz", hash = "sha256:6425963d91054cfcc185807141c7314a9c5ad46325911bd24dcb489bd0161c65"},
+]
+
+[package.dependencies]
+Flask = "*"
+
+[[package]]
 name = "flask-sqlalchemy"
 version = "3.1.1"
 description = "Add SQLAlchemy support to your Flask application."
@@ -743,4 +757,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "3.8.10"
-content-hash = "aee7611a6eb664e9a022831ec91e412b006551000255e6a75ab7fa9a43ab3ffa"
+content-hash = "810a5fe365f012d45a7c1401140f3c6934a5f3ad24de3a67d059fcfe7d0d96f1"

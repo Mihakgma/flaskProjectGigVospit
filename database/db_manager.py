@@ -11,5 +11,5 @@ def init_app(app):
         if not os.path.exists(
                 app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')):  # Проверяем существование файла БД
             db.create_all()
-            from functions.default_data_autofill import init_db_and_load_data
-            init_db_and_load_data(db=db, data_dir="json/default_db_data")
+            from functions.default_data_autofill import db_load_data
+            db_load_data(db=db, data_dir="json/default_db_data")
