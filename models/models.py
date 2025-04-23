@@ -71,6 +71,7 @@ class User(db.Model, UserMixin):
 class ApplicantType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(String(10), nullable=False)
+    code = db.Column(String(3), nullable=False, unique=True)
     additional_info = db.Column(Text)
     vizits = db.relationship('Vizit', back_populates='applicant_type')
 

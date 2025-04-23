@@ -1,14 +1,17 @@
 {
   "1": {
     "name": "ИП",
+    "code": "biz",
     "additional_info": "индивидуальный предприниматель"
   },
   "2": {
     "name": "ЮЛ",
+    "code": "org",
     "additional_info": "юридическое лицо"
   },
   "3": {
     "name": "ФЛ",
+    "code": "ind",
     "additional_info": "физическое лицо"
   }
 }
