@@ -10,10 +10,10 @@
 <p>Адрес проживания: {{ applicant.residence_address or 'Не указано' }}</p>
 <p>Номер телефона: {{ applicant.phone_number or 'Не указано' }}</p>
 <p>Email: {{ applicant.email or 'Не указано' }}</p>
-<p>Контингент: {{ applicant.contingent.name }}</p>
-<p>Сфера деятельности: {{ applicant.work_field.name }}</p>
-<p>Тип заявителя: {{ applicant.applicant_type.name }}</p>
-<p>Тип аттестации: {{ applicant.attestation_type.name }}</p>
+{#<p>Контингент: {{ applicant.contingent.name }}</p>#}
+{#<p>Сфера деятельности: {{ applicant.work_field.name }}</p>#}
+{#<p>Тип заявителя: {{ applicant.applicant_type.name }}</p>#}
+{#<p>Тип аттестации: {{ applicant.attestation_type.name }}</p>#}
 <p>Редактировал:
     {% if applicant.edited_by %}
         {{ applicant.edited_by.last_name }} {{ applicant.edited_by.first_name }} (ID: {{ applicant.edited_by.id }})
@@ -34,12 +34,12 @@
 <p>Начало
     редактирования: {{ applicant.editing_started_at.strftime('%Y-%m-%d %H:%M:%S UTC') if applicant.editing_started_at else 'Не указано' }}</p>
 
-<p>Контракты:</p>
-<ul>
-    {% for contract in applicant.contracts %}
-        <li><a href="{{ url_for('routes.contract_details', contract_id=contract.id) }}">{{ contract.number }}</a></li>
-    {% endfor %}
-</ul>
+{#<p>Контракты:</p>#}
+{#<ul>#}
+{#    {% for contract in applicant.contracts %}#}
+{#        <li><a href="{{ url_for('routes.contract_details', contract_id=contract.id) }}">{{ contract.number }}</a></li>#}
+{#    {% endfor %}#}
+{#</ul>#}
 
 {#<a href="{{ url_for('routes_bp.edit_applicant', applicant_id=applicant.id) }}">Редактировать</a>#}
 

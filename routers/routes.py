@@ -248,16 +248,16 @@ def add_applicant():
     form = AddApplicantForm()
 
     # Запросы к базе данных для select полей (ОБЯЗАТЕЛЬНО ПРОВЕРЬТЕ НАЛИЧИЕ ДАННЫХ):
-    contingents = Contingent.query.all()
-    work_fields = WorkField.query.all()
-    applicant_types = ApplicantType.query.all()
-    attestation_types = AttestationType.query.all()
-    users = User.query.all()  # Это нужно для выбора пользователя, если требуется
+    # contingents = Contingent.query.all()
+    # work_fields = WorkField.query.all()
+    # applicant_types = ApplicantType.query.all()
+    # attestation_types = AttestationType.query.all()
+    # users = User.query.all()  # Это нужно для выбора пользователя, если требуется
 
-    form.contingent_id.choices = [(c.id, c.name) for c in contingents]
-    form.work_field_id.choices = [(w.id, w.name) for w in work_fields]
-    form.applicant_type_id.choices = [(a.id, a.name) for a in applicant_types]
-    form.attestation_type_id.choices = [(at.id, at.name) for at in attestation_types]
+    # form.contingent_id.choices = [(c.id, c.name) for c in contingents]
+    # form.work_field_id.choices = [(w.id, w.name) for w in work_fields]
+    # form.applicant_type_id.choices = [(a.id, a.name) for a in applicant_types]
+    # form.attestation_type_id.choices = [(at.id, at.name) for at in attestation_types]
 
     if request.method == 'POST':
         if form.validate_on_submit():
@@ -274,10 +274,10 @@ def add_applicant():
                     residence_address=form.residence_address.data,
                     phone_number=form.phone_number.data,
                     email=form.email.data,
-                    contingent_id=form.contingent_id.data,
-                    work_field_id=form.work_field_id.data,
-                    applicant_type_id=form.applicant_type_id.data,
-                    attestation_type_id=form.attestation_type_id.data,
+                    # contingent_id=form.contingent_id.data,
+                    # work_field_id=form.work_field_id.data,
+                    # applicant_type_id=form.applicant_type_id.data,
+                    # attestation_type_id=form.attestation_type_id.data,
                     edited_time=datetime.utcnow(),
                     # edited_by_user_id=form.edited_by_user_id.data, # Не нужно, т.к. edited_by определяется автоматически
                     # is_editing_now = form.is_editing_now.data, # Не нужно устанавливать здесь
@@ -311,11 +311,11 @@ def add_applicant():
 
     return render_template('add_applicant.html',
                            form=form,
-                           contingents=contingents,
-                           work_fields=work_fields,
-                           applicant_types=applicant_types,
-                           attestation_types=attestation_types,
-                           users=users  # Если требуется для других целей на странице
+                           # contingents=contingents,
+                           # work_fields=work_fields,
+                           # applicant_types=applicant_types,
+                           # attestation_types=attestation_types,
+                           # users=users  # Если требуется для других целей на странице
                            )
 
 

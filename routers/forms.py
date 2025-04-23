@@ -37,10 +37,10 @@ class AddApplicantForm(FlaskForm):
     residence_address = StringField('Адрес проживания', validators=[Length(max=200)])
     phone_number = StringField('Телефон', validators=[Length(max=20)])  # Используем StringField
     email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])  # Используем StringField
-    contingent_id = SelectField('Контингент', coerce=int, validators=[DataRequired()])
-    work_field_id = SelectField('Сфера деятельности', coerce=int, validators=[DataRequired()])
-    applicant_type_id = SelectField('Тип заявителя', coerce=int, validators=[DataRequired()])
-    attestation_type_id = SelectField('Тип аттестации', coerce=int, validators=[DataRequired()])
+    # contingent_id = SelectField('Контингент', coerce=int, validators=[DataRequired()])
+    # work_field_id = SelectField('Сфера деятельности', coerce=int, validators=[DataRequired()])
+    # applicant_type_id = SelectField('Тип заявителя', coerce=int, validators=[DataRequired()])
+    # attestation_type_id = SelectField('Тип аттестации', coerce=int, validators=[DataRequired()])
     submit = SubmitField('Добавить заявителя')
 
 
