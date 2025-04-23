@@ -179,4 +179,5 @@ instance/
 .idea/
 
 .xlsx
+.xls
 .~lock
