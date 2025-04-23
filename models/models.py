@@ -92,6 +92,7 @@ class WorkField(db.Model):
 class AttestationType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(String(10), nullable=False)
+    code = db.Column(String(7), nullable=False, unique=True)
     additional_info = db.Column(Text)
     vizits = db.relationship("Vizit", back_populates="attestation_type")
 
@@ -164,7 +165,9 @@ class Applicant(db.Model):
     is_editing_now = db.Column(Boolean, nullable=True)
     editing_by_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
     editing_started_at = db.Column(DateTime, nullable=True)
-    contracts = db.relationship('Contract', secondary=applicant_contract, backref='applicants')
+    contracts = db.relationship('Contract',
+                                secondary=applicant_contract,
+                                backref=db.backref('applicants', overlaps="vizits,contracts"), lazy='joined')
     vizits = db.relationship('Vizit', back_populates='applicant')
 
     @property
