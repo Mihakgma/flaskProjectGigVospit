@@ -1,0 +1,22 @@
+.flashes {
+    list-style: none;
+    padding: 0;
+}
+
+.flashes li {
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 5px;
+}
+
+.success {
+    background-color: lightgreen;
+    color: green;
+}
+
+.danger {
+    background-color: lightcoral;
+    color: red;
+}
+
+/* ... стили для других категорий ... */
