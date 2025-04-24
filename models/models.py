@@ -134,6 +134,7 @@ class Contract(db.Model):
     # Определяем отношение один ко многим с таблицей Organization
     organization = db.relationship('Organization', backref='contracts')
     vizits = db.relationship("Vizit", back_populates="contract")
+    # vizits_contract = db.relationship("Vizit", back_populates="contract")
 
 
 user_roles = Table('user_roles', db.metadata,
@@ -142,10 +143,9 @@ user_roles = Table('user_roles', db.metadata,
                    )
 
 # --- Relationships (после объявления таблиц связей) ---
-applicant_contract = Table(
-    'applicant_contract', db.metadata,
+applicant_vizit = db.Table(
+    'applicant_vizit', db.metadata,  # Изменил имя таблицы для ясности
     db.Column('applicant_id', db.Integer, db.ForeignKey('applicant.id'), primary_key=True),
-    db.Column('contract_id', db.Integer, db.ForeignKey('contract.id'), primary_key=True),
     db.Column('vizit_id', db.Integer, db.ForeignKey('vizit.id'), primary_key=True)
 )
 
@@ -170,10 +170,7 @@ class Applicant(db.Model):
     is_editing_now = db.Column(Boolean, nullable=True)
     editing_by_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
     editing_started_at = db.Column(DateTime, nullable=True)
-    contracts = db.relationship('Contract',
-                                secondary=applicant_contract,
-                                backref=db.backref('applicants', overlaps="vizits,contracts"), lazy='joined')
-    vizits = db.relationship('Vizit', back_populates='applicant')
+    vizits = db.relationship('Vizit', secondary=applicant_vizit, backref='applicants')
 
     @property
     def full_name(self):
@@ -195,12 +192,7 @@ class Vizit(db.Model):
     attestation_type = db.relationship('AttestationType', back_populates='vizits')
     work_field = db.relationship('WorkField', back_populates='vizits')
     applicant_type = db.relationship('ApplicantType', back_populates='vizits')
-
-
-class ApplicantContract(db.Model):  # Вспомогательная модель
-    __table__ = applicant_contract
-
-
-Contract.vizits = db.relationship('Vizit',
-                                  secondary=applicant_contract,
-                                  backref=db.backref('contracts', lazy=True))
+    applicant_id = db.Column(db.Integer, db.ForeignKey('applicant.id'), nullable=False)
+    applicant = db.relationship('Applicant', back_populates='vizits')
+    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'), nullable=True)
+    contract = db.relationship('Contract', backref='vizits_contract')
