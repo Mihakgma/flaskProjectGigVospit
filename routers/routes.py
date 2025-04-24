@@ -77,16 +77,6 @@ ROUTES_INFO = [
 ]
 
 
-# @routes_bp.before_request
-# def before_request():
-#     print(session)
-
-
-# @auth_bp.before_request
-# def before_request():
-#     print(session)
-
-
 @auth_bp.route('/register', methods=['GET', 'POST'])
 # @role_required('admin')
 def register():
