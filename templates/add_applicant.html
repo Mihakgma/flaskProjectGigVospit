@@ -3,19 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <title>Добавление заявителя</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $('img[alt="Добавить визит"]').click(function () {
+                $('#vizit-form-container').toggle();
+            });
+        });
+    </script>
 </head>
 <body>
 
 <h1>Добавление заявителя</h1>
 
-<!-- Начинаем форму -->
 <form method="post">
-    {#
-   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-   #}
+    {{ form.hidden_tag() }}
 
-    <!-- Цикл по полям формы -->
-    {% for field in form %}
+    {% for field in form if field.name != 'csrf_token' %}
         <div>
             {{ field.label }}
             {% if field.errors %}
@@ -25,22 +30,41 @@
                     {% endfor %}
                 </ul>
             {% endif %}
-
-            {% if field.type == "SelectField" %}
-                <select id="{{ field.id }}" name="{{ field.name }}">
-                    {% for choice in field.choices %}
-                        <option value="{{ choice[0] }}"
-                                {% if choice[0] == field.data %}selected{% endif %}>{{ choice[1] }}
-                        </option>
-                    {% endfor %}
-                </select>
-            {% else %}
-                {{ field(class_="input") }}
-            {% endif %}
+            {{ field(class_="input") }}
         </div><br>
     {% endfor %}
 
-    <input type="submit" value="Добавить">
+    <button type="submit" name="submit_applicant">Добавить заявителя</button>
+
+    <h2>Добавить визит (опционально)</h2>
+    <img src="{{ url_for('static', filename='plus.gif') }}" alt="Добавить визит" style="cursor: pointer;">
+
+    <div id="vizit-form-container" style="display: none;">
+        {{ vizit_form.hidden_tag() }}
+
+        <div>
+            {{ vizit_form.created_at.label }} {{ vizit_form.created_at(type="date") }}
+            {% for error in vizit_form.created_at.errors %}
+                <span style="color: red;">{{ error }}</span>
+            {% endfor %}
+        </div><br>
+
+        {% for field in vizit_form if field.name != 'csrf_token' and field.name != 'created_at' %}
+            <div>
+                {{ field.label }}
+                {% if field.errors %}
+                    <ul class="errors">
+                        {% for error in field.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                {{ field(class_="input") }}
+            </div><br>
+        {% endfor %}
+
+        <button type="submit" name="submit_vizit">Добавить визит</button> <br>
+    </div>
 </form>
 
 </body>

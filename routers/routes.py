@@ -17,7 +17,7 @@ from models.models import (User,
                            WorkField,
                            ApplicantType,
                            AttestationType,
-                           Contract, Organization)
+                           Contract, Organization, Vizit)
 from database import db
 
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -28,7 +28,7 @@ from routers.forms import (AddApplicantForm,
                            AddContractForm,
                            LoginForm,
                            RegistrationForm,
-                           UserAddForm, OrganizationAddForm)
+                           UserAddForm, OrganizationAddForm, VizitForm)
 
 from flask_login import (login_user,
                          logout_user,
@@ -198,7 +198,7 @@ def add_user():
             db.session.commit()
 
             flash('Новый пользователь успешно добавлен!', 'success')
-            return redirect(url_for('routes.user_details', user_id=new_user.id))
+            return redirect(url_for('user_details', user_id=new_user.id))
 
         except IntegrityError as e:
             db.session.rollback()
@@ -233,59 +233,37 @@ def user_details(user_id):
 
 
 @routes_bp.route('/applicants/add', methods=['GET', 'POST'])
-# @role_required(['admin'])
 def add_applicant():
-    form = AddApplicantForm()
+    applicant_form = AddApplicantForm()
+    vizit_form = VizitForm()
 
     if request.method == 'POST':
-        if form.validate_on_submit():
+        if 'submit_applicant' in request.form and applicant_form.validate_on_submit():
             try:
-                new_applicant = Applicant(
-                    first_name=form.first_name.data,
-                    last_name=form.last_name.data,
-                    middle_name=form.middle_name.data,
-                    medbook_number=form.medbook_number.data,
-                    snils_number=form.snils_number.data,
-                    passport_number=form.passport_number.data,
-                    birth_date=form.birth_date.data,
-                    registration_address=form.registration_address.data,
-                    residence_address=form.residence_address.data,
-                    phone_number=form.phone_number.data,
-                    email=form.email.data,
-                    edited_time=datetime.utcnow(),
-                    # edited_by_user_id=form.edited_by_user_id.data, # Не нужно, т.к. edited_by определяется автоматически
-                    # is_editing_now = form.is_editing_now.data, # Не нужно устанавливать здесь
-                    # editing_by_id = form.editing_by_id.data, # Не нужно устанавливать здесь
-                    # editing_started_at = form.editing_started_at.data # Не нужно устанавливать здесь
-                )
+                new_applicant = Applicant()
+                applicant_form.populate_obj(new_applicant)
                 db.session.add(new_applicant)
+                db.session.flush()  # Получаем id нового заявителя
+
+                if 'submit_vizit' in request.form and vizit_form.validate_on_submit():
+                    new_vizit = Vizit()
+                    vizit_form.populate_obj(new_vizit)
+                    new_vizit.applicant_id = new_applicant.id
+                    new_vizit.created_at = vizit_form.created_at.data
+                    db.session.add(new_vizit)
+
                 db.session.commit()
-
-                flash('Новый заявитель успешно добавлен!', 'success')
-                return redirect(url_for('routes.applicant_details', applicant_id=new_applicant.id))
-
-            except IntegrityError as e:
-                db.session.rollback()
-                if 'UNIQUE constraint failed' in str(e):
-                    if 'medbook_number' in str(e):
-                        flash('Заявитель с таким номером медкнижки уже существует.', 'danger')
-                    elif 'snils_number' in str(e):
-                        flash('Заявитель с таким СНИЛС уже существует.', 'danger')
-                    else:  # Для других потенциальных уникальных полей
-                        flash('Произошла ошибка, связанная с уникальностью данных. Проверьте введенную информацию.',
-                              'danger')
-                else:
-                    print(f"Ошибка при добавлении заявителя: {e}")
-                    flash('Произошла ошибка при добавлении заявителя. Попробуйте позже.', 'danger')
+                flash('Заявитель и визит успешно добавлены!', 'success')
+                return redirect(url_for('applicant_details', applicant_id=new_applicant.id))
 
             except Exception as e:
                 db.session.rollback()
                 print(f"Ошибка при добавлении заявителя: {e}")
                 flash('Произошла ошибка при добавлении заявителя. Попробуйте позже.', 'danger')
+        else:  # Если форма заявителя не валидна
+            flash("Ошибка при добавлении заявителя!", "danger")
 
-    return render_template('add_applicant.html',
-                           form=form
-                           )
+    return render_template('add_applicant.html', form=applicant_form, vizit_form=vizit_form)
 
 
 @routes_bp.route('/applicants/<int:applicant_id>')
@@ -320,7 +298,7 @@ def add_contract():
                 db.session.add(new_contract)
                 db.session.commit()
                 flash('Новый контракт успешно добавлен!', 'success')
-                return redirect(url_for('routes.contract_details', contract_id=new_contract.id))
+                return redirect(url_for('contract_details', contract_id=new_contract.id))
             except Exception as e:
                 db.session.rollback()
                 print(f"Ошибка при добавлении контракта: {e}")
@@ -382,6 +360,6 @@ def add_organization():
 # @login_required
 def organization_details(organization_id):
     organization = Organization.query.get_or_404(organization_id)
-    return render_template('organization_details.html',
+    return render_template('routes_bp.organization_details.html',
                            organization=organization,
                            title="Детали организации")

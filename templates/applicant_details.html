@@ -1,47 +1,89 @@
-<p>ID: {{ applicant.id }}</p>
-<p>Имя: {{ applicant.first_name }}</p>
-<p>Фамилия: {{ applicant.last_name }}</p>
-<p>Отчество: {{ applicant.middle_name or 'Не указано' }}</p>
-<p>Номер медицинской книжки: {{ applicant.medbook_number }}</p>
-<p>СНИЛС: {{ applicant.snils_number }}</p>
-<p>Номер паспорта: {{ applicant.passport_number or 'Не указано' }}</p>
-<p>Дата рождения: {{ applicant.birth_date.strftime('%Y-%m-%d') }}</p>
-<p>Адрес регистрации: {{ applicant.registration_address or 'Не указано' }}</p>
-<p>Адрес проживания: {{ applicant.residence_address or 'Не указано' }}</p>
-<p>Номер телефона: {{ applicant.phone_number or 'Не указано' }}</p>
-<p>Email: {{ applicant.email or 'Не указано' }}</p>
-{#<p>Контингент: {{ applicant.contingent.name }}</p>#}
-{#<p>Сфера деятельности: {{ applicant.work_field.name }}</p>#}
-{#<p>Тип заявителя: {{ applicant.applicant_type.name }}</p>#}
-{#<p>Тип аттестации: {{ applicant.attestation_type.name }}</p>#}
-<p>Редактировал:
-    {% if applicant.edited_by %}
-        {{ applicant.edited_by.last_name }} {{ applicant.edited_by.first_name }} (ID: {{ applicant.edited_by.id }})
-    {% else %}
-        Не указано
-    {% endif %}
-</p>
-<p>Время
-    редактирования: {{ applicant.edited_time.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime('%d.%m.%Y %H:%M:%S') if applicant.edited_time else 'Не указано' }}</p>
-<p>Редактируется сейчас: {{ 'Да' if applicant.is_editing_now else 'Нет' }}</p>
-<p>Редактирует:
-    {% if applicant.editing_by %}
-        {{ applicant.editing_by.last_name }} {{ applicant.editing_by.first_name }} (ID: {{ applicant.editing_by.id }})
-    {% else %}
-        Никто
-    {% endif %}
-</p>
-<p>Начало
-    редактирования: {{ applicant.editing_started_at.strftime('%Y-%m-%d %H:%M:%S UTC') if applicant.editing_started_at else 'Не указано' }}</p>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Информация о заявителе</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script> {# Добавьте jQuery #}
+    <script>
+        $(document).ready(function(){
+            $("#toggleVizits").click(function(){
+                $("#vizits").toggle();
+            });
+        });
+    </script>
+</head>
+<body>
 
-{#<p>Контракты:</p>#}
-{#<ul>#}
-{#    {% for contract in applicant.contracts %}#}
-{#        <li><a href="{{ url_for('routes.contract_details', contract_id=contract.id) }}">{{ contract.number }}</a></li>#}
-{#    {% endfor %}#}
-{#</ul>#}
+<h1>Информация о заявителе</h1>
 
-{#<a href="{{ url_for('routes_bp.edit_applicant', applicant_id=applicant.id) }}">Редактировать</a>#}
+<dl>
+    <dt>ID:</dt><dd>{{ applicant.id }}</dd>
+    <dt>Имя:</dt><dd>{{ applicant.first_name }}</dd>
+    <dt>Фамилия:</dt><dd>{{ applicant.last_name }}</dd>
+    <dt>Отчество:</dt><dd>{{ applicant.middle_name or 'Не указано' }}</dd>
+    <dt>Номер медицинской книжки:</dt><dd>{{ applicant.medbook_number }}</dd>
+    <dt>СНИЛС:</dt><dd>{{ applicant.snils_number }}</dd>
+    <dt>Номер паспорта:</dt><dd>{{ applicant.passport_number or 'Не указано' }}</dd>
+    <dt>Дата рождения:</dt><dd>{{ applicant.birth_date.strftime('%d.%m.%Y') }}</dd> {# Единый формат даты #}
+    <dt>Адрес регистрации:</dt><dd>{{ applicant.registration_address or 'Не указано' }}</dd>
+    <dt>Адрес проживания:</dt><dd>{{ applicant.residence_address or 'Не указано' }}</dd>
+    <dt>Номер телефона:</dt><dd>{{ applicant.phone_number or 'Не указано' }}</dd>
+    <dt>Email:</dt><dd>{{ applicant.email or 'Не указано' }}</dd>
+    <dt>Редактировал:</dt><dd>
+        {% if applicant.edited_by %}
+            {{ applicant.edited_by.last_name }} {{ applicant.edited_by.first_name }} (ID: {{ applicant.edited_by.id }})
+        {% else %}
+            Не указано
+        {% endif %}
+    </dd>
+    <dt>Время редактирования:</dt><dd>{{ applicant.edited_time.strftime('%d.%m.%Y %H:%M:%S') if applicant.edited_time else 'Не указано' }}</dd>
+    <dt>Редактируется сейчас:</dt><dd>{{ 'Да' if applicant.is_editing_now else 'Нет' }}</dd>
+    <dt>Редактирует:</dt><dd>
+        {% if applicant.editing_by %}
+            {{ applicant.editing_by.last_name }} {{ applicant.editing_by.first_name }} (ID: {{ applicant.editing_by.id }})
+        {% else %}
+            Никто
+        {% endif %}
+    </dd>
+    <dt>Начало редактирования:</dt><dd>{{ applicant.editing_started_at.strftime('%d.%m.%Y %H:%M:%S') if applicant.editing_started_at else 'Не указано' }}</dd>
+</dl>
+
+
+
+{#<a href="{{ url_for('routes_bp.edit_applicant', applicant_id=applicant.id) }}">Редактировать</a> <br> {# Разкомментировано #}
+
+<h2>Визиты</h2>
+<button id="toggleVizits">Показать/Скрыть визиты</button> {# Кнопка для показа/скрытия визитов #}
+
+<div id="vizits" style="display: none;"> {# Визиты скрыты по умолчанию #}
+    <ul>
+    {% for vizit in applicant.vizits %}
+        <li>
+            Дата создания: {{ vizit.created_at.strftime('%d.%m.%Y') }} <br>
+            Контингент: {{ vizit.contingent.name }} <br>
+            Тип аттестации: {{ vizit.attestation_type.name }} <br>
+            Сфера деятельности: {{ vizit.work_field.name }} <br>
+            Тип заявителя: {{ vizit.applicant_type.name }} <br>
+            Контракты:
+                <ul>
+                    {% for contract in vizit.contracts %}
+                        <li><a href="{{ url_for('contract_details', contract_id=contract.id) }}">{{ contract.number }}</a></li>
+                    {% endfor %}
+                </ul>
+
+        </li>
+
+    {% endfor %}
+    </ul>
+</div>
+
+<h2>Контракты</h2>
+<ul>
+    {% for contract in applicant.contracts %}
+        <li><a href="{{ url_for('contract_details', contract_id=contract.id) }}">{{ contract.number }}</a></li>
+    {% endfor %}
+</ul>
 
 </body>
 </html>

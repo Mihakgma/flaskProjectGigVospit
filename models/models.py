@@ -146,7 +146,7 @@ applicant_contract = Table(
     'applicant_contract', db.metadata,
     db.Column('applicant_id', db.Integer, db.ForeignKey('applicant.id'), primary_key=True),
     db.Column('contract_id', db.Integer, db.ForeignKey('contract.id'), primary_key=True),
-    db.Column('vizit_id', db.Integer, db.ForeignKey('vizit.id'), primary_key=True)  # Добавляем vizit_id
+    db.Column('vizit_id', db.Integer, db.ForeignKey('vizit.id'), primary_key=True)
 )
 
 User.roles = db.relationship('Role', secondary=user_roles, backref=db.backref('users', lazy=True))

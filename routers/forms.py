@@ -7,12 +7,12 @@ from wtforms import (StringField,
                      TextAreaField,
                      PasswordField,
                      SelectMultipleField)
+from wtforms.fields.datetime import DateTimeField
 from wtforms.validators import (DataRequired,
                                 Length,
                                 Email,
                                 Optional, InputRequired)
-from wtforms_sqlalchemy.fields import (QuerySelectField,
-                                       QuerySelectMultipleField)
+from wtforms_sqlalchemy.fields import (QuerySelectField)
 
 from functions import validate_birth_date
 from wtforms.widgets import CheckboxInput
@@ -65,7 +65,8 @@ class LoginForm(FlaskForm):
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from wtforms.fields import StringField, PasswordField, SubmitField
 from models import User, Role, Department, Status, \
-    Organization, Applicant  # Предположительно, модели расположены в отдельном модуле
+    Organization, Applicant, AttestationType, Contingent, \
+    WorkField, Contract, ApplicantType  # Предположительно, модели расположены в отдельном модуле
 
 
 class RegistrationForm(FlaskForm):
@@ -194,3 +195,19 @@ class AddContractForm(FlaskForm):
         super().__init__(*args, **kwargs)
         self.applicants.choices = [(a.id, a.full_name) for a in Applicant.query.all()]
         self.organization_id.choices = [(o.id, o.name) for o in Organization.query.all()]
+
+
+class VizitForm(FlaskForm):
+    contingent_id = SelectField('Контингент', coerce=int, validators=[DataRequired()])
+    attestation_type_id = SelectField('Тип аттестации', coerce=int, validators=[DataRequired()])
+    work_field_id = SelectField('Сфера деятельности', coerce=int, validators=[DataRequired()])
+    applicant_type_id = SelectField('Тип заявителя', coerce=int, validators=[DataRequired()])
+    created_at = DateTimeField('Дата создания визита', format='%Y-%m-%d', validators=[DataRequired()])  # Новое поле
+    submit = SubmitField('Добавить визит')
+
+    def __init__(self, *args, **kwargs):
+        super(VizitForm, self).__init__(*args, **kwargs)
+        self.attestation_type_id.choices = [(a.id, a.name) for a in AttestationType.query.all()]
+        self.contingent_id.choices = [(c.id, c.name) for c in Contingent.query.all()]
+        self.work_field_id.choices = [(w.id, w.name) for w in WorkField.query.all()]
+        self.applicant_type_id.choices = [(a.id, a.name) for a in ApplicantType.query.all()]
