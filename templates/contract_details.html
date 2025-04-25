@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Детали договора №{{ contract.number }}</h1>
+    <h1>Детали договора (контракта) №{{ contract.number }}</h1>
     <p>Дата заключения: {{ contract.contract_date.strftime('%d.%m.%Y') }}</p>
     <p>Срок окончания: {{ contract.expiration_date.strftime('%d.%m.%Y') }}</p>
     <p>Продлён: {% if contract.is_extended %}Да{% else %}Нет{% endif %}</p>
