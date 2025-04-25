@@ -187,13 +187,13 @@ class AddContractForm(FlaskForm):
     expiration_date = DateField('Срок окончания', format='%Y-%m-%d')
     is_extended = BooleanField('Продлён')
     additional_info = TextAreaField('Дополнительная информация')
-    applicants = SelectMultipleField('Заявители', coerce=int, choices=[])
+    # applicants = SelectMultipleField('Заявители', coerce=int, choices=[])
     organization_id = SelectField('Организация', coerce=int, choices=[])  # Поле для выбора организации
     submit = SubmitField('Сохранить')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.applicants.choices = [(a.id, a.full_name) for a in Applicant.query.all()]
+        # self.applicants.choices = [(a.id, a.full_name) for a in Applicant.query.all()]
         self.organization_id.choices = [(o.id, o.name) for o in Organization.query.all()]
 
 

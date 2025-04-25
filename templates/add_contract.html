@@ -2,7 +2,7 @@
 
 {% block content %}
     <!-- Твой основной контент формы -->
-    <h1>Добавить контракт</h1>
+    <h1>Добавить договор (контракт)</h1>
     <form method="POST">
         {{ form.hidden_tag() }}
         <div>
@@ -12,8 +12,8 @@
             {{ form.expiration_date.label }} {{ form.expiration_date() }}<br>
             {{ form.is_extended.label }} {{ form.is_extended() }}<br>
             {{ form.additional_info.label }} {{ form.additional_info(cols=30, rows=10) }}<br>
-            {{ form.applicants.label }}<br>
-            {{ form.applicants() }}<br>
+{#            {{ form.applicants.label }}<br>#}
+{#            {{ form.applicants() }}<br>#}
             {{ form.organization_id.label }}<br>
             {{ form.organization_id() }}<br>
             {{ form.submit() }}

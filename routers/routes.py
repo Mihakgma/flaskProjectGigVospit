@@ -238,20 +238,19 @@ def add_applicant():
     vizit_form = VizitForm()
 
     if request.method == 'POST':
-        if applicant_form.validate_on_submit(): # Валидация формы заявителя
+        if applicant_form.validate_on_submit():  # Валидация формы заявителя
             try:
                 new_applicant = Applicant()
                 applicant_form.populate_obj(new_applicant)
                 db.session.add(new_applicant)
                 db.session.flush()
 
-                if vizit_form.validate_on_submit(): # Валидация формы визита
+                if vizit_form.validate_on_submit():  # Валидация формы визита
                     new_vizit = Vizit()
                     vizit_form.populate_obj(new_vizit)
                     new_vizit.applicant_id = new_applicant.id
                     new_vizit.created_at = vizit_form.created_at.data
                     db.session.add(new_vizit)
-
 
                 db.session.commit()
                 flash('Заявитель и визит (если был добавлен) успешно сохранены!', 'success')
@@ -262,7 +261,7 @@ def add_applicant():
                 print(f"Ошибка при добавлении заявителя/визита: {e}")
                 flash('Произошла ошибка при добавлении. Попробуйте позже.', 'danger')
 
-        else: # Если форма заявителя не валидна, проверяем и добавляем визит отдельно, если валиден
+        else:  # Если форма заявителя не валидна, проверяем и добавляем визит отдельно, если валиден
             if vizit_form.validate_on_submit():
                 flash('Форма заявителя содержит ошибки. Пожалуйста исправьте их.', 'danger')
 
@@ -271,9 +270,7 @@ def add_applicant():
             for error in errors:
                 flash(f"Ошибка в поле '{field.label.text}': {error}", 'danger')
 
-
     return render_template('add_applicant.html', form=applicant_form, vizit_form=vizit_form)
-
 
 
 @routes_bp.route('/applicants/<int:applicant_id>')
@@ -302,8 +299,8 @@ def add_contract():
                 )
 
                 # Подключаем выбранных заявителей к контракту
-                applicants = Applicant.query.filter(Applicant.id.in_(form.applicants.data)).all()
-                new_contract.applicants.extend(applicants)
+                # applicants = Applicant.query.filter(Applicant.id.in_(form.applicants.data)).all()
+                # new_contract.applicants.extend(applicants)
 
                 db.session.add(new_contract)
                 db.session.commit()
