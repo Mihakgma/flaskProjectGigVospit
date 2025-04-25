@@ -244,6 +244,7 @@ def add_applicant():
                     new_vizit.applicant_id = new_applicant.id
                     new_vizit.created_at = vizit_form.created_at.data
                     db.session.add(new_vizit)
+                    new_applicant.vizits.append(new_vizit)
 
                 db.session.commit()
                 flash('Заявитель и визит (если был добавлен) успешно сохранены!', 'success')
@@ -261,7 +262,7 @@ def add_applicant():
         # Выводим ошибки валидации формы заявителя, если они есть
         for field, errors in applicant_form.errors.items():
             for error in errors:
-                flash(f"Ошибка в поле '{field.label.text}': {error}", 'danger')
+                flash(f"Ошибка в поле '{applicant_form[field].label.text}': {error}", 'danger')
 
     return render_template('add_applicant.html', form=applicant_form, vizit_form=vizit_form)
 

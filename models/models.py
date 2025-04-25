@@ -134,8 +134,6 @@ class Contract(db.Model):
     additional_info = db.Column(db.Text(length=300), default=None, nullable=True)
     # Определяем отношение один ко многим с таблицей Organization
     organization = db.relationship('Organization', backref='contracts')
-    vizits = db.relationship("Vizit", back_populates="contract")
-    # vizits_contract = db.relationship("Vizit", back_populates="contract")
 
 
 user_roles = Table('user_roles', db.metadata,
@@ -171,7 +169,9 @@ class Applicant(db.Model):
     is_editing_now = db.Column(Boolean, nullable=True)
     editing_by_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
     editing_started_at = db.Column(DateTime, nullable=True)
-    vizits = db.relationship('Vizit', secondary=applicant_vizit, backref='applicants')
+    vizits = db.relationship('Vizit', secondary=applicant_vizit,
+                             backref=db.backref('applicants', cascade=None),
+                             lazy='subquery')
     additional_info = db.Column(db.Text(length=300), default=None, nullable=True)
 
     @property
@@ -184,7 +184,7 @@ class Applicant(db.Model):
 class Vizit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     applicant_id = db.Column(db.Integer, db.ForeignKey('applicant.id'), nullable=False)
-    applicant = db.relationship('Applicant', back_populates='vizits')
+    # applicant = db.relationship('Applicant', backref=db.backref('vizits', cascade=None), lazy=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # Дата оформления
     contingent_id = db.Column(db.Integer, db.ForeignKey('contingent.id'), nullable=False)
     attestation_type_id = db.Column(db.Integer, db.ForeignKey('attestation_type.id'), nullable=False)
@@ -195,5 +195,5 @@ class Vizit(db.Model):
     work_field = db.relationship('WorkField', back_populates='vizits')
     applicant_type = db.relationship('ApplicantType', back_populates='vizits')
     contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'), nullable=True)
-    contract = db.relationship('Contract', backref='vizits_contract')
+    # contract = db.relationship('Contract', backref='vizits_contract')
     additional_info = db.Column(db.Text(length=300), default=None, nullable=True)
