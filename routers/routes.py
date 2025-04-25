@@ -1,6 +1,5 @@
 from flask import (Blueprint,
                    render_template,
-                   jsonify,
                    request,
                    redirect,
                    url_for,
@@ -10,13 +9,7 @@ import logging
 from functions.access_control import role_required
 from models.models import (User,
                            Role,
-                           Department,
-                           Status,
                            Applicant,
-                           Contingent,
-                           WorkField,
-                           ApplicantType,
-                           AttestationType,
                            Contract, Organization, Vizit)
 from database import db
 
@@ -367,6 +360,6 @@ def add_organization():
 # @login_required
 def organization_details(organization_id):
     organization = Organization.query.get_or_404(organization_id)
-    return render_template('routes_bp.organization_details.html',
+    return render_template('organization_details.html',
                            organization=organization,
                            title="Детали организации")
