@@ -183,3 +183,4 @@ instance/
 .~lock
 organization.json
 applicant.json
+user.json

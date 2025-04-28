@@ -15,7 +15,7 @@ from wtforms.validators import (DataRequired,
 from wtforms_sqlalchemy.fields import (QuerySelectField)
 
 from functions import validate_birth_date
-from wtforms.widgets import CheckboxInput
+from wtforms.widgets import CheckboxInput, ListWidget
 
 
 class AddApplicantForm(FlaskForm):
@@ -65,8 +65,8 @@ class LoginForm(FlaskForm):
 from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
 from wtforms.fields import StringField, PasswordField, SubmitField
 from models import User, Role, Department, Status, \
-    Organization, Applicant, AttestationType, Contingent, \
-    WorkField, Contract, ApplicantType  # Предположительно, модели расположены в отдельном модуле
+    Organization, AttestationType, Contingent, \
+    WorkField, ApplicantType  # Предположительно, модели расположены в отдельном модуле
 
 
 class RegistrationForm(FlaskForm):
@@ -110,7 +110,6 @@ class UserAddForm(FlaskForm):
     username = StringField('Имя пользователя', validators=[DataRequired(), Length(min=2, max=20)])
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Пароль', validators=[DataRequired(), Length(min=8)])
-    # confirm_password = PasswordField('Подтвердите пароль', validators=[DataRequired(), EqualTo('password')])
     phone = StringField('Телефон')
     dept_id = QuerySelectField('Отдел',
                                query_factory=lambda: Department.query.all(),
@@ -119,9 +118,14 @@ class UserAddForm(FlaskForm):
     status_id = QuerySelectField('Статус',
                                  query_factory=lambda: Status.query.all(),
                                  get_label='name', allow_blank=True, blank_text='Выберите статус')
-    roles = SelectMultipleField('Роли', choices=[], widget=CheckboxInput())
-    info = TextAreaField('Дополнительно')  # Добавьте поле info
+    roles = SelectMultipleField('Роли', coerce=int, widget=ListWidget(prefix_label=False),
+                                option_widget=CheckboxInput())
+    info = TextAreaField('Дополнительно')
     submit = SubmitField('Добавить пользователя')
+
+    def __init__(self, *args, **kwargs):
+        super(UserAddForm, self).__init__(*args, **kwargs)
+        self.roles.choices = [(role.id, role.name) for role in Role.query.all()]
 
     def validate_username(self, username):
         user = User.query.filter_by(username=username.data).first()
@@ -132,10 +136,6 @@ class UserAddForm(FlaskForm):
         user = User.query.filter_by(email=email.data).first()
         if user:
             raise ValidationError('Этот email уже занят.')
-
-    def populate_role_choices(self):
-        roles = Role.query.all()
-        self.roles.choices = [(role.id, role.name) for role in Role.query.all()]
 
 
 class OrganizationAddForm(FlaskForm):

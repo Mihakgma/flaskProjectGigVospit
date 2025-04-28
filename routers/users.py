@@ -3,7 +3,7 @@ from flask import (Blueprint,
                    redirect,
                    url_for,
                    flash)
-from flask_login import login_required
+# from flask_login import login_required
 
 from functions.access_control import role_required
 from models.models import (User,
@@ -29,7 +29,7 @@ def users():
 @role_required('admin', )
 def add_user():
     form = UserAddForm()
-    form.populate_role_choices()
+    # form.populate_role_choices()
 
     if form.validate_on_submit():
         try:
@@ -60,10 +60,7 @@ def add_user():
                 roles=role_objects
             )
 
-            # selected_roles = Role.query.filter(Role.id.in_(form.role_ids.data)).all()
-
-            db.session.add(new_user)  # Сначала добавьте пользователя
-
+            db.session.add(new_user)
             db.session.commit()
 
             flash('Новый пользователь успешно добавлен!', 'success')
@@ -71,6 +68,7 @@ def add_user():
 
         except IntegrityError as e:
             db.session.rollback()
+
             if 'UNIQUE constraint failed' in str(e):
                 if 'username' in str(e):
                     flash('Пользователь с таким именем пользователя уже существует.', 'danger')
