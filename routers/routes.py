@@ -5,18 +5,14 @@ from flask import (Blueprint,
                    url_for,
                    flash)
 
-from models.models import (Applicant,
-                           Contract,
-                           Organization,
-                           Vizit)
+from models.models import (Contract,
+                           Organization)
 from database import db
 
-from datetime import timezone
 from sqlalchemy.exc import IntegrityError
 
-from forms.forms import (AddApplicantForm,
-                         AddContractForm,
-                         OrganizationAddForm, VizitForm)
+from forms.forms import (AddContractForm,
+                         OrganizationAddForm)
 
 routes_bp = Blueprint('routes', __name__)  # Создаем blueprint
 
@@ -32,11 +28,11 @@ ROUTES_INFO = [
      },
     {'path': '/applicants/add',
      'title': 'Добавить нового заявителя',
-     'route': 'routes.add_applicant'
+     'route': 'applicants.add_applicant'
      },
     {'path': '/applicants/<int:applicant_id>',
      'title': 'Отображает детали заявителя',
-     # 'route': 'routes.applicant_details',
+     # 'route': 'applicants.applicant_details',
      },
     {'path': '/organizations/add',
      'title': 'Добавление новой организации',
@@ -61,56 +57,6 @@ ROUTES_INFO = [
 @routes_bp.route('/')
 def index():
     return render_template('index.html', routes=ROUTES_INFO)
-
-
-@routes_bp.route('/applicants/add', methods=['GET', 'POST'])
-def add_applicant():
-    applicant_form = AddApplicantForm()
-    vizit_form = VizitForm()
-
-    if request.method == 'POST':
-        if applicant_form.validate_on_submit():  # Валидация формы заявителя
-            try:
-                new_applicant = Applicant()
-                applicant_form.populate_obj(new_applicant)
-                db.session.add(new_applicant)
-                db.session.flush()
-
-                if vizit_form.validate_on_submit():  # Валидация формы визита
-                    new_vizit = Vizit()
-                    vizit_form.populate_obj(new_vizit)
-                    new_vizit.applicant_id = new_applicant.id
-                    new_vizit.created_at = vizit_form.created_at.data
-                    db.session.add(new_vizit)
-                    new_applicant.vizits.append(new_vizit)
-
-                db.session.commit()
-                flash('Заявитель и визит (если был добавлен) успешно сохранены!', 'success')
-                return redirect(url_for('routes.applicant_details', applicant_id=new_applicant.id))
-
-            except Exception as e:
-                db.session.rollback()
-                print(f"Ошибка при добавлении заявителя/визита: {e}")
-                flash('Произошла ошибка при добавлении. Попробуйте позже.', 'danger')
-
-        else:  # Если форма заявителя не валидна, проверяем и добавляем визит отдельно, если валиден
-            if vizit_form.validate_on_submit():
-                flash('Форма заявителя содержит ошибки. Пожалуйста исправьте их.', 'danger')
-
-        # Выводим ошибки валидации формы заявителя, если они есть
-        for field, errors in applicant_form.errors.items():
-            for error in errors:
-                flash(f"Ошибка в поле '{applicant_form[field].label.text}': {error}", 'danger')
-
-    return render_template('add_applicant.html', form=applicant_form, vizit_form=vizit_form)
-
-
-@routes_bp.route('/applicants/<int:applicant_id>')
-def applicant_details(applicant_id):
-    applicant = Applicant.query.get_or_404(applicant_id)
-    return render_template('applicant_details.html',
-                           applicant=applicant,
-                           timezone=timezone)
 
 
 @routes_bp.route('/contracts/add', methods=['GET', 'POST'])

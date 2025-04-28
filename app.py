@@ -4,7 +4,10 @@ from waitress import serve
 from flask import Flask
 from database import init_app, db
 from models import User
-from routers import auth_bp, routes_bp, users_bp  # Импортируем blueprint
+from routers import (auth_bp,
+                     routes_bp,
+                     users_bp,
+                     applicants_bp)  # Импортируем blueprint
 
 # from flask_script import Manager
 from flask_login import LoginManager
@@ -30,6 +33,7 @@ def create_app():
         return User.query.get(int(user_id))
 
     app.register_blueprint(users_bp, url_prefix='/users')
+    app.register_blueprint(applicants_bp, url_prefix='/applicants')
     app.register_blueprint(routes_bp, url_prefix='/')
     # csrf = CSRFProtect()
     # csrf.init_app(app)  # Инициализация CSRFProtect

@@ -1,40 +1,35 @@
 <!-- templates/user_details.html -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Детали пользователя</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
+{% block content %}
 
-<h1>Детали пользователя</h1>
-
-<p>ID: {{ user.id }}</p>
-<p>Имя: {{ user.first_name }}</p>
-<p>Фамилия: {{ user.last_name }}</p>
-<p>Отчество: {{ user.middle_name }}</p>
-<p>Имя пользователя: {{ user.username }}</p>
-<p>Email: {{ user.email }}</p>
-<p>Телефон: {{ user.phone }}</p>
-
-<p>Роли:</p>
-<ul>
-    {% for role in user.roles %}
-        <li>{{ role.name }}</li>
-    {% endfor %}
-</ul>
-
-<p>Отдел: {{ user.department.name if user.department else "Нет отдела" }}</p> {# #}
-<p>Статус: {{ user.status.name if user.status else "Нет статуса" }}</p> {# #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
 
-</body>
-</html>
+    <h1>Детали пользователя</h1>
+
+    <p>ID: {{ user.id }}</p>
+    <p>Имя: {{ user.first_name }}</p>
+    <p>Фамилия: {{ user.last_name }}</p>
+    <p>Отчество: {{ user.middle_name }}</p>
+    <p>Имя пользователя: {{ user.username }}</p>
+    <p>Email: {{ user.email }}</p>
+    <p>Телефон: {{ user.phone }}</p>
+
+    <p>Роли:</p>
+    <ul>
+        {% for role in user.roles %}
+            <li>{{ role.name }}</li>
+        {% endfor %}
+    </ul>
+
+    <p>Отдел: {{ user.department.name if user.department else "Нет отдела" }}</p>
+    <p>Статус: {{ user.status.name if user.status else "Нет статуса" }}</p>
+
+{% endblock %}
