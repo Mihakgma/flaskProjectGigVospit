@@ -182,4 +182,4 @@ instance/
 .xls
 .~lock
 organization.json
-applicants.json
+applicant.json
