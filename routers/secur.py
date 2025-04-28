@@ -89,6 +89,4 @@ def login():
 def logout():
     form = LoginForm()
     logout_user()
-    return render_template('login.html',
-                           title='Авторизация',
-                           form=form)
+    return redirect(url_for('auth.login'))

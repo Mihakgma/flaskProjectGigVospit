@@ -25,7 +25,7 @@ def users():
 
 
 @users_bp.route('/add', methods=['GET', 'POST'])
-@login_required
+# @login_required
 @role_required('admin', )
 def add_user():
     form = UserAddForm()
@@ -97,7 +97,7 @@ def add_user():
 
 @users_bp.route('/details/<int:user_id>/',
                 methods=['GET'])
-@login_required
+# @login_required
 @role_required('admin', 'moder', 'oper', )
 def user_details(user_id):
     user = User.query.get_or_404(user_id)
