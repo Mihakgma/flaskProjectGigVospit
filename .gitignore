@@ -181,3 +181,4 @@ instance/
 .xlsx
 .xls
 .~lock
+organization.json
