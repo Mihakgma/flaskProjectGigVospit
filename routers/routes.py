@@ -6,7 +6,6 @@ from flask import (Blueprint,
                    flash, session)
 import logging
 
-from functions.access_control import role_required
 from models.models import (User,
                            Role,
                            Applicant,
@@ -14,19 +13,18 @@ from models.models import (User,
 from database import db
 
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timezone
+from datetime import timezone
 from sqlalchemy.exc import IntegrityError
 
-from routers.forms import (AddApplicantForm,
-                           AddContractForm,
-                           LoginForm,
-                           RegistrationForm,
-                           UserAddForm, OrganizationAddForm, VizitForm)
+from forms.forms import (AddApplicantForm,
+                         AddContractForm,
+                         LoginForm,
+                         RegistrationForm,
+                         UserAddForm, OrganizationAddForm, VizitForm)
 
 from flask_login import (login_user,
                          logout_user,
-                         current_user,
-                         login_required)
+                         current_user)
 
 routes_bp = Blueprint('routes', __name__)  # Создаем blueprint
 auth_bp = Blueprint('auth', __name__)  # Создаем blueprint
