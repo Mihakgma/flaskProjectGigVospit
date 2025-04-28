@@ -3,6 +3,7 @@ from flask import (Blueprint,
                    redirect,
                    url_for,
                    flash)
+from flask_login import login_required
 
 from models.models import (User,
                            Role)
@@ -16,8 +17,6 @@ from forms.forms import UserAddForm
 users_bp = Blueprint('users', __name__)  # Создаем blueprint
 
 
-
-
 @users_bp.route('/users')
 def users():
     users = User.query.all()
@@ -25,6 +24,7 @@ def users():
 
 
 @users_bp.route('/add', methods=['GET', 'POST'])
+@login_required
 # @role_required(['admin'])
 def add_user():
     form = UserAddForm()
@@ -94,7 +94,9 @@ def add_user():
                            form=form)
 
 
-@users_bp.route('/<int:user_id>')
+@users_bp.route('/details/<int:user_id>/',
+                methods=['GET'])
+@login_required
 def user_details(user_id):
     user = User.query.get_or_404(user_id)
     return render_template('user_details.html', user=user)

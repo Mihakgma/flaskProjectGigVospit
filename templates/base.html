@@ -6,12 +6,11 @@
     <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    {# Ссылка на ваш CSS #}
 </head>
 <body>
 
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="{{ url_for('routes.index') }}">ВЫДАЧА МЕД КНИЖЕК НА БАЗЕ ФБУЗ "ЦГиЭКО - КУЗБАССЕ"</a>
+    <a class="navbar-brand" href="{{ url_for('routes.index') }}">МЕД КНИЖКИ</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
             aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
@@ -22,33 +21,11 @@
                 <a class="nav-link" href="{{ url_for('routes.index') }}">Главная</a>
             </li>
             {% if current_user.is_authenticated %}
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('routes.users') }}">Пользователи</a>
-                </li>
-                <li class="nav-item dropdown"> {# Выпадающее меню для действий с пользователями #}
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button"
-                       data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Действия с пользователями
-                    </a>
-                    <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                        <a class="dropdown-item" href="{{ url_for('routes.add_user') }}">Добавить пользователя</a>
-                        {# Ссылка на добавление #}
-                        <a class="dropdown-item" href="#">Другое действие</a> {# Другие действия с пользователями #}
-                    </div>
-                </li>
-                <li class="nav-item dropdown"> {# Выпадающее меню для организаций #}
-                    <a class="nav-link dropdown-toggle" href="#" id="organizationsDropdown" role="button"
-                       data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        Организации
-                    </a>
-                    <div class="dropdown-menu" aria-labelledby="organizationsDropdown">
-                        <a class="dropdown-item" href="{{ url_for('routes.add_organization') }}">Добавить
-                            организацию</a>
-                        <a class="dropdown-item" href="#">Список организаций</a>
-                        {# Добавьте роут для списка организаций #}
-                    </div>
-                </li>
-
+                {% for item in routes %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for(item.route) }}">{{ item.title }}</a>
+                    </li>
+                {% endfor %}
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('auth.logout') }}">Выйти</a>
                 </li>
@@ -72,10 +49,9 @@
             {% endfor %}
         {% endif %}
     {% endwith %}
-    {% block content %}
-    {% endblock %}
-</div>
 
+    {% block content %}{% endblock %}
+</div>
 
 <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>

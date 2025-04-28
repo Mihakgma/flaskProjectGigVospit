@@ -4,6 +4,7 @@ from flask import (Blueprint,
                    redirect,
                    url_for,
                    flash)
+from flask_login import login_required
 
 from models.models import (Contract,
                            Organization)
@@ -18,48 +19,32 @@ routes_bp = Blueprint('routes', __name__)  # Создаем blueprint
 
 # Словарь с описанием роутов
 ROUTES_INFO = [
-    {'path': '/users/add',
-     'title': 'Форма для добавления пользователя с ролями, отделом и статусом.',
-     'route': 'users.add_user',
-     },
-    {'path': 'users/<int:user_id>',
-     'title': 'Отображает детали пользователя.',
-     # 'route': 'users.user_details'
-     },
-    {'path': '/applicants/add',
-     'title': 'Добавить нового заявителя',
-     'route': 'applicants.add_applicant'
-     },
-    {'path': '/applicants/<int:applicant_id>',
-     'title': 'Отображает детали заявителя',
-     # 'route': 'applicants.applicant_details',
-     },
-    {'path': '/organizations/add',
-     'title': 'Добавление новой организации',
-     'route': 'routes.add_organization'
-     },
-    {'path': '/organizations/<int:organization_id>',
-     'title': 'Отображает детали организации',
-     # 'route': 'routes.organization_details',
-     },
-    {'path': '/contracts/add',
-     'title': 'Добавление нового контракта',
-     'route': 'routes.add_contract'
-     },
-    {'path': '/contracts/<int:contract_id>',
-     'title': 'Отображает детали контракта',
-     },
-    {'path': '/auth/register', 'title': 'Регистрация нового пользователя', 'route': 'auth.register'},
-    {'path': '/auth/login', 'title': 'Войти в систему', 'route': 'auth.login'}
+    {'title': 'Добавить пользователя', 'route': 'users.add_user'},
+    # {'title': 'Детали пользователя', 'route': 'users.user_details'},
+    {'title': 'Добавить заявителя', 'route': 'applicants.add_applicant'},
+    # {'title': 'Детали заявителя', 'route': 'applicants.applicant_details'},
+    {'title': 'Добавить организацию', 'route': 'routes.add_organization'}, # Добавлен route
+    # {'title': 'Детали организации', 'route': 'organizations.organization_details'}, # Добавлен route
+    {'title': 'Добавить контракт', 'route': 'routes.add_contract'}, # Добавлен route
+    # {'title': 'Детали контракта', 'route': 'contracts.contract_details'}, # Добавлен route
+    {'title': 'Регистрация', 'route': 'auth.register'},
+    {'title': 'Вход', 'route': 'auth.login'},
+    # {'title': 'Выход', 'route': 'auth.logout'}
 ]
 
 
 @routes_bp.route('/')
+@login_required
 def index():
+    # users = User.query.all()  # Или другой запрос, если нужны не все пользователи
+    # applicants = Applicant.query.all()
+    # organizations = Organization.query.all()
+    # contracts = Contract.query.all()
     return render_template('index.html', routes=ROUTES_INFO)
 
 
 @routes_bp.route('/contracts/add', methods=['GET', 'POST'])
+@login_required
 def add_contract():
     form = AddContractForm()
 
@@ -93,13 +78,14 @@ def add_contract():
 
 
 @routes_bp.route('/contracts/<int:contract_id>')
+@login_required
 def contract_details(contract_id):
     contract = Contract.query.get_or_404(contract_id)
     return render_template('contract_details.html', contract=contract)
 
 
 @routes_bp.route('/organizations/add', methods=['GET', 'POST'])
-# @login_required
+@login_required
 def add_organization():
     form = OrganizationAddForm()
 
@@ -142,7 +128,7 @@ def add_organization():
 
 
 @routes_bp.route('/organizations/<int:organization_id>')
-# @login_required
+@login_required
 def organization_details(organization_id):
     organization = Organization.query.get_or_404(organization_id)
     return render_template('organization_details.html',

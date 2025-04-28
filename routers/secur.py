@@ -21,7 +21,6 @@ from flask_login import (login_user,
                          current_user)
 
 auth_bp = Blueprint('auth', __name__)  # Создаем blueprint
-logout_bp = Blueprint('logout', __name__)  # Создаем blueprint
 
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
@@ -85,8 +84,11 @@ def login():
     return render_template('login.html', title='Авторизация', form=form)
 
 
-@logout_bp.route('/logout')
+@auth_bp.route('/logout')
 # @login_required  # Защищаем роут logout
 def logout():
+    form = LoginForm()
     logout_user()
-    return redirect(url_for('routes.index'))  # Или другой роут главной страницы
+    return render_template('login.html',
+                           title='Авторизация',
+                           form=form)

@@ -1,111 +1,118 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Информация о заявителе</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
-    {# Добавьте jQuery #}
-    <script>
-        $(document).ready(function () {
-            $("#toggleVizits").click(function () {
-                $("#vizits").toggle();
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <title>Информация о заявителе</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+        <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+        {# Добавьте jQuery #}
+        <script>
+            $(document).ready(function () {
+                $("#toggleVizits").click(function () {
+                    $("#vizits").toggle();
+                });
             });
-        });
-    </script>
-</head>
-<body>
+        </script>
+    </head>
+    <body>
 
-<h1>Информация о заявителе</h1>
+    <h1>Информация о заявителе</h1>
 
-<dl>
-    <dt>ID:</dt>
-    <dd>{{ applicant.id }}</dd>
-    <dt>Имя:</dt>
-    <dd>{{ applicant.first_name }}</dd>
-    <dt>Фамилия:</dt>
-    <dd>{{ applicant.last_name }}</dd>
-    <dt>Отчество:</dt>
-    <dd>{{ applicant.middle_name or 'Не указано' }}</dd>
-    <dt>Номер медицинской книжки:</dt>
-    <dd>{{ applicant.medbook_number }}</dd>
-    <dt>СНИЛС:</dt>
-    <dd>{{ applicant.snils_number }}</dd>
-    <dt>Номер паспорта:</dt>
-    <dd>{{ applicant.passport_number or 'Не указано' }}</dd>
-    <dt>Дата рождения:</dt>
-    <dd>{{ applicant.birth_date.strftime('%d.%m.%Y') }}</dd>
-    {# Единый формат даты #}
-    <dt>Адрес регистрации:</dt>
-    <dd>{{ applicant.registration_address or 'Не указано' }}</dd>
-    <dt>Адрес проживания:</dt>
-    <dd>{{ applicant.residence_address or 'Не указано' }}</dd>
-    <dt>Номер телефона:</dt>
-    <dd>{{ applicant.phone_number or 'Не указано' }}</dd>
-    <dt>Email:</dt>
-    <dd>{{ applicant.email or 'Не указано' }}</dd>
-    <dt>Редактировал:</dt>
-    <dd>
-        {% if applicant.edited_by %}
-            {{ applicant.edited_by.last_name }} {{ applicant.edited_by.first_name }} (ID: {{ applicant.edited_by.id }})
-        {% else %}
-            Не указано
-        {% endif %}
-    </dd>
-    <dt>Время редактирования:</dt>
-    <dd>{{ applicant.edited_time.strftime('%d.%m.%Y %H:%M:%S') if applicant.edited_time else 'Не указано' }}</dd>
-    <dt>Редактируется сейчас:</dt>
-    <dd>{{ 'Да' if applicant.is_editing_now else 'Нет' }}</dd>
-    <dt>Редактирует:</dt>
-    <dd>
-        {% if applicant.editing_by %}
-            {{ applicant.editing_by.last_name }} {{ applicant.editing_by.first_name }} (ID:
-            {{ applicant.editing_by.id }})
-        {% else %}
-            Никто
-        {% endif %}
-    </dd>
-    <dt>Начало редактирования:</dt>
-    <dd>{{ applicant.editing_started_at.strftime('%d.%m.%Y %H:%M:%S') if applicant.editing_started_at else 'Не указано' }}</dd>
-</dl>
+    <dl>
+        <dt>ID:</dt>
+        <dd>{{ applicant.id }}</dd>
+        <dt>Имя:</dt>
+        <dd>{{ applicant.first_name }}</dd>
+        <dt>Фамилия:</dt>
+        <dd>{{ applicant.last_name }}</dd>
+        <dt>Отчество:</dt>
+        <dd>{{ applicant.middle_name or 'Не указано' }}</dd>
+        <dt>Номер медицинской книжки:</dt>
+        <dd>{{ applicant.medbook_number }}</dd>
+        <dt>СНИЛС:</dt>
+        <dd>{{ applicant.snils_number }}</dd>
+        <dt>Номер паспорта:</dt>
+        <dd>{{ applicant.passport_number or 'Не указано' }}</dd>
+        <dt>Дата рождения:</dt>
+        <dd>{{ applicant.birth_date.strftime('%d.%m.%Y') }}</dd>
+        {# Единый формат даты #}
+        <dt>Адрес регистрации:</dt>
+        <dd>{{ applicant.registration_address or 'Не указано' }}</dd>
+        <dt>Адрес проживания:</dt>
+        <dd>{{ applicant.residence_address or 'Не указано' }}</dd>
+        <dt>Номер телефона:</dt>
+        <dd>{{ applicant.phone_number or 'Не указано' }}</dd>
+        <dt>Email:</dt>
+        <dd>{{ applicant.email or 'Не указано' }}</dd>
+        <dt>Редактировал:</dt>
+        <dd>
+            {% if applicant.edited_by %}
+                {{ applicant.edited_by.last_name }} {{ applicant.edited_by.first_name }} (ID:
+                {{ applicant.edited_by.id }})
+            {% else %}
+                Не указано
+            {% endif %}
+        </dd>
+        <dt>Время редактирования:</dt>
+        <dd>{{ applicant.edited_time.strftime('%d.%m.%Y %H:%M:%S') if applicant.edited_time else 'Не указано' }}</dd>
+        <dt>Редактируется сейчас:</dt>
+        <dd>{{ 'Да' if applicant.is_editing_now else 'Нет' }}</dd>
+        <dt>Редактирует:</dt>
+        <dd>
+            {% if applicant.editing_by %}
+                {{ applicant.editing_by.last_name }} {{ applicant.editing_by.first_name }} (ID:
+                {{ applicant.editing_by.id }})
+            {% else %}
+                Никто
+            {% endif %}
+        </dd>
+        <dt>Начало редактирования:</dt>
+        <dd>{{ applicant.editing_started_at.strftime('%d.%m.%Y %H:%M:%S') if applicant.editing_started_at else 'Не указано' }}</dd>
+    </dl>
 
 
-{#<a href="{{ url_for('routes_bp.edit_applicant', applicant_id=applicant.id) }}">Редактировать</a> <br> {# Разкомментировано #}
+    {#<a href="{{ url_for('routes_bp.edit_applicant', applicant_id=applicant.id) }}">Редактировать</a> <br> {# Разкомментировано #}
 
-<h2>Визиты</h2>
-<button id="toggleVizits">Показать/Скрыть визиты</button>
-{# Кнопка для показа/скрытия визитов #}
+    <h2>Визиты</h2>
+    <button id="toggleVizits">Показать/Скрыть визиты</button>
+    {# Кнопка для показа/скрытия визитов #}
 
-<div id="vizits" style="display: none;"> {# Визиты скрыты по умолчанию #}
+    <div id="vizits" style="display: none;"> {# Визиты скрыты по умолчанию #}
+        <ul>
+            {% for vizit in applicant.vizits %}
+                <li>
+                    Дата создания: {{ vizit.created_at.strftime('%d.%m.%Y') }} <br>
+                    Контингент: {{ vizit.contingent.name }} <br>
+                    Тип аттестации: {{ vizit.attestation_type.name }} <br>
+                    Сфера деятельности: {{ vizit.work_field.name }} <br>
+                    Тип заявителя: {{ vizit.applicant_type.name }} <br>
+                    Контракты:
+                    <ul>
+                        {% for contract in vizit.contracts %}
+                            <li>
+                                <a href="{{ url_for('contract_details', contract_id=contract.id) }}">{{ contract.number }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+
+                </li>
+
+            {% endfor %}
+        </ul>
+    </div>
+
+    <h2>Контракты</h2>
     <ul>
-        {% for vizit in applicant.vizits %}
-            <li>
-                Дата создания: {{ vizit.created_at.strftime('%d.%m.%Y') }} <br>
-                Контингент: {{ vizit.contingent.name }} <br>
-                Тип аттестации: {{ vizit.attestation_type.name }} <br>
-                Сфера деятельности: {{ vizit.work_field.name }} <br>
-                Тип заявителя: {{ vizit.applicant_type.name }} <br>
-                Контракты:
-                <ul>
-                    {% for contract in vizit.contracts %}
-                        <li>
-                            <a href="{{ url_for('contract_details', contract_id=contract.id) }}">{{ contract.number }}</a>
-                        </li>
-                    {% endfor %}
-                </ul>
-
-            </li>
-
+        {% for contract in applicant.contracts %}
+            <li><a href="{{ url_for('contract_details', contract_id=contract.id) }}">{{ contract.number }}</a></li>
         {% endfor %}
     </ul>
-</div>
 
-<h2>Контракты</h2>
-<ul>
-    {% for contract in applicant.contracts %}
-        <li><a href="{{ url_for('contract_details', contract_id=contract.id) }}">{{ contract.number }}</a></li>
-    {% endfor %}
-</ul>
+    </body>
+    </html>
 
-</body>
-</html>
+{% endblock %}

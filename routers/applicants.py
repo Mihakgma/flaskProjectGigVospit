@@ -4,6 +4,7 @@ from flask import (Blueprint,
                    redirect,
                    url_for,
                    flash)
+from flask_login import login_required
 
 from models.models import (Applicant,
                            Vizit)
@@ -18,6 +19,7 @@ applicants_bp = Blueprint('applicants', __name__)  # Создаем blueprint
 
 
 @applicants_bp.route('/add', methods=['GET', 'POST'])
+@login_required
 def add_applicant():
     applicant_form = AddApplicantForm()
     vizit_form = VizitForm()
@@ -57,10 +59,13 @@ def add_applicant():
             for error in errors:
                 flash(f"Ошибка в поле '{applicant_form[field].label.text}': {error}", 'danger')
 
-    return render_template('add_applicant.html', form=applicant_form, vizit_form=vizit_form)
+    return render_template('add_applicant.html',
+                           form=applicant_form,
+                           vizit_form=vizit_form)
 
 
-@applicants_bp.route('/<int:applicant_id>')
+@applicants_bp.route('/details/<int:applicant_id>')
+@login_required
 def applicant_details(applicant_id):
     applicant = Applicant.query.get_or_404(applicant_id)
     return render_template('applicant_details.html',
