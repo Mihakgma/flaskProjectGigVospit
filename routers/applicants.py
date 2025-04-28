@@ -6,6 +6,7 @@ from flask import (Blueprint,
                    flash)
 from flask_login import login_required
 
+from functions.access_control import role_required
 from models.models import (Applicant,
                            Vizit)
 from database import db
@@ -20,6 +21,7 @@ applicants_bp = Blueprint('applicants', __name__)  # Создаем blueprint
 
 @applicants_bp.route('/add', methods=['GET', 'POST'])
 @login_required
+@role_required('admin', 'moder', 'oper', )
 def add_applicant():
     applicant_form = AddApplicantForm()
     vizit_form = VizitForm()

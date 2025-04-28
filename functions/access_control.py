@@ -1,26 +1,27 @@
-# from functools import wraps
-# from flask import redirect, session, flash, url_for
 import functools
-from flask import abort
+from flask import abort, make_response, jsonify
 from flask_login import current_user
 
 
-# Сам декоратор проверки доступа
 def role_required(*role_names):
     def decorator(original_route):
         @functools.wraps(original_route)
         def decorated_route(*args, **kwargs):
             if not current_user.is_authenticated:
-                abort(401)
-            print(current_user.roles.__dict__.keys())
+                abort(401, description="Пользователь не аутентифицирован")
 
-            user_roles = set(current_user.roles.codes)
-            missing_roles = set(role_names) - user_roles
+            # Получаем роли пользователя
+            roles = current_user.roles
+            # Набор существующих ролей пользователя
+            user_roles = {role.code for role in roles}
 
-            if missing_roles:
-                abort(401, message="Missing role(s): {}".format(', '.join(missing_roles)))
+            # Допускаем пользователя, если у него есть хотя бы одна нужная роль
+            if any(role_name in user_roles for role_name in role_names):
+                return original_route(*args, **kwargs)
 
-            return original_route(*args, **kwargs)
+            # Формируем сообщение об отсутствии необходимых прав
+            response_message = f"ACCESS DENIED - REQUIRED ANY OF THESE ROLES: {', '.join(role_names)}"
+            abort(make_response(jsonify(message=response_message), 401))
 
         return decorated_route
 

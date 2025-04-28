@@ -5,6 +5,7 @@ from flask import (Blueprint,
                    flash)
 from flask_login import login_required
 
+from functions.access_control import role_required
 from models.models import (User,
                            Role)
 from database import db
@@ -25,7 +26,7 @@ def users():
 
 @users_bp.route('/add', methods=['GET', 'POST'])
 @login_required
-# @role_required(['admin'])
+@role_required('admin', )
 def add_user():
     form = UserAddForm()
     form.populate_role_choices()
@@ -97,6 +98,7 @@ def add_user():
 @users_bp.route('/details/<int:user_id>/',
                 methods=['GET'])
 @login_required
+@role_required('admin', 'moder', 'oper', )
 def user_details(user_id):
     user = User.query.get_or_404(user_id)
     return render_template('user_details.html', user=user)
