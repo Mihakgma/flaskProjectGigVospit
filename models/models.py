@@ -49,7 +49,7 @@ class User(db.Model, UserMixin):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=False)  # Пароль
-    phone = db.Column(db.String(20), nullable=True)  # Телефон
+    phone = db.Column(db.String(11), nullable=True)  # Телефон
     dept_id = db.Column(db.Integer, ForeignKey('department.id'), nullable=False)  # ID отдела
     status_id = db.Column(db.Integer, ForeignKey('status.id'), nullable=False)  # ID статуса
     department = db.relationship('Department', backref='users', lazy='joined')
@@ -162,7 +162,7 @@ class Applicant(db.Model):
     birth_date = db.Column(DateTime, nullable=False)
     registration_address = db.Column(String(200), nullable=True)
     residence_address = db.Column(String(200), nullable=True)
-    phone_number = db.Column(String(20), nullable=True)
+    phone_number = db.Column(String(11), nullable=True)
     email = db.Column(String(120), nullable=True)
     edited_by_user_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
     edited_time = db.Column(DateTime, nullable=True)
