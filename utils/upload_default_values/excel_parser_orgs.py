@@ -1,6 +1,6 @@
-from utils.upload_default_values.parser_functs import (excel_to_data_frame_parser,
-                                                       unique_rows_with_max_columns,
-                                                       save_dataframe_to_json)
+from functions.parser_functs import (excel_to_data_frame_parser,
+                                     unique_rows_with_max_columns,
+                                     save_dataframe_to_json)
 
 if __name__ == '__main__':
     file_path = "../Сведения о договорах ОГВиА оригинал!!!.xls"

@@ -63,8 +63,12 @@ def unique_rows_with_max_columns(df,
                                  filter_upon_colname,
                                  sort_by_colname):
     # Оставляем уникальные значения по указанной колонке
-    filtered_df = df.drop_duplicates(subset=filter_upon_colname, keep=False)
+    filtered_df = df.drop_duplicates(subset=filter_upon_colname, keep=False).copy()
     filtered_df.reset_index(drop=True, inplace=True)
+    try:
+        filtered_df.drop(columns='index', inplace=True)
+    except BaseException as e:
+        print(e, '\nprobably index column has been dropped before...')
 
     # Создаем новую колонку 'num_filled', содержащую число непустых значений в каждой строке
     filtered_df['num_filled'] = filtered_df.count(axis=1)
@@ -100,3 +104,63 @@ def save_dataframe_to_json(df, file_path=None):
         json.dump(result_dict, f, ensure_ascii=False, indent=4)
 
     print(f"Данные успешно сохранены в файл '{file_path}'")
+
+
+def transform_applicants_data(df_in: pd.DataFrame,
+                              fio_colname: str,
+                              columns_info: dict,
+                              *args,
+                              **kwargs) -> pd.DataFrame:
+    """
+    Трансформирует DataFrame заявителей, извлекая и обрабатывая данные ФИО,
+    номера телефонов, даты и другие поля.
+
+    Args:
+        df_in: Исходный DataFrame.
+        fio_colname: Название столбца с ФИО.
+        columns_info: Словарь соответствия названий столбцов.
+        *args: Дополнительные функции обработки (phone_number_fix, date_fix, names_fix, elmk_snils_fix).
+        **kwargs: Дополнительные аргументы для функций обработки.
+
+    Returns:
+        Трансформированный DataFrame.
+    """
+
+    df_out = pd.DataFrame(columns=columns_info.values())
+
+    phone_number_fix = kwargs.get("phone_number_fix", lambda x: x)
+    date_fix = kwargs.get("date_fix", lambda x: x)
+    names_fix = kwargs.get("names_fix", lambda x: x)
+    elmk_snils_fix = kwargs.get("elmk_snils_fix", lambda x: x)
+
+    for index, row in df_in.iterrows():
+        new_row = {}
+        for in_col, out_col in columns_info.items():
+            if out_col in ('first_name', 'middle_name', 'last_name'):  # Имя, Отчество, Фамилия
+                names = row.get(fio_colname).split()
+                if len(names) > 1:
+                    last_name = names[0] if len(names) > 0 else None
+                    first_name = names[1] if len(names) > 1 else None
+                    middle_name = names[2] if len(names) > 2 else None
+                new_row['first_name'] = names_fix(first_name) if first_name is not None else first_name
+                new_row['middle_name'] = names_fix(middle_name) if middle_name is not None else middle_name
+                new_row['last_name'] = names_fix(last_name) if last_name is not None else last_name
+
+            elif out_col == 'phone_number':  # Телефон
+                new_row[out_col] = phone_number_fix(row.get(in_col))
+
+            elif out_col == 'birth_date':  # Дата рождения
+                # new_row[out_col] = date_fix(row.get(in_col))
+                new_row[out_col] = row.get(in_col)
+
+            elif out_col in ('medbook_number', 'snils_number'):
+                new_row[out_col] = elmk_snils_fix(row.get(in_col))
+            elif out_col == 'additional_info':
+                new_row[out_col] = row.get(in_col)
+
+            else:  # Все остальные поля
+                new_row[out_col] = row.get(in_col)
+
+        df_out = pd.concat([df_out, pd.DataFrame([new_row])], ignore_index=True)
+
+    return df_out
