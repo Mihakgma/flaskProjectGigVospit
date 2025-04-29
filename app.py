@@ -8,7 +8,8 @@ from routers import (auth_bp,
                      routes_bp,
                      users_bp,
                      applicants_bp,
-                     contracts_bp)  # Импортируем blueprint
+                     contracts_bp,
+                     orgs_bp)  # Импортируем blueprint
 
 # from flask_script import Manager
 from flask_login import LoginManager
@@ -36,6 +37,7 @@ def create_app():
     app.register_blueprint(users_bp, url_prefix='/users')
     app.register_blueprint(applicants_bp, url_prefix='/applicants')
     app.register_blueprint(contracts_bp, url_prefix='/contracts')
+    app.register_blueprint(orgs_bp, url_prefix='/organizations')
     app.register_blueprint(routes_bp, url_prefix='/')
     # csrf = CSRFProtect()
     # csrf.init_app(app)  # Инициализация CSRFProtect
@@ -46,6 +48,6 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    # serve(app, host='0.0.0.0', port=8080)
+    serve(app, host='0.0.0.0', port=8080)
     # ДЛЯ ОТЛАДКИ ПРИЛОЖЕНИЯ ЗАПУСКАЕМ В РЕЖИМЕ ДЕБАГГИНГА!!!
-    app.run(debug=True)
+    # app.run(debug=True)
