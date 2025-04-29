@@ -184,3 +184,5 @@ instance/
 organization.json
 applicant.json
 user.json
+vizit.json
+applicant_vizit.json
