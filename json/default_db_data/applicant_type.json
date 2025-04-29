@@ -13,5 +13,10 @@
     "name": "ФЛ",
     "code": "ind",
     "additional_info": "физическое лицо"
+  },
+  "4": {
+    "name": "НД",
+    "code": "nan",
+    "additional_info": "данные не были получены"
   }
 }
