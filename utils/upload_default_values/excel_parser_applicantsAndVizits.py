@@ -2,7 +2,6 @@ from functions.parser_functs import (excel_to_data_frame_parser,
                                      unique_rows_with_max_columns,
                                      transform_applicants_data, save_dataframe_to_json)
 from functions.data_fix import (phone_number_fix,
-                                date_fix,
                                 names_fix,
                                 elmk_snils_fix)
 

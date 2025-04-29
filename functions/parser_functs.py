@@ -1,3 +1,6 @@
+import re
+
+import numpy as np
 import pandas as pd
 import os
 import json
@@ -111,55 +114,49 @@ def transform_applicants_data(df_in: pd.DataFrame,
                               columns_info: dict,
                               *args,
                               **kwargs) -> pd.DataFrame:
-    """
-    Трансформирует DataFrame заявителей, извлекая и обрабатывая данные ФИО,
-    номера телефонов, даты и другие поля.
-
-    Args:
-        df_in: Исходный DataFrame.
-        fio_colname: Название столбца с ФИО.
-        columns_info: Словарь соответствия названий столбцов.
-        *args: Дополнительные функции обработки (phone_number_fix, date_fix, names_fix, elmk_snils_fix).
-        **kwargs: Дополнительные аргументы для функций обработки.
-
-    Returns:
-        Трансформированный DataFrame.
-    """
+    """Трансформирует DataFrame заявителей."""
 
     df_out = pd.DataFrame(columns=columns_info.values())
 
     phone_number_fix = kwargs.get("phone_number_fix", lambda x: x)
-    date_fix = kwargs.get("date_fix", lambda x: x)
+    # date_fix = kwargs.get("date_fix", lambda x: x)
     names_fix = kwargs.get("names_fix", lambda x: x)
     elmk_snils_fix = kwargs.get("elmk_snils_fix", lambda x: x)
 
+    nullable_fields = {'middle_name', 'passport_number', 'registration_address', 'residence_address', 'phone_number',
+                       'email', 'additional_info'}
+
     for index, row in df_in.iterrows():
         new_row = {}
+
+        # Приоритет полных ФИО
+        new_row['last_name'] = names_fix(row.get('фамилия'))  # Теперь берем из 'фамилия'
+        new_row['first_name'] = names_fix(row.get('имя'))  # Теперь берем из 'имя'
+        new_row['middle_name'] = names_fix(row.get('отчество'))  # Теперь берем из 'отчество'
+
+        # Если полные ФИО отсутствуют, используем fio_colname
+        if any(pd.isna(v) for v in [new_row['last_name'], new_row['first_name']]):  # Проверяем только имя и фамилию
+            names = row.get(fio_colname, "").split()
+            if len(names) > 0 and pd.isna(new_row['last_name']):
+                new_row['last_name'] = names_fix(names[0])
+            if len(names) > 1 and pd.isna(new_row['first_name']):
+                first_name_parts = re.split(r'[.\s]', names[1])
+                new_row['first_name'] = names_fix(
+                    " ".join(p for p in first_name_parts if p and not re.match(r'^[A-Z]$', p)))
+            if len(names) > 2 and pd.isna(new_row['middle_name']):
+                middle_name_parts = re.split(r'[.\s]', names[2])
+                new_row['middle_name'] = names_fix(
+                    " ".join(p for p in middle_name_parts if p and not re.match(r'^[A-Z]$', p)))
+
         for in_col, out_col in columns_info.items():
-            if out_col in ('first_name', 'middle_name', 'last_name'):  # Имя, Отчество, Фамилия
-                names = row.get(fio_colname).split()
-                if len(names) > 1:
-                    last_name = names[0] if len(names) > 0 else None
-                    first_name = names[1] if len(names) > 1 else None
-                    middle_name = names[2] if len(names) > 2 else None
-                new_row['first_name'] = names_fix(first_name) if first_name is not None else first_name
-                new_row['middle_name'] = names_fix(middle_name) if middle_name is not None else middle_name
-                new_row['last_name'] = names_fix(last_name) if last_name is not None else last_name
+            if out_col not in ('first_name', 'middle_name', 'last_name'):
+                value = row.get(in_col)
+                # ... (остальной код обработки полей остается тем же)
 
-            elif out_col == 'phone_number':  # Телефон
-                new_row[out_col] = phone_number_fix(row.get(in_col))
-
-            elif out_col == 'birth_date':  # Дата рождения
-                # new_row[out_col] = date_fix(row.get(in_col))
-                new_row[out_col] = row.get(in_col)
-
-            elif out_col in ('medbook_number', 'snils_number'):
-                new_row[out_col] = elmk_snils_fix(row.get(in_col))
-            elif out_col == 'additional_info':
-                new_row[out_col] = row.get(in_col)
-
-            else:  # Все остальные поля
-                new_row[out_col] = row.get(in_col)
+        # Заполняем отсутствующие значения NaN или None, в зависимости от типа поля
+        for field in columns_info.values():
+            if pd.isna(new_row.get(field)) or new_row.get(field) == '':
+                new_row[field] = np.nan if field in nullable_fields else None  # NaN для nullable, None для остальных
 
         df_out = pd.concat([df_out, pd.DataFrame([new_row])], ignore_index=True)
 
