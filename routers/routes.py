@@ -21,6 +21,6 @@ ROUTES_INFO = [
 
 
 @routes_bp.route('/')
-@login_required
+# @login_required
 def index():
     return render_template('index.html', routes=ROUTES_INFO)
