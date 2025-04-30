@@ -1,11 +1,12 @@
 from models.models import (Role, Status, Department, ApplicantType,
                            Contingent, WorkField, AttestationType,
-                           Organization)
+                           Organization, Applicant)
 
 import json
 import os
 import sys
 from pathlib import Path
+from datetime import datetime
 
 # Получаем абсолютный путь к директории проекта
 project_dir = Path(__file__).resolve().parent.parent
@@ -24,7 +25,8 @@ def load_initial_data(data_dir, db):
         "status.json": Status,
         "department.json": Department,
         "role.json": Role,
-        "organization.json": Organization
+        "organization.json": Organization,
+        "applicant.json": Applicant,
     }
 
     for filename, Model in model_map.items():
@@ -37,6 +39,9 @@ def load_initial_data(data_dir, db):
                     try:
                         # При необходимости, можно привести id к int: int(id)
                         instance = Model(**entry)
+                        if instance.__class__ == Applicant:
+                            instance.birth_date = datetime.strptime(instance.birth_date,
+                                                                    '%d.%m.%Y')
                         db.session.add(instance)
                         db.session.commit()
                     except Exception as e:
