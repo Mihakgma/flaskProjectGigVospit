@@ -41,11 +41,11 @@ def load_initial_data(data_dir, db):
                     try:
                         # При необходимости, можно привести id к int: int(id)
                         instance = Model(**entry)
-                        if instance.__class__ == Applicant:
+                        if isinstance(instance, Applicant):
                             instance.birth_date = datetime.strptime(instance.birth_date,
                                                                     '%d.%m.%Y')
-                        elif instance.__class__ == Vizit:
-                            instance.created_at = datetime.strptime(instance.birth_date,
+                        elif isinstance(instance, Vizit):
+                            instance.created_at = datetime.strptime(instance.created_at,
                                                                     '%d.%m.%Y')
                         db.session.add(instance)
                         db.session.commit()
