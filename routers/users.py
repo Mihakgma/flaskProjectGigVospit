@@ -3,7 +3,7 @@ from flask import (Blueprint,
                    redirect,
                    url_for,
                    flash)
-# from flask_login import login_required
+from flask_login import login_required
 
 from functions.access_control import role_required
 from models.models import (User,
@@ -15,17 +15,17 @@ from sqlalchemy.exc import IntegrityError
 
 from forms.forms import UserAddForm
 
-users_bp = Blueprint('users', __name__)  # Создаем blueprint
+users_bp = Blueprint('users', __name__)
 
 
 @users_bp.route('/users')
+@login_required
 def users():
     users = User.query.all()
     return render_template('list.html', users=users)
 
 
 @users_bp.route('/add', methods=['GET', 'POST'])
-# @login_required
 @role_required('admin', )
 def add_user():
     form = UserAddForm()
@@ -95,7 +95,7 @@ def add_user():
 
 @users_bp.route('/details/<int:user_id>/',
                 methods=['GET'])
-# @login_required
+@login_required
 @role_required('admin', 'moder', 'oper', )
 def user_details(user_id):
     user = User.query.get_or_404(user_id)

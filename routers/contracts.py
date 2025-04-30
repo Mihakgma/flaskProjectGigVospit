@@ -16,6 +16,7 @@ contracts_bp = Blueprint('contracts', __name__)  # Создаем blueprint
 
 
 @contracts_bp.route('/add', methods=['GET', 'POST'])
+@login_required
 @role_required('admin', 'moder', 'oper', )
 def add_contract():
     form = AddContractForm()
@@ -51,6 +52,7 @@ def add_contract():
 
 @contracts_bp.route('/details/<int:contract_id>')
 @login_required
+@role_required('anyone')
 def contract_details(contract_id):
     contract = Contract.query.get_or_404(contract_id)
     return render_template('contract_details.html', contract=contract)

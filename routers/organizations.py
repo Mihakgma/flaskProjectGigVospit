@@ -17,6 +17,7 @@ orgs_bp = Blueprint('organizations', __name__)  # Создаем blueprint
 
 
 @orgs_bp.route('/add', methods=['GET', 'POST'])
+@login_required
 @role_required('admin', 'moder', 'oper', )
 def add_organization():
     form = OrganizationAddForm()
@@ -61,6 +62,7 @@ def add_organization():
 
 @orgs_bp.route('/details/<int:organization_id>')
 @login_required
+@role_required('anyone')
 def organization_details(organization_id):
     organization = Organization.query.get_or_404(organization_id)
     return render_template('organization_details.html',

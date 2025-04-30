@@ -68,6 +68,7 @@ def add_applicant():
 
 @applicants_bp.route('/details/<int:applicant_id>')
 @login_required
+@role_required('anyone')
 def applicant_details(applicant_id):
     applicant = Applicant.query.get_or_404(applicant_id)
     return render_template('applicant_details.html',
