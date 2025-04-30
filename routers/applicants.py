@@ -16,6 +16,7 @@ from datetime import timezone
 from forms.forms import (AddApplicantForm,
                          VizitForm, ApplicantSearchForm)
 from sqlalchemy import or_, and_
+from sqlalchemy.sql.expression import func
 
 applicants_bp = Blueprint('applicants', __name__)  # Создаем blueprint
 
@@ -85,6 +86,7 @@ def search_applicants():
     applicants = []
 
     if request.method == 'POST' and form.validate_on_submit():
+        search_criteria = {}
         if not any(field.data for field in form if field.name not in ['csrf_token', 'submit', 'last_name_exact']):
             flash('Заполните хотя бы одно поле для поиска', 'error')
             return render_template('search_applicants.html', form=form, applicants=applicants)
@@ -105,6 +107,30 @@ def search_applicants():
         if form.last_visit_start.data and form.last_visit_end.data is None:
             flash('Заполните конечную дату последнего визита', 'error')
             return render_template('search_applicants.html', form=form, applicants=applicants)
+
+        if form.last_name.data:
+            search_criteria['last_name'] = func.lower(form.last_name.data).strip()  # Добавляем lower() и strip()
+
+        if form.registration_address.data:
+            search_criteria['registration_address'] = func.lower(
+                form.registration_address.data).strip()  # Добавляем lower() и strip()
+
+        if form.residence_address.data:
+            search_criteria['residence_address'] = func.lower(
+                form.residence_address.data).strip()  # Добавляем lower() и strip()
+
+        if 'snils_part1' in request.form:
+            snils_parts = [request.form.get(f'snils_part{i}') for i in range(1, 5)]
+            snils = ''.join(filter(None, snils_parts))  # Объединяем части СНИЛС, удаляя пустые строки
+            if snils:  # Если СНИЛС введен
+                search_criteria['snils_number'] = int(snils)
+
+        if 'medbook_part1' in request.form:
+            medbook_parts = [request.form.get(f'medbook_part{i}') for i in range(1, 5)]
+            medbook = ''.join(filter(None, medbook_parts))  # Объединяем части номера медкнижки
+            if medbook:
+                search_criteria['medbook_number'] = int(medbook)
+
         search_criteria = {}
 
         if form.last_name.data:
@@ -130,6 +156,19 @@ def search_applicants():
                 Vizit.applicant_id).subquery()
 
             filters = []
+            for field_name, value in search_criteria.items():
+                if field_name == 'last_name':
+                    filters.append(func.upper(Applicant.last_name).contains(value))  # contains + lower() для фамилии
+                elif field_name == 'registration_address':
+                    filters.append(func.lower(Applicant.registration_address).contains(
+                        value))  # contains + lower() для адреса регистрации
+                elif field_name == 'residence_address':
+                    filters.append(func.lower(Applicant.residence_address).contains(
+                        value))  # contains + lower() для адреса проживания
+                elif field_name == 'last_name_exact':
+                    filters.append(func.lower(Applicant.last_name) == value)
+                else:
+                    filters.append(getattr(Applicant, field_name) == value)
             if form.last_visit_start.data:
                 filters.append(subquery.c.last_visit >= form.last_visit_start.data)
             if form.last_visit_end.data:

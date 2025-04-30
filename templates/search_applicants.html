@@ -13,31 +13,64 @@
     {% endwith %}
     <h1>Поиск заявителей</h1>
 
-    <form method="POST">
+    <form method="POST" id="search_form">
         {{ form.csrf_token }}
+
         <div>
             {{ form.last_name.label }} {{ form.last_name }}
             {{ form.last_name_exact }} {{ form.last_name_exact.label }}
         </div>
-        <div>{{ form.snils_number.label }} {{ form.snils_number }}</div>
-        <div>{{ form.medbook_number.label }} {{ form.medbook_number }}</div>
+        <hr>
+
+
+        <div>
+            {{ form.snils_number.label }}
+            <input type="text" name="snils_part1" maxlength="3" pattern="[0-9]*"> -
+            <input type="text" name="snils_part2" maxlength="3" pattern="[0-9]*"> -
+            <input type="text" name="snils_part3" maxlength="3" pattern="[0-9]*"> -
+            <input type="text" name="snils_part4" maxlength="2" pattern="[0-9]*">
+        </div>
+        <hr>
+
+
+        <div>
+            {{ form.medbook_number.label }}
+            <input type="text" name="medbook_part1" maxlength="2" pattern="[0-9]*"> -
+            <input type="text" name="medbook_part2" maxlength="2" pattern="[0-9]*"> -
+            <input type="text" name="medbook_part3" maxlength="6" pattern="[0-9]*"> -
+            <input type="text" name="medbook_part4" maxlength="2" pattern="[0-9]*">
+
+        </div>
+        <hr>
+
         <div>
             {{ form.birth_date_start.label }} {{ form.birth_date_start }}
             {{ form.birth_date_end.label }} {{ form.birth_date_end }}
         </div>
+        <hr>
         <div>
             {{ form.last_visit_start.label }} {{ form.last_visit_start }}
             {{ form.last_visit_end.label }} {{ form.last_visit_end }}
         </div>
+        <hr>
         <div>{{ form.registration_address.label }} {{ form.registration_address }}</div>
+        <hr>
         <div>{{ form.residence_address.label }} {{ form.residence_address }}</div>
+
+
         {{ form.submit() }}
 
 
-        <div>
-            <button type="reset">Очистить</button>
-        </div>
+        <button type="button" onclick="resetForm()">Очистить</button>
+
+        <script>
+            function resetForm() {
+                document.getElementById("search_form").reset();
+            }
+        </script>
+
     </form>
+
 
     {% if applicants %}
         <h2>Результаты поиска:</h2>
@@ -45,7 +78,7 @@
             {% for applicant in applicants %}
                 <li>
                     <a href="{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}">{{ applicant.full_name }}</a>
-                </li> <!-- Предполагается наличие роута applicant_details -->
+                </li>
             {% endfor %}
         </ul>
     {% endif %}
