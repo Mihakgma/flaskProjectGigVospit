@@ -117,6 +117,7 @@ def transform_applicants_data(df_in: pd.DataFrame,
                               *args,
                               **kwargs) -> pd.DataFrame:
     """Трансформация DataFrame заявителей с упрощенной логикой."""
+    fio_values = df_in[fio_colname].apply(lambda x: "".join([", ", names_fix(x)]))
 
     handlers = {
         'fio': kwargs.get("names_fix", names_fix),
@@ -178,5 +179,7 @@ def transform_applicants_data(df_in: pd.DataFrame,
                        'email',
                        'additional_info']
     df_out[nullable_fields] = df_out[nullable_fields].replace('', np.nan)
+    df_out['additional_info'] = df_out['additional_info'] + fio_values
+
 
     return df_out
