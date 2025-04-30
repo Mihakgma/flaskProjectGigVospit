@@ -5,6 +5,7 @@ from flask import (Blueprint,
                    flash)
 from flask_login import login_required
 
+from functions.access_control import role_required
 from models.models import Organization
 from database import db
 
@@ -16,7 +17,7 @@ orgs_bp = Blueprint('organizations', __name__)  # Создаем blueprint
 
 
 @orgs_bp.route('/add', methods=['GET', 'POST'])
-@login_required
+@role_required('admin', 'moder', 'oper', )
 def add_organization():
     form = OrganizationAddForm()
 

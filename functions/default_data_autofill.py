@@ -72,29 +72,22 @@ def load_initial_data(data_dir, db):
         db.session.rollback()
         print(f"Error linking applicants to visits: {e}")
 
-    # Теперь дополнительно загрузим данные в таблицу связи user_roles
+    # После добавления всех объектов свяжем пользователей и роли
     try:
-        users_file_path = os.path.join(data_dir, "user.json")
-        roles_file_path = os.path.join(data_dir, "role.json")
+        # Перечислим всех пользователей и соответствующие им роли последовательно
+        users = User.query.order_by(User.id.asc()).all()
+        roles = Role.query.order_by(Role.id.asc()).all()
 
-        if os.path.exists(users_file_path) and os.path.exists(roles_file_path):
-            with open(users_file_path, 'r', encoding='utf-8') as uf, \
-                    open(roles_file_path, 'r', encoding='utf-8') as rf:
+        # Присваиваем каждой роли одного пользователя, соблюдая порядок ID
+        for i, user in enumerate(users):
+            if i < len(roles):
+                user.roles.append(roles[i])
 
-                users_data = json.load(uf)
-                roles_data = json.load(rf)
-
-            # Предположим, что каждая роль имеет ассоциацию с одним или несколькими пользователями
-            for user_id, user_entry in users_data.items():
-                for role_id, _ in roles_data.items():  # Проходим по всем доступным ролям
-                    db.session.execute(user_roles.insert(), {"user_id": int(user_id), "role_id": int(role_id)})
-
-        db.session.commit()
-        print("Данные успешно загружены и связаны.")
-
+        db.session.commit()  # Подтверждаем изменения
+        print("Пользователи и роли успешно связаны.")
     except Exception as e:
         db.session.rollback()
-        print(f"Ошибка связывания данных: {e}")
+        print(f"Ошибка связывания пользователей и ролей: {e}")
 
 
 def db_load_data(db, data_dir="initial_data"):
