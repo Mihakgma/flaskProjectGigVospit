@@ -1,4 +1,4 @@
-import re
+# import re
 
 import numpy as np
 import pandas as pd
@@ -188,20 +188,33 @@ def transform_applicants_data(df_in: pd.DataFrame,
                        'email',
                        'additional_info']
     df_out[nullable_fields] = df_out[nullable_fields].replace('', np.nan)
-    # ПОРЯДОК ЗАПИСЕЙ В ДФ ИЗНАЧАЛЬНОЙ НЕ СООТВЕТСВУЕТ ПОРЯДКУ НЕОБХОДИМОМУ!!!
-    # НАДО СМЕРДЖИТЬ 2 ДФ ВМЕСТЕ ТАК, ЧТОБЫ В ИТОГОВОМ ДФ В КОЛОНКЕ 'additional_info'
-    # ХРАНИЛИСЬ СУММЫ ИСХОДНОЙ КОЛОНКИ ИЗ df_out['additional_info'] И temp_df[fio_colname]
-    # ТАКЖЕ НА ВЫХОД ДОЛЖНЫ ПОДАВАТЬСЯ 2 ДФ ВМЕСТО ОДНОГО,
-    # df_out (на выходе переименовать в applicants_df), vizits_df,
-    # в последний ДФ тот же temp_df, только без колонок (дропнуть колонки после всех манипуляций)
-    # fio_colname, snils_colname_df_in.
-    # мерджить ДФ-ы надо по полю snils_colname_df_in - значения одинаковые в обоих дф-ах.
-    # df_out['additional_info'] = df_out['additional_info'] + fio_values
+
     df_applicants = merge_update_df(df_left=df_out,
                                     df_right=temp_df,
                                     update_colname='additional_info',
                                     values_from_colname=fio_colname,
                                     merge_on_colname='snils_number')
+    df_vizits = df_applicants[['passport_number', 'snils_number']].copy()
+    vizit_id_colname = 'applicant_id'
+    vizit_created_colname = 'created_at'
+    vizit_contingent_id_colname = 'contingent_id'
+    vizit_attestation_type_id_colname = 'attestation_type_id'
+    vizit_work_field_id_colname = 'work_field_id'
+    vizit_applicant_type_id_colname = 'applicant_type_id'
+
+    df_vizits = df_vizits.merge(temp_df[['snils_number',
+                                         date_in_colname]],
+                                on='snils_number')
+
+    df_vizits[vizit_id_colname] = [i for i in range(1, df_vizits.shape[0] + 1)]
+    df_vizits = df_vizits.drop(columns=['passport_number'])
+    df_vizits[vizit_created_colname] = df_vizits[date_in_colname]
+    df_vizits = df_vizits.drop(columns=['snils_number'])
+    df_vizits = df_vizits.drop(columns=[date_in_colname])
+    df_vizits[vizit_contingent_id_colname] = [4 for i in range(df_vizits.shape[0])]
+    df_vizits[vizit_attestation_type_id_colname] = [4 for i in range(df_vizits.shape[0])]
+    df_vizits[vizit_work_field_id_colname] = [36 for i in range(df_vizits.shape[0])]
+    df_vizits[vizit_applicant_type_id_colname] = [4 for i in range(df_vizits.shape[0])]
 
 
-    return df_applicants
+    return df_applicants, df_vizits
