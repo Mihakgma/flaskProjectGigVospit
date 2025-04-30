@@ -42,6 +42,7 @@ if __name__ == '__main__':
                                                           first_name_colname = "имя",
                                                           columns_info=applicants_colnames,
                                                           phone_number_fix=phone_number_fix,
+                                                          date_in_colname="Дата поступления",
                                                           # date_fix=date_fix,
                                                           names_fix=names_fix,
                                                           elmk_snils_fix=elmk_snils_fix)

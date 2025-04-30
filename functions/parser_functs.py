@@ -6,6 +6,7 @@ import os
 import json
 
 from functions.data_fix import names_fix, phone_number_fix, elmk_snils_fix
+from functions.merge_update_dfs import merge_update_df
 
 
 def excel_to_data_frame_parser(file: str,
@@ -114,10 +115,18 @@ def save_dataframe_to_json(df, file_path=None):
 def transform_applicants_data(df_in: pd.DataFrame,
                               fio_colname: str,
                               columns_info: dict,
+                              date_in_colname:str,
                               *args,
                               **kwargs) -> pd.DataFrame:
     """Трансформация DataFrame заявителей с упрощенной логикой."""
-    fio_values = df_in[fio_colname].apply(lambda x: "".join([", ", names_fix(x)]))
+    # fio_values = df_in[fio_colname].apply(lambda x: "".join([", ", names_fix(x)]))
+    colnames_temp = [k for (k, v) in columns_info.items()
+                     if v == 'snils_number']
+    snils_colname_df_in = colnames_temp[0]
+    colnames_temp.append(date_in_colname)
+    temp_df = df_in[colnames_temp].copy()
+    temp_df[fio_colname] = df_in[fio_colname].apply(lambda x: "".join([", ", names_fix(x)]))
+    temp_df['snils_number'] = temp_df[snils_colname_df_in].apply(lambda x: elmk_snils_fix(x))
 
     handlers = {
         'fio': kwargs.get("names_fix", names_fix),
@@ -179,7 +188,20 @@ def transform_applicants_data(df_in: pd.DataFrame,
                        'email',
                        'additional_info']
     df_out[nullable_fields] = df_out[nullable_fields].replace('', np.nan)
-    df_out['additional_info'] = df_out['additional_info'] + fio_values
+    # ПОРЯДОК ЗАПИСЕЙ В ДФ ИЗНАЧАЛЬНОЙ НЕ СООТВЕТСВУЕТ ПОРЯДКУ НЕОБХОДИМОМУ!!!
+    # НАДО СМЕРДЖИТЬ 2 ДФ ВМЕСТЕ ТАК, ЧТОБЫ В ИТОГОВОМ ДФ В КОЛОНКЕ 'additional_info'
+    # ХРАНИЛИСЬ СУММЫ ИСХОДНОЙ КОЛОНКИ ИЗ df_out['additional_info'] И temp_df[fio_colname]
+    # ТАКЖЕ НА ВЫХОД ДОЛЖНЫ ПОДАВАТЬСЯ 2 ДФ ВМЕСТО ОДНОГО,
+    # df_out (на выходе переименовать в applicants_df), vizits_df,
+    # в последний ДФ тот же temp_df, только без колонок (дропнуть колонки после всех манипуляций)
+    # fio_colname, snils_colname_df_in.
+    # мерджить ДФ-ы надо по полю snils_colname_df_in - значения одинаковые в обоих дф-ах.
+    # df_out['additional_info'] = df_out['additional_info'] + fio_values
+    df_applicants = merge_update_df(df_left=df_out,
+                                    df_right=temp_df,
+                                    update_colname='additional_info',
+                                    values_from_colname=fio_colname,
+                                    merge_on_colname='snils_number')
 
 
-    return df_out
+    return df_applicants
