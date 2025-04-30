@@ -1,3 +1,5 @@
+import pandas as pd
+
 from functions.parser_functs import (excel_to_data_frame_parser,
                                      unique_rows_with_max_columns,
                                      transform_applicants_data, save_dataframe_to_json)
@@ -46,3 +48,11 @@ if __name__ == '__main__':
                                                          elmk_snils_fix=elmk_snils_fix)
     save_dataframe_to_json(df=df_applicants, file_path='applicant.json')
     save_dataframe_to_json(df=df_vizits, file_path='vizit.json')
+
+    if df_applicants.shape[0] == df_vizits.shape[0]:
+        print("создается таблица связей визитов с заявителями")
+        df_applicants_vizits = pd.DataFrame({
+            'applicant_id' : df_applicants.index + 1,
+            'vizit_id': df_vizits.index + 1,
+        })
+        save_dataframe_to_json(df=df_applicants_vizits, file_path='applicant_vizit.json')

@@ -1,6 +1,6 @@
 from models.models import (Role, Status, Department, ApplicantType,
                            Contingent, WorkField, AttestationType,
-                           Organization, Applicant)
+                           Organization, Applicant, Vizit)
 
 import json
 import os
@@ -41,6 +41,9 @@ def load_initial_data(data_dir, db):
                         instance = Model(**entry)
                         if instance.__class__ == Applicant:
                             instance.birth_date = datetime.strptime(instance.birth_date,
+                                                                    '%d.%m.%Y')
+                        elif instance.__class__ == Vizit:
+                            instance.created_at = datetime.strptime(instance.birth_date,
                                                                     '%d.%m.%Y')
                         db.session.add(instance)
                         db.session.commit()
