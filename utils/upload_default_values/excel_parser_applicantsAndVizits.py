@@ -40,7 +40,7 @@ if __name__ == '__main__':
     print(df_snils_unique.ФИО.head())
     df_applicants, df_vizits = transform_applicants_data(df_in=df_snils_unique,
                                                          fio_colname="ФИО",
-                                                         first_name_colname = "имя",
+                                                         first_name_colname="имя",
                                                          columns_info=applicants_colnames,
                                                          phone_number_fix=phone_number_fix,
                                                          date_in_colname="Дата поступления",
@@ -48,11 +48,3 @@ if __name__ == '__main__':
                                                          elmk_snils_fix=elmk_snils_fix)
     save_dataframe_to_json(df=df_applicants, file_path='applicant.json')
     save_dataframe_to_json(df=df_vizits, file_path='vizit.json')
-
-    if df_applicants.shape[0] == df_vizits.shape[0]:
-        print("создается таблица связей визитов с заявителями")
-        df_applicants_vizits = pd.DataFrame({
-            'applicant_id' : df_applicants.index + 1,
-            'vizit_id': df_vizits.index + 1,
-        })
-        save_dataframe_to_json(df=df_applicants_vizits, file_path='applicant_vizit.json')
