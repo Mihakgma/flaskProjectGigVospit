@@ -211,3 +211,17 @@ class VizitForm(FlaskForm):
         self.contingent_id.choices = [(c.id, c.name) for c in Contingent.query.all()]
         self.work_field_id.choices = [(w.id, w.name) for w in WorkField.query.all()]
         self.applicant_type_id.choices = [(a.id, a.name) for a in ApplicantType.query.all()]
+
+
+class ApplicantSearchForm(FlaskForm):
+    last_name = StringField('Фамилия', validators=[Optional()])
+    last_name_exact = BooleanField('Точное совпадение фамилии', default=False) # Для полного совпадения
+    snils_number = StringField('СНИЛС', validators=[Optional()])
+    medbook_number = StringField('Номер медицинской книжки', validators=[Optional()])
+    birth_date_start = DateField('Дата рождения (от)', validators=[Optional()])
+    birth_date_end = DateField('Дата рождения (до)', validators=[Optional()])
+    last_visit_start = DateField('Дата последнего визита (от)', validators=[Optional()])
+    last_visit_end = DateField('Дата последнего визита (до)', validators=[Optional()])
+    registration_address = StringField('Адрес регистрации', validators=[Optional()])
+    residence_address = StringField('Адрес прописки', validators=[Optional()])
+    submit = SubmitField('Найти')

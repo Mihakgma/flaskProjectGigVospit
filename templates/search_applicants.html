@@ -1,0 +1,53 @@
+<!-- templates/search_applicants.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class=flashes>
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    <h1>Поиск заявителей</h1>
+
+    <form method="POST">
+        {{ form.csrf_token }}
+        <div>
+            {{ form.last_name.label }} {{ form.last_name }}
+            {{ form.last_name_exact }} {{ form.last_name_exact.label }}
+        </div>
+        <div>{{ form.snils_number.label }} {{ form.snils_number }}</div>
+        <div>{{ form.medbook_number.label }} {{ form.medbook_number }}</div>
+        <div>
+            {{ form.birth_date_start.label }} {{ form.birth_date_start }}
+            {{ form.birth_date_end.label }} {{ form.birth_date_end }}
+        </div>
+        <div>
+            {{ form.last_visit_start.label }} {{ form.last_visit_start }}
+            {{ form.last_visit_end.label }} {{ form.last_visit_end }}
+        </div>
+        <div>{{ form.registration_address.label }} {{ form.registration_address }}</div>
+        <div>{{ form.residence_address.label }} {{ form.residence_address }}</div>
+        {{ form.submit() }}
+
+
+        <div>
+            <button type="reset">Очистить</button>
+        </div>
+    </form>
+
+    {% if applicants %}
+        <h2>Результаты поиска:</h2>
+        <ul>
+            {% for applicant in applicants %}
+                <li>
+                    <a href="{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}">{{ applicant.full_name }}</a>
+                </li> <!-- Предполагается наличие роута applicant_details -->
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+{% endblock %}
