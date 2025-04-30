@@ -39,6 +39,7 @@ if __name__ == '__main__':
     print(df_snils_unique.ФИО.head())
     df_transformed_applicants = transform_applicants_data(df_in=df_snils_unique,
                                                           fio_colname="ФИО",
+                                                          first_name_colname = "имя",
                                                           columns_info=applicants_colnames,
                                                           phone_number_fix=phone_number_fix,
                                                           # date_fix=date_fix,

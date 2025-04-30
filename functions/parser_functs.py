@@ -5,6 +5,8 @@ import pandas as pd
 import os
 import json
 
+from functions.data_fix import names_fix, phone_number_fix, elmk_snils_fix
+
 
 def excel_to_data_frame_parser(file: str,
                                ws_name: str,
@@ -114,50 +116,67 @@ def transform_applicants_data(df_in: pd.DataFrame,
                               columns_info: dict,
                               *args,
                               **kwargs) -> pd.DataFrame:
-    """Трансформирует DataFrame заявителей."""
+    """Трансформация DataFrame заявителей с упрощенной логикой."""
+
+    handlers = {
+        'fio': kwargs.get("names_fix", names_fix),
+        'phone': kwargs.get("phone_number_fix", phone_number_fix),
+        'snils': kwargs.get("elmk_snils_fix", elmk_snils_fix),
+    }
 
     df_out = pd.DataFrame(columns=columns_info.values())
-
-    phone_number_fix = kwargs.get("phone_number_fix", lambda x: x)
-    # date_fix = kwargs.get("date_fix", lambda x: x)
-    names_fix = kwargs.get("names_fix", lambda x: x)
-    elmk_snils_fix = kwargs.get("elmk_snils_fix", lambda x: x)
-
-    nullable_fields = {'middle_name', 'passport_number', 'registration_address', 'residence_address', 'phone_number',
-                       'email', 'additional_info'}
 
     for index, row in df_in.iterrows():
         new_row = {}
 
-        # Приоритет полных ФИО
-        new_row['last_name'] = names_fix(row.get('фамилия'))  # Теперь берем из 'фамилия'
-        new_row['first_name'] = names_fix(row.get('имя'))  # Теперь берем из 'имя'
-        new_row['middle_name'] = names_fix(row.get('отчество'))  # Теперь берем из 'отчество'
+        # Обработка ФИО
+        last_name = handlers['fio'](row.get('фамилия'))
+        first_name = handlers['fio'](row.get('имя'))
+        middle_name = handlers['fio'](row.get('отчество'))
 
-        # Если полные ФИО отсутствуют, используем fio_colname
-        if any(pd.isna(v) for v in [new_row['last_name'], new_row['first_name']]):  # Проверяем только имя и фамилию
+        if not last_name or not first_name:
             names = row.get(fio_colname, "").split()
-            if len(names) > 0 and pd.isna(new_row['last_name']):
-                new_row['last_name'] = names_fix(names[0])
-            if len(names) > 1 and pd.isna(new_row['first_name']):
-                first_name_parts = re.split(r'[.\s]', names[1])
-                new_row['first_name'] = names_fix(
-                    " ".join(p for p in first_name_parts if p and not re.match(r'^[A-Z]$', p)))
-            if len(names) > 2 and pd.isna(new_row['middle_name']):
-                middle_name_parts = re.split(r'[.\s]', names[2])
-                new_row['middle_name'] = names_fix(
-                    " ".join(p for p in middle_name_parts if p and not re.match(r'^[A-Z]$', p)))
+            if names:
+                last_name = last_name or handlers['fio'](names[0])
+                if len(names) > 1:
+                    first_name_part = names[1].split(".")[0] if "." in names[1] else names[1][
+                        0]  # Извлекаем инициал имени
+                    first_name = first_name or handlers['fio'](first_name_part)
+                if len(names) > 2:
+                    middle_name_part = names[2].split(".")[0] if "." in names[2] else names[2][
+                        0]  # Извлекаем инициал отчества
+                    middle_name = middle_name or handlers['fio'](middle_name_part)
 
+        # Заполнение инициалов только если соответствующее полное поле пустое
+        if last_name:
+            if not first_name:
+                new_row['first_name'] = 'И'
+            if not middle_name:
+                new_row['middle_name'] = 'О'
+
+        new_row['last_name'] = last_name
+        new_row['first_name'] = first_name
+        new_row['middle_name'] = middle_name
+
+        # Обработка остальных полей
         for in_col, out_col in columns_info.items():
             if out_col not in ('first_name', 'middle_name', 'last_name'):
                 value = row.get(in_col)
-                # ... (остальной код обработки полей остается тем же)
-
-        # Заполняем отсутствующие значения NaN или None, в зависимости от типа поля
-        for field in columns_info.values():
-            if pd.isna(new_row.get(field)) or new_row.get(field) == '':
-                new_row[field] = np.nan if field in nullable_fields else None  # NaN для nullable, None для остальных
+                handler = handlers.get(out_col.split('_')[0] if '_' in out_col else in_col, lambda x: x)
+                if out_col in ('medbook_number', 'passport_number', 'snils_number'):  # Обработка как для СНИЛС
+                    handler = handlers['snils']
+                new_row[out_col] = handler(value)
 
         df_out = pd.concat([df_out, pd.DataFrame([new_row])], ignore_index=True)
+
+    # Замена пустых строк на NaN после цикла
+    nullable_fields = ['middle_name',
+                       'passport_number',
+                       'registration_address',
+                       'residence_address',
+                       'phone_number',
+                       'email',
+                       'additional_info']
+    df_out[nullable_fields] = df_out[nullable_fields].replace('', np.nan)
 
     return df_out

@@ -26,5 +26,6 @@ def names_fix(name):
 
 def elmk_snils_fix(value):
     if value:
-        return re.sub(r'\D', '', str(value))
+        value = re.sub(r'\D', '', str(value))
+        return value.replace("-", "")
     return None
