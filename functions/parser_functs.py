@@ -125,7 +125,7 @@ def transform_applicants_data(df_in: pd.DataFrame,
     snils_colname_df_in = colnames_temp[0]
     colnames_temp.append(date_in_colname)
     temp_df = df_in[colnames_temp].copy()
-    temp_df[fio_colname] = df_in[fio_colname].apply(lambda x: "".join([", ", names_fix(x)]))
+    temp_df[fio_colname] = df_in[fio_colname].apply(lambda x: "".join(["", names_fix(x)]))
     temp_df['snils_number'] = temp_df[snils_colname_df_in].apply(lambda x: elmk_snils_fix(x))
 
     handlers = {
