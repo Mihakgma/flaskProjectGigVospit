@@ -17,45 +17,45 @@
         {{ form.csrf_token }}
 
         <div>
-            {{ form.last_name.label }} {{ form.last_name }}
-            {{ form.last_name_exact }} {{ form.last_name_exact.label }}
+            {{ form.last_name.label }} {{ form.last_name(id='last_name') }}
+            {{ form.last_name_exact(id='last_name_exact') }} {{ form.last_name_exact.label }}
         </div>
         <hr>
 
 
         <div>
             {{ form.snils_number.label }}
-            <input type="text" name="snils_part1" maxlength="3" pattern="[0-9]*"> -
-            <input type="text" name="snils_part2" maxlength="3" pattern="[0-9]*"> -
-            <input type="text" name="snils_part3" maxlength="3" pattern="[0-9]*"> -
-            <input type="text" name="snils_part4" maxlength="2" pattern="[0-9]*">
+            <input type="text" name="snils_part1" maxlength="3" pattern="[0-9]*" id="snils_part1"> -
+            <input type="text" name="snils_part2" maxlength="3" pattern="[0-9]*" id="snils_part2"> -
+            <input type="text" name="snils_part3" maxlength="3" pattern="[0-9]*" id="snils_part3"> -
+            <input type="text" name="snils_part4" maxlength="2" pattern="[0-9]*" id="snils_part4">
         </div>
         <hr>
 
 
         <div>
             {{ form.medbook_number.label }}
-            <input type="text" name="medbook_part1" maxlength="2" pattern="[0-9]*"> -
-            <input type="text" name="medbook_part2" maxlength="2" pattern="[0-9]*"> -
-            <input type="text" name="medbook_part3" maxlength="6" pattern="[0-9]*"> -
-            <input type="text" name="medbook_part4" maxlength="2" pattern="[0-9]*">
+            <input type="text" name="medbook_part1" maxlength="2" pattern="[0-9]*" id="medbook_part1"> -
+            <input type="text" name="medbook_part2" maxlength="2" pattern="[0-9]*" id="medbook_part2"> -
+            <input type="text" name="medbook_part3" maxlength="6" pattern="[0-9]*" id="medbook_part3"> -
+            <input type="text" name="medbook_part4" maxlength="2" pattern="[0-9]*" id="medbook_part4">
 
         </div>
         <hr>
 
         <div>
-            {{ form.birth_date_start.label }} {{ form.birth_date_start }}
-            {{ form.birth_date_end.label }} {{ form.birth_date_end }}
+            {{ form.birth_date_start.label }} {{ form.birth_date_start(id='birth_date_start') }}
+            {{ form.birth_date_end.label }} {{ form.birth_date_end(id='birth_date_end') }}
         </div>
         <hr>
         <div>
-            {{ form.last_visit_start.label }} {{ form.last_visit_start }}
-            {{ form.last_visit_end.label }} {{ form.last_visit_end }}
+            {{ form.last_visit_start.label }} {{ form.last_visit_start(id='last_visit_start') }}
+            {{ form.last_visit_end.label }} {{ form.last_visit_end(id='last_visit_end') }}
         </div>
         <hr>
-        <div>{{ form.registration_address.label }} {{ form.registration_address }}</div>
+        <div>{{ form.registration_address.label }} {{ form.registration_address(id='registration_address') }}</div>
         <hr>
-        <div>{{ form.residence_address.label }} {{ form.residence_address }}</div>
+        <div>{{ form.residence_address.label }} {{ form.residence_address(id='residence_address') }}</div>
 
 
         {{ form.submit() }}
@@ -66,6 +66,19 @@
         <script>
             function resetForm() {
                 document.getElementById("search_form").reset();
+
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById('snils_part' + i).value = '';
+                    document.getElementById('medbook_part' + i).value = '';
+                }
+                document.getElementById('last_name').value = '';
+                document.getElementById('last_name_exact').value = '';
+                document.getElementById('birth_date_start').value = '';
+                document.getElementById('birth_date_end').value = '';
+                document.getElementById('last_visit_start').value = '';
+                document.getElementById('last_visit_end').value = '';
+                document.getElementById('registration_address').value = '';
+                document.getElementById('residence_address').value = '';
             }
         </script>
 

@@ -80,25 +80,56 @@ def applicant_details(applicant_id):
 
 @applicants_bp.route('/search_applicants', methods=['GET', 'POST'])
 @login_required
-@role_required('anyone')  # Или укажите нужную роль
+@role_required('anyone')
 def search_applicants():
     form = ApplicantSearchForm()
     applicants = []
 
     if request.method == 'POST' and form.validate_on_submit():
         search_criteria = {}
-        if not any(field.data for field in form if field.name not in ['csrf_token', 'submit', 'last_name_exact']):
+
+        if not any(field.data for field in form if field.name not in ['csrf_token', 'submit', 'last_name_exact']) and \
+                not ('snils_part1' in request.form or 'medbook_part1' in request.form):
             flash('Заполните хотя бы одно поле для поиска', 'error')
             return render_template('search_applicants.html', form=form, applicants=applicants)
 
-        if form.last_name.data and len(form.last_name.data) < 2:
-            flash('Фамилия должна содержать не менее 2 символов', 'error')
-            return render_template('search_applicants.html', form=form, applicants=applicants)
+        if form.last_name.data:
+            if len(form.last_name.data) < 2:
+                flash('Фамилия должна содержать не менее 2 символов', 'error')
+                return render_template('search_applicants.html', form=form, applicants=applicants)
+            search_criteria['last_name'] = form.last_name.data.strip().upper()  # upper() для фамилии
 
-        if (form.registration_address.data and len(form.registration_address.data) < 2) or \
-                (form.residence_address.data and len(form.residence_address.data) < 2):
-            flash('Адрес должен содержать не менее 2 символов', 'error')
-            return render_template('search_applicants.html', form=form, applicants=applicants)
+        if form.registration_address.data:
+            if len(form.registration_address.data) < 2:
+                flash('Адрес регистрации должен содержать не менее 2 символов', 'error')
+                return render_template('search_applicants.html', form=form, applicants=applicants)
+            search_criteria['registration_address'] = form.registration_address.data  # без lower() для адреса
+
+        if form.residence_address.data:
+            if len(form.residence_address.data) < 2:
+                flash('Адрес проживания должен содержать не менее 2 символов', 'error')
+                return render_template('search_applicants.html', form=form, applicants=applicants)
+            search_criteria['residence_address'] = form.residence_address.data  # без lower() для адреса
+
+        if 'snils_part1' in request.form:
+            snils_parts = [request.form.get(f'snils_part{i}') for i in range(1, 5)]
+            snils = ''.join(filter(None, snils_parts))
+            if snils:
+                try:
+                    search_criteria['snils_number'] = int(snils)
+                except ValueError:
+                    flash('СНИЛС должен содержать только цифры', 'error')
+                    return render_template('search_applicants.html', form=form, applicants=applicants)
+
+        if 'medbook_part1' in request.form:
+            medbook_parts = [request.form.get(f'medbook_part{i}') for i in range(1, 5)]
+            medbook = ''.join(filter(None, medbook_parts))
+            if medbook:
+                try:
+                    search_criteria['medbook_number'] = int(medbook)
+                except ValueError:
+                    flash('Номер медкнижки должен содержать только цифры', 'error')
+                    return render_template('search_applicants.html', form=form, applicants=applicants)
 
         if form.birth_date_start.data and form.birth_date_end.data is None:
             flash('Заполните конечную дату рождения', 'error')
@@ -108,96 +139,38 @@ def search_applicants():
             flash('Заполните конечную дату последнего визита', 'error')
             return render_template('search_applicants.html', form=form, applicants=applicants)
 
-        if form.last_name.data:
-            search_criteria['last_name'] = func.lower(form.last_name.data).strip()  # Добавляем lower() и strip()
-
-        if form.registration_address.data:
-            search_criteria['registration_address'] = func.lower(
-                form.registration_address.data).strip()  # Добавляем lower() и strip()
-
-        if form.residence_address.data:
-            search_criteria['residence_address'] = func.lower(
-                form.residence_address.data).strip()  # Добавляем lower() и strip()
-
-        if 'snils_part1' in request.form:
-            snils_parts = [request.form.get(f'snils_part{i}') for i in range(1, 5)]
-            snils = ''.join(filter(None, snils_parts))  # Объединяем части СНИЛС, удаляя пустые строки
-            if snils:  # Если СНИЛС введен
-                search_criteria['snils_number'] = int(snils)
-
-        if 'medbook_part1' in request.form:
-            medbook_parts = [request.form.get(f'medbook_part{i}') for i in range(1, 5)]
-            medbook = ''.join(filter(None, medbook_parts))  # Объединяем части номера медкнижки
-            if medbook:
-                search_criteria['medbook_number'] = int(medbook)
-
-        search_criteria = {}
-
-        if form.last_name.data:
-            if form.last_name_exact.data:  # Полное совпадение
-                search_criteria['last_name'] = form.last_name.data
-            else:  # Частичное совпадение
-                search_criteria['last_name'] = {'like': f'%{form.last_name.data}%'}
-
-        if form.snils_number.data:
-            search_criteria['snils_number'] = form.snils_number.data
-
-        if form.medbook_number.data:
-            search_criteria['medbook_number'] = form.medbook_number.data
-
         if form.birth_date_start.data:
-            search_criteria['birth_date'] = {'gte': form.birth_date_start.data}
+            search_criteria['birth_date_start'] = form.birth_date_start.data
         if form.birth_date_end.data:
-            search_criteria.setdefault('birth_date', {}).update({'lte': form.birth_date_end.data})
+            search_criteria['birth_date_end'] = form.birth_date_end.data
 
-        if form.last_visit_start.data or form.last_visit_end.data:
-            subquery = Vizit.query.with_entities(Vizit.applicant_id,
-                                                 db.func.max(Vizit.created_at).label('last_visit')).group_by(
-                Vizit.applicant_id).subquery()
+        if form.last_visit_start.data:
+            search_criteria['last_visit_start'] = form.last_visit_start.data
+        if form.last_visit_end.data:
+            search_criteria['last_visit_end'] = form.last_visit_end.data
 
-            filters = []
-            for field_name, value in search_criteria.items():
-                if field_name == 'last_name':
-                    filters.append(func.upper(Applicant.last_name).contains(value))  # contains + lower() для фамилии
-                elif field_name == 'registration_address':
-                    filters.append(func.lower(Applicant.registration_address).contains(
-                        value))  # contains + lower() для адреса регистрации
-                elif field_name == 'residence_address':
-                    filters.append(func.lower(Applicant.residence_address).contains(
-                        value))  # contains + lower() для адреса проживания
-                elif field_name == 'last_name_exact':
-                    filters.append(func.lower(Applicant.last_name) == value)
-                else:
-                    filters.append(getattr(Applicant, field_name) == value)
-            if form.last_visit_start.data:
-                filters.append(subquery.c.last_visit >= form.last_visit_start.data)
-            if form.last_visit_end.data:
-                filters.append(subquery.c.last_visit <= form.last_visit_end.data)
-
-            applicant_ids = db.session.query(subquery.c.applicant_id).filter(and_(*filters)).all()
-            search_criteria['id'] = {'in_': [id[0] for id in applicant_ids]}
-
-        if form.registration_address.data:
-            search_criteria['registration_address'] = {'like': f'%{form.registration_address.data}%'}
-
-        if form.residence_address.data:
-            search_criteria['residence_address'] = {'like': f'%{form.residence_address.data}%'}
-
-        query = Applicant.query
-        for field, value in search_criteria.items():
-            if isinstance(value, dict):  # Для like, gte, lte, in_
-                if 'like' in value:
-                    query = query.filter(getattr(Applicant, field).like(value['like']))
-                elif 'gte' in value:
-                    query = query.filter(getattr(Applicant, field) >= value['gte'])
-                elif 'lte' in value:
-                    query = query.filter(getattr(Applicant, field) <= value['lte'])
-                elif 'in_' in value:
-                    query = query.filter(getattr(Applicant, field).in_(value['in_']))
-
+        filters = []
+        for field_name, value in search_criteria.items():
+            if field_name == 'last_name':
+                filters.append(func.upper(getattr(Applicant, field_name)).contains(value))
+            elif field_name == 'last_name_exact':
+                filters.append(func.lower(getattr(Applicant, field_name[0:-6])) == value)
+            elif field_name in ['registration_address', 'residence_address']:
+                filters.append(getattr(Applicant, field_name).contains(value))
+            elif field_name in ['snils_number', 'medbook_number']:
+                filters.append(getattr(Applicant, field_name) == value)
+            elif field_name == 'birth_date_start':
+                filters.append(Applicant.birth_date >= value)
+            elif field_name == 'birth_date_end':
+                filters.append(Applicant.birth_date <= value)
+            elif field_name == 'last_visit_start':
+                filters.append(Applicant.last_visit >= value)
+            elif field_name == 'last_visit_end':
+                filters.append(Applicant.last_visit <= value)
             else:
-                query = query.filter(getattr(Applicant, field) == value)
+                filters.append(getattr(Applicant, field_name) == value)
 
-        applicants = query.all()
+        # Пример запроса:
+        applicants = Applicant.query.filter(and_(*filters)).all()
 
     return render_template('search_applicants.html', form=form, applicants=applicants)
