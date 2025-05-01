@@ -6,6 +6,8 @@ from flask import (Blueprint,
                    flash)
 from flask_login import login_required
 
+# from sqlalchemy.orm import Pagination
+
 from functions.access_control import role_required
 from models.models import (Applicant,
                            Vizit)
@@ -15,7 +17,7 @@ from datetime import timezone
 
 from forms.forms import (AddApplicantForm,
                          VizitForm, ApplicantSearchForm)
-from sqlalchemy import or_, and_
+from sqlalchemy import and_
 from sqlalchemy.sql.expression import func
 
 applicants_bp = Blueprint('applicants', __name__)  # Создаем blueprint
@@ -84,6 +86,9 @@ def applicant_details(applicant_id):
 def search_applicants():
     form = ApplicantSearchForm()
     applicants = []
+    total_count = 0
+    per_page = request.args.get('per_page', 20, type=int)  # значение по умолчанию - 20
+    page = request.args.get('page', 1, type=int)
 
     if request.method == 'POST' and form.validate_on_submit():
         search_criteria = {}
@@ -171,6 +176,14 @@ def search_applicants():
                 filters.append(getattr(Applicant, field_name) == value)
 
         # Пример запроса:
-        applicants = Applicant.query.filter(and_(*filters)).all()
+        # applicants = Applicant.query.filter(and_(*filters)).all()
 
-    return render_template('search_applicants.html', form=form, applicants=applicants)
+        total_count = Applicant.query.filter(and_(*filters)).count()
+        applicants = Applicant.query.filter(and_(*filters)).paginate(page=page,
+                                                                     per_page=per_page,
+                                                                     error_out=False)
+
+    return render_template('search_applicants.html',
+                           form=form,
+                           applicants=applicants,
+                           total_count=total_count)

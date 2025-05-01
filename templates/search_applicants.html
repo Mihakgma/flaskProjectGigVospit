@@ -87,13 +87,52 @@
 
     {% if applicants %}
         <h2>Результаты поиска:</h2>
+        <p>По вашему запросу всего найдено {{ applicants.total }} результатов</p>
+
         <ul>
-            {% for applicant in applicants %}
+            {% for applicant in applicants.items %}
                 <li>
                     <a href="{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}">{{ applicant.full_name }}</a>
                 </li>
             {% endfor %}
         </ul>
+
+        <div class="pagination">
+            {% if applicants.has_prev %}
+                <a href="{{ url_for('applicants.search_applicants', page=1, per_page=per_page) }}">В начало</a>
+                <a href="{{ url_for('applicants.search_applicants', page=applicants.prev_num, per_page=per_page) }}">Назад</a>
+            {% endif %}
+
+            {% for page_num in applicants.iter_pages() %}
+                {% if page_num %}
+                    {% if page_num == applicants.page %}
+                        <span class="current">{{ page_num }}</span>
+                    {% else %}
+                        <a href="{{ url_for('applicants.search_applicants', page=page_num, per_page=per_page) }}">{{ page_num }}</a>
+                    {% endif %}
+                {% else %}
+                    <span class="ellipsis">…</span>
+                {% endif %}
+            {% endfor %}
+
+
+            {% if applicants.has_next %}
+                <a href="{{ url_for('applicants.search_applicants', page=applicants.next_num, per_page=per_page) }}">Вперед</a>
+                <a href="{{ url_for('applicants.search_applicants', page=applicants.pages, per_page=per_page) }}">В
+                    конец</a>
+            {% endif %}
+
+
+            <select name="per_page" onchange="this.form.submit()">
+                <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                <option value="30" {% if per_page == 30 %}selected{% endif %}>30</option>
+                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+
+            </select> элементов на странице
+        </div>
+
+
+
     {% endif %}
 
 {% endblock %}
