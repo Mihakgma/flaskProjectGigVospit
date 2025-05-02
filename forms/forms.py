@@ -216,8 +216,17 @@ class VizitForm(FlaskForm):
 class ApplicantSearchForm(FlaskForm):
     last_name = StringField('Фамилия', validators=[Optional()])
     last_name_exact = BooleanField('Точное совпадение фамилии', default=False) # Для полного совпадения
-    snils_number = StringField('СНИЛС', validators=[Optional()])
-    medbook_number = StringField('Номер медицинской книжки', validators=[Optional()])
+    # Поля для частей СНИЛС
+    snils_part1 = StringField('Часть 1', validators=[Optional(), Length(max=3)])
+    snils_part2 = StringField('Часть 2', validators=[Optional(), Length(max=3)])
+    snils_part3 = StringField('Часть 3', validators=[Optional(), Length(max=3)])
+    snils_part4 = StringField('Часть 4', validators=[Optional(), Length(max=2)])
+
+    # Поля для частей мед. книжки
+    medbook_part1 = StringField('Часть 1', validators=[Optional(), Length(max=3)])
+    medbook_part2 = StringField('Часть 2', validators=[Optional(), Length(max=3)])
+    medbook_part3 = StringField('Часть 3', validators=[Optional(), Length(max=3)])
+    medbook_part4 = StringField('Часть 4', validators=[Optional(), Length(max=2)])
     birth_date_start = DateField('Дата рождения (от)', validators=[Optional()])
     birth_date_end = DateField('Дата рождения (до)', validators=[Optional()])
     last_visit_start = DateField('Дата последнего визита (от)', validators=[Optional()])
