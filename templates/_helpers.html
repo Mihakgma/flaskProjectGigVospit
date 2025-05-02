@@ -1,15 +1,15 @@
 <!-- _helpers.html -->
 
-{% macro render_field(field, label=None, class_=None, placeholder=None) %}
-    <div class="form-group">
-        {%- if label is defined and label != '' %}
-            <label class="control-label">{{ label }}</label>
-        {%- else %}
-            {{ field.label(class_="control-label") }}
-        {%- endif %}
-        {{ field(class_=class_, placeholder=placeholder)|safe }}
-        {% if field.errors %}
-            <small class="text-danger">{% for error in field.errors %}<br/>{{ error }}{% endfor %}</small>
-        {% endif %}
-    </div>
-{% endmacro %}
+{#{% macro render_field(field, label=None, class_=None, placeholder=None) %}#}
+{#    <div class="form-group">#}
+{#        {%- if label is defined and label != '' %}#}
+{#            <label class="control-label">{{ label }}</label>#}
+{#        {%- else %}#}
+{#            {{ field.label(class_="control-label") }}#}
+{#        {%- endif %}#}
+{#        {{ field(class_=class_, placeholder=placeholder)|safe }}#}
+{#        {% if field.errors %}#}
+{#            <small class="text-danger">{% for error in field.errors %}<br/>{{ error }}{% endfor %}</small>#}
+{#        {% endif %}#}
+{#    </div>#}
+{#{% endmacro %}#}

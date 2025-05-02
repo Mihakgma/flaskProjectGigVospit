@@ -1,212 +1,99 @@
-<!-- search_applicants.html -->
-
-{% extends "base.html" %}
-
-{% block title %}Поиск заявителей{% endblock %}
+<!-- templates/search_applicants.html -->
+{% extends 'base.html' %}
 
 {% block content %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class=flashes>
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    <h1>Поиск заявителей</h1>
 
-    {% from '_helpers.html' import render_field %}
+    <form method="POST" id="search_form">
+        {{ form.csrf_token }}
 
-    <form id="search_form" method="post" action="" novalidate>
-        {{ form.hidden_tag() }}
-        <fieldset class="form-group">
-            <legend class="border-bottom mb-4">Поиск заявителей</legend>
-            <div class="form-row">
-                <div class="col-md-6">
-                    {{ render_field(form.last_name, label='Фамилия:', class_='form-control') }}
-                </div>
-                <div class="col-md-6">
-                    {{ render_field(form.last_name_exact, label='Фамилия точное совпадение:', class_='form-control') }}
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="col-md-6">
-                    {{ render_field(form.birth_date_start, label='Дата рождения (начало)', class_='form-control datepicker') }}
-                </div>
-                <div class="col-md-6">
-                    {{ render_field(form.birth_date_end, label='Дата рождения (конец)', class_='form-control datepicker') }}
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="col-md-6">
-                    {{ render_field(form.last_visit_start, label='Последний визит (начало)', class_='form-control datepicker') }}
-                </div>
-                <div class="col-md-6">
-                    {{ render_field(form.last_visit_end, label='Последний визит (конец)', class_='form-control datepicker') }}
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="col-md-6">
-                    {{ render_field(form.registration_address, label='Адрес регистрации:', class_='form-control') }}
-                </div>
-                <div class="col-md-6">
-                    {{ render_field(form.residence_address, label='Адрес проживания:', class_='form-control') }}
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="col-md-6">
-                    <p><strong>Номер СНИЛС (разделено частями)</strong></p>
-                    <div class="row">
-                        <div class="col-sm-3">
-                            {{ render_field(form.snils_part1, class_='form-control') }}
-                        </div>
-                        <div class="col-sm-3">
-                            {{ render_field(form.snils_part2, class_='form-control') }}
-                        </div>
-                        <div class="col-sm-3">
-                            {{ render_field(form.snils_part3, class_='form-control') }}
-                        </div>
-                        <div class="col-sm-3">
-                            {{ render_field(form.snils_part4, class_='form-control') }}
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <p><strong>Медицинская книжка (разделено частями)</strong></p>
-                    <div class="row">
-                        <div class="col-sm-3">
-                            {{ render_field(form.medbook_part1, class_='form-control') }}
-                        </div>
-                        <div class="col-sm-3">
-                            {{ render_field(form.medbook_part2, class_='form-control') }}
-                        </div>
-                        <div class="col-sm-3">
-                            {{ render_field(form.medbook_part3, class_='form-control') }}
-                        </div>
-                        <div class="col-sm-3">
-                            {{ render_field(form.medbook_part4, class_='form-control') }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="form-group">
-                {{ form.submit(class_="btn btn-outline-info") }}
-                <button type="button" onclick="resetForm();" class="btn btn-outline-warning ml-2">Очистить</button>
-            </div>
-        </fieldset>
+        <div>
+            {{ form.last_name.label }} {{ form.last_name(id='last_name') }}
+            {{ form.last_name_exact(id='last_name_exact') }} {{ form.last_name_exact.label }}
+        </div>
+        <hr>
+
+
+        <div>
+            {{ form.snils_number.label }}
+            <input type="text" name="snils_part1" maxlength="3" pattern="[0-9]*" id="snils_part1"> -
+            <input type="text" name="snils_part2" maxlength="3" pattern="[0-9]*" id="snils_part2"> -
+            <input type="text" name="snils_part3" maxlength="3" pattern="[0-9]*" id="snils_part3"> -
+            <input type="text" name="snils_part4" maxlength="2" pattern="[0-9]*" id="snils_part4">
+        </div>
+        <hr>
+
+
+        <div>
+            {{ form.medbook_number.label }}
+            <input type="text" name="medbook_part1" maxlength="2" pattern="[0-9]*" id="medbook_part1"> -
+            <input type="text" name="medbook_part2" maxlength="2" pattern="[0-9]*" id="medbook_part2"> -
+            <input type="text" name="medbook_part3" maxlength="6" pattern="[0-9]*" id="medbook_part3"> -
+            <input type="text" name="medbook_part4" maxlength="2" pattern="[0-9]*" id="medbook_part4">
+
+        </div>
+        <hr>
+
+        <div>
+            {{ form.birth_date_start.label }} {{ form.birth_date_start(id='birth_date_start') }}
+            {{ form.birth_date_end.label }} {{ form.birth_date_end(id='birth_date_end') }}
+        </div>
+        <hr>
+        <div>
+            {{ form.last_visit_start.label }} {{ form.last_visit_start(id='last_visit_start') }}
+            {{ form.last_visit_end.label }} {{ form.last_visit_end(id='last_visit_end') }}
+        </div>
+        <hr>
+        <div>{{ form.registration_address.label }} {{ form.registration_address(id='registration_address') }}</div>
+        <hr>
+        <div>{{ form.residence_address.label }} {{ form.residence_address(id='residence_address') }}</div>
+
+
+        {{ form.submit() }}
+
+
+        <button type="button" onclick="resetForm()">Очистить</button>
+
+        <script>
+            function resetForm() {
+                document.getElementById("search_form").reset();
+
+                for (let i = 1; i <= 4; i++) {
+                    document.getElementById('snils_part' + i).value = '';
+                    document.getElementById('medbook_part' + i).value = '';
+                }
+                document.getElementById('last_name').value = '';
+                document.getElementById('last_name_exact').value = '';
+                document.getElementById('birth_date_start').value = '';
+                document.getElementById('birth_date_end').value = '';
+                document.getElementById('last_visit_start').value = '';
+                document.getElementById('last_visit_end').value = '';
+                document.getElementById('registration_address').value = '';
+                document.getElementById('residence_address').value = '';
+            }
+        </script>
+
     </form>
 
-    {% if applicants.total > 0 %}
-        <hr/>
-        <div class="row align-items-center my-3">
-            <div class="col-md-6 text-left">
-                Показано {{ applicants.items|length }} из {{ applicants.total }} заявок
-            </div>
-            <div class="col-md-6 text-right">
-                <form method="get" action="{{ url_for('applicants.search_applicants') }}">
-                    <select name="per_page" onchange="this.form.submit()">
-                        <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
-                        <option value="30" {% if per_page == 30 %}selected{% endif %}>30</option>
-                        <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
-                    </select> записей на странице
 
-                    {% for key, value in request.args.items() if key not in ('page', 'per_page') %}
-                        <input type="hidden" name="{{ key }}" value="{{ value }}">
-                    {% endfor %}
-                </form>
-            </div>
-        </div>
-
-        <table class="table table-bordered table-hover">
-            <thead>
-            <tr>
-                <th>ФИО</th>
-                <th>Дата рождения</th>
-                <th>Последняя запись</th>
-                <th>Регистрация</th>
-                <th>Адрес проживания</th>
-                <th>СНИЛС</th>
-                <th>Медицинская книжка</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for applicant in applicants.items %}
-                <tr onclick="window.location.href='{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}'">
-                    <td>{{ applicant.full_name }}</td>
-                    <td>{{ applicant.birth_date.strftime('%Y-%m-%d') }}</td>
-                    <td>{{ applicant.last_visit.strftime('%Y-%m-%d') if applicant.last_visit else '-' }}</td>
-                    <td>{{ applicant.registration_address }}</td>
-                    <td>{{ applicant.residence_address }}</td>
-                    <td>{{ applicant.snils_number }}</td>
-                    <td>{{ applicant.medbook_number }}</td>
-                </tr>
+    {% if applicants %}
+        <h2>Результаты поиска:</h2>
+        <ul>
+            {% for applicant in applicants %}
+                <li>
+                    <a href="{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}">{{ applicant.full_name }}</a>
+                </li>
             {% endfor %}
-            </tbody>
-        </table>
-
-        <nav aria-label="Page navigation example">
-            <ul class="pagination justify-content-center">
-                {% if applicants.has_prev %}
-                    <li class="page-item">
-                        <a class="page-link"
-                           href="{{ url_for('applicants.search_applicants', page=applicants.prev_num, per_page=per_page, **url_args) }}"
-                           aria-label="Previous">
-                            <span aria-hidden="true">&laquo;</span>
-                        </a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Предыдущая</a>
-                    </li>
-                {% endif %}
-
-                {% for page in applicants.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
-                    {% if page %}
-                        {% if page == applicants.page %}
-                            <li class="page-item active" aria-current="page">
-                                <span class="page-link">{{ page }}</span>
-                            </li>
-                        {% else %}
-                            <li class="page-item">
-                                <a class="page-link"
-                                   href="{{ url_for('applicants.search_applicants', page=page, per_page=per_page, **url_args) }}">{{ page }}</a>
-                            </li>
-                        {% endif %}
-                    {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link">...</span>
-                        </li>
-                    {% endif %}
-                {% endfor %}
-
-                {% if applicants.has_next %}
-                    <li class="page-item">
-                        <a class="page-link"
-                           href="{{ url_for('applicants.search_applicants', page=applicants.next_num, per_page=per_page, **url_args) }}"
-                           aria-label="Next">
-                            <span aria-hidden="true">&raquo;</span>
-                        </a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled">
-                        <a class="page-link" href="#">Следующая</a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
-    {% else %}
-        <p>Нет найденных заявок.</p>
+        </ul>
     {% endif %}
-
-    <!-- Script для очистки формы -->
-    <script>
-        function resetForm() {
-            document.getElementById("search_form").reset();
-
-            for (let i = 1; i <= 4; i++) {
-                document.getElementById('snils_part' + i).value = '';
-                document.getElementById('medbook_part' + i).value = '';
-            }
-            document.getElementById('last_name').value = '';
-            document.getElementById('last_name_exact').value = '';
-            document.getElementById('birth_date_start').value = '';
-            document.getElementById('birth_date_end').value = '';
-            document.getElementById('last_visit_start').value = '';
-            document.getElementById('last_visit_end').value = '';
-            document.getElementById('registration_address').value = '';
-            document.getElementById('residence_address').value = '';
-        }
-    </script>
 
 {% endblock %}
