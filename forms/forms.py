@@ -17,11 +17,19 @@ from wtforms_sqlalchemy.fields import (QuerySelectField)
 from functions import validate_birth_date
 from wtforms.widgets import CheckboxInput, ListWidget
 
+from functions.data_fix import names_fix
+
 
 class AddApplicantForm(FlaskForm):
-    first_name = StringField('Имя', validators=[DataRequired(), Length(max=80)])
-    last_name = StringField('Фамилия', validators=[DataRequired(), Length(max=80)])
-    middle_name = StringField('Отчество', validators=[Length(max=80)])
+    first_name = StringField('Имя',
+                             validators=[DataRequired(),Length(max=80)],
+                             filters=(names_fix,))
+    last_name = StringField('Фамилия',
+                            validators=[DataRequired(), Length(max=80)],
+                            filters=(names_fix,))
+    middle_name = StringField('Отчество',
+                              validators=[Length(max=80)],
+                              filters=(names_fix,))
     medbook_number = StringField('Номер медицинской книжки', validators=[Length(max=50)])
     snils_number = StringField('СНИЛС', validators=[Length(max=14)])
     passport_number = StringField('Номер паспорта', validators=[Length(max=20)])

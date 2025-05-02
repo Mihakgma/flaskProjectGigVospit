@@ -85,6 +85,19 @@ def search_applicants():
     form = ApplicantSearchForm()
     applicants = []
 
+    last_visit_sq = (  # Объявляем подзапрос ДО цикла
+        db.session.query(
+            Vizit.applicant_id,
+            func.max(Vizit.created_at).label('last_visit_date')
+        )
+        .group_by(Vizit.applicant_id)
+        .subquery()
+    )
+
+    query = db.session.query(Applicant).outerjoin(
+        last_visit_sq, Applicant.id == last_visit_sq.c.applicant_id
+    )
+
     if request.method == 'POST' and form.validate_on_submit():
         search_criteria = {}
 
@@ -164,13 +177,17 @@ def search_applicants():
             elif field_name == 'birth_date_end':
                 filters.append(Applicant.birth_date <= value)
             elif field_name == 'last_visit_start':
-                filters.append(Applicant.last_visit >= value)
+                filters.append(last_visit_sq.c.last_visit_date >= value)
             elif field_name == 'last_visit_end':
-                filters.append(Applicant.last_visit <= value)
+                filters.append(last_visit_sq.c.last_visit_date <= value)
             else:
                 filters.append(getattr(Applicant, field_name) == value)
 
         # Пример запроса:
         applicants = Applicant.query.filter(and_(*filters)).all()
 
-    return render_template('search_applicants.html', form=form, applicants=applicants)
+    return render_template(
+        'search_applicants.html',
+        form=form,
+        applicants=applicants
+    )
