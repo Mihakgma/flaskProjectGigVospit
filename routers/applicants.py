@@ -11,7 +11,7 @@ from models.models import (Applicant,
                            Vizit)
 from database import db
 
-from datetime import timezone, datetime
+from datetime import timezone, date, datetime
 
 from forms.forms import (AddApplicantForm,
                          VizitForm, ApplicantSearchForm)
@@ -82,73 +82,75 @@ def applicant_details(applicant_id):
 @login_required
 @role_required('anyone')
 def search_applicants():
-    form = ApplicantSearchForm()
+    form = ApplicantSearchForm(request.args)
+    page = int(request.args.get('page', 1))
+    per_page = int(request.args.get('per_page', 20))
 
-    page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 20, type=int)
-
-    if request.method == 'POST' and form.validate_on_submit():
-        search_criteria = request.form.to_dict()
-        search_criteria.pop('csrf_token', None)
-        search_criteria.pop('submit', None)
-        if form.last_visit_start.data:
-            search_criteria['last_visit_start'] = form.last_visit_start.data.isoformat()
-        if form.last_visit_end.data:
-            search_criteria['last_visit_end'] = form.last_visit_end.data.isoformat()
-        return redirect(url_for('applicants.search_applicants', **search_criteria))
-
-    search_criteria = request.args.to_dict()
     filters = []
 
-    for field_name, value in search_criteria.items():
-        # Исключаем 'page' и 'per_page' из обработки фильтров, а также пустые значения
-        if field_name not in ('page', 'per_page') and value:
-            if field_name == 'last_name':
-                filters.append(func.upper(Applicant.last_name).contains(value.upper()))
-            elif field_name == 'last_name_exact':
-                filters.append(func.lower(Applicant.last_name) == value.lower())
-            elif field_name in ['registration_address', 'residence_address']:
-                filters.append(getattr(Applicant, field_name).contains(value))
-            elif field_name.startswith('snils_part'):
-                snils_parts = [search_criteria.get(f'snils_part{i}') for i in range(1, 5)]
-                snils = ''.join(filter(None, snils_parts))
-                if snils:
+    last_visit_sq = (  # Объявляем подзапрос ДО цикла
+        db.session.query(
+            Vizit.applicant_id,
+            func.max(Vizit.created_at).label('last_visit_date')
+        )
+        .group_by(Vizit.applicant_id)
+        .subquery()
+    )
+
+    query = db.session.query(Applicant).outerjoin(
+        last_visit_sq, Applicant.id == last_visit_sq.c.applicant_id
+    )
+
+    for field_name, value in request.args.items():
+        if value and field_name not in ('page', 'per_page', 'submit'):
+            if field_name in ('birth_date_start', 'birth_date_end', 'last_visit_start', 'last_visit_end'):
+                try:
+                    value = date.fromisoformat(value)
+                    # Проверяем корректность даты
+                    assert isinstance(value, datetime.date), f'Некорректная дата: {value}'
+
+                    if field_name == 'birth_date_start':
+                        filters.append(Applicant.birth_date >= value)
+                    elif field_name == 'birth_date_end':
+                        filters.append(Applicant.birth_date <= value)
+                    elif field_name == 'last_visit_start':
+                        filters.append(last_visit_sq.c.last_visit_date >= value)
+                    elif field_name == 'last_visit_end':
+                        filters.append(last_visit_sq.c.last_visit_date <= value)
+
+                except (ValueError, AssertionError):
+                    flash("Ошибка в формате даты!", "error")
+                    return redirect(url_for('applicants.search_applicants'))
+            elif field_name.startswith(('snils_part', 'medbook_part')):
+                parts = [request.args.get(f'{field_name[:-1]}{i}') for i in range(1, 5)]
+                valid_parts = list(filter(lambda x: len(x.strip()) > 0, parts))  # Убираем пустые части
+                if valid_parts:
                     try:
-                        filters.append(Applicant.snils_number == int(snils))
+                        full_number = ''.join(valid_parts)
+                        filters.append(getattr(Applicant, field_name[:-7] + '_number') == int(full_number))
                     except ValueError:
-                        pass  # Сообщение об ошибке
-            elif field_name.startswith('medbook_part'):
-                medbook_parts = [search_criteria.get(f'medbook_part{i}') for i in range(1, 5)]
-                medbook = ''.join(filter(None, medbook_parts))
-                if medbook:
-                    try:
-                        filters.append(Applicant.medbook_number == int(medbook))
-                    except ValueError:
-                        pass  # Сообщение об ошибке
-            elif field_name == 'birth_date_start':
-                filters.append(Applicant.birth_date >= datetime.fromisoformat(value))
-            elif field_name == 'birth_date_end':
-                filters.append(Applicant.birth_date <= datetime.fromisoformat(value))
-            elif field_name == 'last_visit_start':
-                # Нет direct поля last_visit, используем Vizit model
-                subq = db.session.query(Vizit.applicant_id) \
-                    .filter(Vizit.created_at >= datetime.fromisoformat(value)) \
-                    .exists()
-                filters.append(subq)
-            elif field_name == 'last_visit_end':
-                # Аналогичная ситуация с last_visit_end
-                subq = db.session.query(Vizit.applicant_id) \
-                    .filter(Vizit.created_at <= datetime.fromisoformat(value)) \
-                    .exists()
-                filters.append(subq)
-            # Для всех остальных полей, если такие есть
+                        flash(f"Неверный формат {field_name[:-7].replace('_', ' ').title()}", "error")
+                        return redirect(url_for('applicants.search_applicants'))
+
+            # Для всех остальных полей
             else:
                 try:
                     filters.append(getattr(Applicant, field_name) == value)
                 except AttributeError:
-                    pass  # Игнорируем неизвестные поля
+                    print(f"Warning: Unknown field '{field_name}'")  # Логирование неизвестных полей
 
-    query = Applicant.query.filter(and_(*filters))
+    if not filters:
+        query = db.session.query(Applicant).outerjoin(
+            last_visit_sq, Applicant.id == last_visit_sq.c.applicant_id
+        )  # Запрос без фильтров, если filters пуст
+    else:
+        query = query.filter(and_(*filters))
+
+    print(query)
+
+    url_args = request.args.copy()
+    url_args.pop('page', None)
+    url_args.pop('per_page', None)
 
     total_count = query.count()
     applicants = query.paginate(page=page, per_page=per_page, error_out=False)
@@ -158,5 +160,6 @@ def search_applicants():
         form=form,
         applicants=applicants,
         total_count=total_count,
-        per_page=per_page
+        per_page=per_page,
+        url_args=url_args  # Передаем url_args в шаблон
     )
