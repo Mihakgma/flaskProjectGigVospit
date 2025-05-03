@@ -47,7 +47,7 @@ def load_initial_data(data_dir, db):
                             instance.birth_date = datetime.strptime(entry.get('birth_date', ''), '%d.%m.%Y')
 
                         elif isinstance(instance, Vizit):
-                            instance.visit_date = datetime.strptime(entry.get('created_at', ''), '%d.%m.%Y')
+                            instance.visit_date = datetime.strptime(entry.get('visit_date', ''), '%d.%m.%Y')
 
                         # Сохраняем экземпляр в сессии
                         db.session.add(instance)

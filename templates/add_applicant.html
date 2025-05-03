@@ -59,7 +59,7 @@
         </div>
         <br>
 
-        {% for field in vizit_form if field.name != 'csrf_token' and field.name != 'created_at' %}
+        {% for field in vizit_form if field.name != 'csrf_token' and field.name != 'visit_date' %}
             <div>
                 {{ field.label }}
                 {% if field.errors %}
