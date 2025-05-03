@@ -70,7 +70,7 @@ def add_applicant():
 
 @applicants_bp.route('/details/<int:applicant_id>')
 @login_required
-@role_required('anyone')
+@role_required('admin', 'moder', 'oper', )
 def applicant_details(applicant_id):
     applicant = Applicant.query.get_or_404(applicant_id)
     return render_template('applicant_details.html',
@@ -82,24 +82,12 @@ def applicant_details(applicant_id):
 @login_required
 @role_required('anyone')
 def search_applicants():
-    form = ApplicantSearchForm()
+    form = ApplicantSearchForm(request.form)  # Используем request.form для POST
     applicants = []
-
-    last_visit_sq = (  # Объявляем подзапрос ДО цикла
-        db.session.query(
-            Vizit.applicant_id,
-            func.max(Vizit.created_at).label('last_visit_date')
-        )
-        .group_by(Vizit.applicant_id)
-        .subquery()
-    )
-
-    query = db.session.query(Applicant).outerjoin(
-        last_visit_sq, Applicant.id == last_visit_sq.c.applicant_id
-    )
 
     if request.method == 'POST' and form.validate_on_submit():
         search_criteria = {}
+        filters = []
 
         if not any(field.data for field in form if field.name not in ['csrf_token', 'submit', 'last_name_exact']) and \
                 not ('snils_part1' in request.form or 'medbook_part1' in request.form):
@@ -144,30 +132,37 @@ def search_applicants():
                     flash('Номер медкнижки должен содержать только цифры', 'error')
                     return render_template('search_applicants.html', form=form, applicants=applicants)
 
-        if form.birth_date_start.data and form.birth_date_end.data is None:
-            flash('Заполните конечную дату рождения', 'error')
-            return render_template('search_applicants.html', form=form, applicants=applicants)
+        for field_name in ['birth_date', 'last_visit']:
+            start_date = form[f'{field_name}_start'].data
+            end_date = form[f'{field_name}_end'].data
 
-        if form.last_visit_start.data and form.last_visit_end.data is None:
-            flash('Заполните конечную дату последнего визита', 'error')
-            return render_template('search_applicants.html', form=form, applicants=applicants)
+            if start_date and end_date:
+                search_criteria[f'{field_name}_start'] = start_date
+                search_criteria[f'{field_name}_end'] = end_date
+            elif start_date or end_date:  # Если заполнена только одна дата
+                flash(f'Заполните обе даты для "{field_name.replace("_", " ").title()}"', 'error')
+                return render_template('search_applicants.html', form=form, applicants=applicants)
 
-        if form.birth_date_start.data:
-            search_criteria['birth_date_start'] = form.birth_date_start.data
-        if form.birth_date_end.data:
-            search_criteria['birth_date_end'] = form.birth_date_end.data
+        # Построение запроса с учетом last_visit
+        last_visit_sq = (
+            db.session.query(
+                Vizit.applicant_id,
+                func.max(Vizit.created_at).label('last_visit_date')
+            )
+            .group_by(Vizit.applicant_id)
+            .subquery()
+        )
 
-        if form.last_visit_start.data:
-            search_criteria['last_visit_start'] = form.last_visit_start.data
-        if form.last_visit_end.data:
-            search_criteria['last_visit_end'] = form.last_visit_end.data
+        query = db.session.query(Applicant).outerjoin(
+            last_visit_sq, Applicant.id == last_visit_sq.c.applicant_id
+        )
 
-        filters = []
         for field_name, value in search_criteria.items():
+
             if field_name == 'last_name':
                 filters.append(func.upper(getattr(Applicant, field_name)).contains(value))
             elif field_name == 'last_name_exact':
-                filters.append(func.lower(getattr(Applicant, field_name[0:-6])) == value)
+                filters.append(func.upper(getattr(Applicant, field_name)) == value)
             elif field_name in ['registration_address', 'residence_address']:
                 filters.append(getattr(Applicant, field_name).contains(value))
             elif field_name in ['snils_number', 'medbook_number']:
@@ -183,8 +178,11 @@ def search_applicants():
             else:
                 filters.append(getattr(Applicant, field_name) == value)
 
-        # Пример запроса:
-        applicants = Applicant.query.filter(and_(*filters)).all()
+        if filters:
+            query = query.filter(and_(*filters))
+            print(query)
+
+        applicants = query.all()
 
     return render_template(
         'search_applicants.html',
