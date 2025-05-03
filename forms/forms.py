@@ -20,6 +20,7 @@ from wtforms.widgets import CheckboxInput, ListWidget
 from functions.data_fix import (names_fix,
                                 elmk_snils_fix)
 from functions.validators.med_book_validator import validate_med_book
+from functions.validators.snils_validator import validate_snils
 
 
 class AddApplicantForm(FlaskForm):
@@ -35,7 +36,9 @@ class AddApplicantForm(FlaskForm):
     medbook_number = StringField('Номер медицинской книжки',
                                  validators=[Length(max=50), validate_med_book],
                                  filters=(elmk_snils_fix,))
-    snils_number = StringField('СНИЛС', validators=[Length(max=14)])
+    snils_number = StringField('СНИЛС',
+                               validators=[Length(max=14), validate_snils],
+                               filters=(elmk_snils_fix,))
     passport_number = StringField('Номер паспорта', validators=[Length(max=20)])
     birth_date = DateField(
         'Дата рождения',
