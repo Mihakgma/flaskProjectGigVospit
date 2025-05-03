@@ -185,7 +185,7 @@ class Vizit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     applicant_id = db.Column(db.Integer, db.ForeignKey('applicant.id'), nullable=False)
     # applicant = db.relationship('Applicant', backref=db.backref('vizits', cascade=None), lazy=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # Дата оформления
+    visit_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # Дата оформления
     contingent_id = db.Column(db.Integer, db.ForeignKey('contingent.id'), nullable=False)
     attestation_type_id = db.Column(db.Integer, db.ForeignKey('attestation_type.id'), nullable=False)
     work_field_id = db.Column(db.Integer, db.ForeignKey('work_field.id'), nullable=False)

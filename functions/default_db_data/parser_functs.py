@@ -201,7 +201,7 @@ def transform_applicants_data(df_in: pd.DataFrame,
 
     df_vizits = df_applicants[['passport_number', 'snils_number']].copy()
     vizit_id_colname = 'applicant_id'
-    vizit_created_colname = 'created_at'
+    vizit_created_colname = 'visit_date'
     vizit_contingent_id_colname = 'contingent_id'
     vizit_attestation_type_id_colname = 'attestation_type_id'
     vizit_work_field_id_colname = 'work_field_id'

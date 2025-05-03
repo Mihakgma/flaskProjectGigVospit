@@ -40,7 +40,7 @@ def add_applicant():
                     new_vizit = Vizit()
                     vizit_form.populate_obj(new_vizit)
                     new_vizit.applicant_id = new_applicant.id
-                    new_vizit.created_at = vizit_form.created_at.data
+                    new_vizit.visit_date = vizit_form.visit_date.data
                     db.session.add(new_vizit)
                     new_applicant.vizits.append(new_vizit)
 
@@ -147,7 +147,7 @@ def search_applicants():
         last_visit_sq = (
             db.session.query(
                 Vizit.applicant_id,
-                func.max(Vizit.created_at).label('last_visit_date')
+                func.max(Vizit.visit_date).label('last_visit_date')
             )
             .group_by(Vizit.applicant_id)
             .subquery()
@@ -180,7 +180,7 @@ def search_applicants():
 
         if filters:
             query = query.filter(and_(*filters))
-            print(query)
+            # print(query)
 
         applicants = query.all()
 

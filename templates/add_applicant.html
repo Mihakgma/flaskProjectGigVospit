@@ -52,8 +52,8 @@
         {{ vizit_form.hidden_tag() }}
 
         <div>
-            {{ vizit_form.created_at.label }} {{ vizit_form.created_at(type="date") }}
-            {% for error in vizit_form.created_at.errors %}
+            {{ vizit_form.visit_date.label }} {{ vizit_form.visit_date(type="date") }}
+            {% for error in vizit_form.visit_date.errors %}
                 <span style="color: red;">{{ error }}</span>
             {% endfor %}
         </div>

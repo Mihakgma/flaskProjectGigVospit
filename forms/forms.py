@@ -225,7 +225,7 @@ class VizitForm(FlaskForm):
     attestation_type_id = SelectField('Тип аттестации', coerce=int, validators=[DataRequired()])
     work_field_id = SelectField('Сфера деятельности', coerce=int, validators=[DataRequired()])
     applicant_type_id = SelectField('Тип заявителя', coerce=int, validators=[DataRequired()])
-    created_at = DateTimeField('Дата создания визита', format='%Y-%m-%d', validators=[DataRequired()])  # Новое поле
+    visit_date = DateTimeField('Дата визита', format='%Y-%m-%d', validators=[DataRequired()])
     submit = SubmitField('Добавить визит')
 
     def __init__(self, *args, **kwargs):
