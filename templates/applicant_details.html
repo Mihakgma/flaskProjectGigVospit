@@ -75,7 +75,7 @@
     </dl>
 
 
-    {#<a href="{{ url_for('routes_bp.edit_applicant', applicant_id=applicant.id) }}">Редактировать</a> <br> {# Разкомментировано #}
+    <a href="{{ url_for('applicants.edit_applicant', applicant_id=applicant.id) }}">Редактировать</a> <br>
 
     <h2>Визиты</h2>
     <button id="toggleVizits">Показать/Скрыть визиты</button>

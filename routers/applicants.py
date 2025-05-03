@@ -3,8 +3,8 @@ from flask import (Blueprint,
                    request,
                    redirect,
                    url_for,
-                   flash)
-from flask_login import login_required
+                   flash, abort)
+from flask_login import login_required, current_user
 
 from functions.access_control import role_required
 from models.models import (Applicant,
@@ -14,7 +14,7 @@ from database import db
 from datetime import timezone, date, datetime
 
 from forms.forms import (AddApplicantForm,
-                         VizitForm, ApplicantSearchForm)
+                         VizitForm, ApplicantSearchForm, ApplicantEditForm)
 from sqlalchemy import and_
 from sqlalchemy.sql.expression import func
 
@@ -73,9 +73,50 @@ def add_applicant():
 @role_required('admin', 'moder', 'oper', )
 def applicant_details(applicant_id):
     applicant = Applicant.query.get_or_404(applicant_id)
+    visits = Vizit.query.filter_by(applicant_id=applicant_id).all()
     return render_template('applicant_details.html',
                            applicant=applicant,
+                           visits=visits,
                            timezone=timezone)
+
+
+@applicants_bp.route('/applicant/<int:applicant_id>/edit', methods=['GET', 'POST'])
+@login_required
+@role_required('admin', 'moder', 'oper', )
+def edit_applicant(applicant_id):
+    applicant = Applicant.query.get_or_404(applicant_id)
+
+    applicant_form = ApplicantEditForm(obj=applicant)
+    visit_form = VizitForm()
+
+    if request.method == 'POST':
+        if applicant_form.submit.data and applicant_form.validate_on_submit():
+            applicant_form.populate_obj(applicant)
+            applicant.edited_by_user_id = current_user.id
+            applicant.edited_time = datetime.utcnow()
+            db.session.commit()
+            flash('Данные заявителя обновлены', 'success')
+            return redirect(url_for('applicants.applicant_details', applicant_id=applicant.id))
+        elif visit_form.submit.data and visit_form.validate_on_submit():
+            visit = Vizit(
+                applicant_id=applicant.id,
+                contingent_id=visit_form.contingent_id,
+                attestation_type_id=visit_form.attestation_type_id,
+                work_field_id=visit_form.work_field_id,
+                applicant_type_id=visit_form.applicant_type_id,
+                visit_date=visit_form.visit_date.data,
+            )
+            db.session.add(visit)
+            applicant.edited_by_user_id = current_user.id
+            applicant.edited_time = datetime.utcnow()
+            db.session.commit()
+            flash('Визит добавлен', 'success')
+            return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
+
+    return render_template('edit_applicant.html',
+                           applicant=applicant,
+                           applicant_form=applicant_form,
+                           visit_form=visit_form)
 
 
 @applicants_bp.route('/search_applicants', methods=['GET', 'POST'])

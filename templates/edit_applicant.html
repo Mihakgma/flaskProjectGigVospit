@@ -1,0 +1,42 @@
+# templates/edit_applicant.html
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Редактирование заявителя</h1>
+
+    <form method="post" novalidate>
+        {{ applicant_form.hidden_tag() }}
+
+        {% for field in applicant_form if field.name != 'submit' and field.name != 'csrf_token' %}
+            <div>
+                {{ field.label }}
+                {{ field() }}
+                {% for error in field.errors %}
+                    <span style="color: red;">{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        {{ applicant_form.submit() }}
+    </form>
+
+
+    <h2>Добавить визит</h2>
+    <form method="post" novalidate>
+        {{ visit_form.hidden_tag() }}
+        {% for field in visit_form if field.name not in ['csrf_token', 'submit_visit'] %}
+            <div>
+                {{ field.label }}
+                {{ field() }}
+                {% for error in field.errors %}
+                    <span style="color: red;">{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+
+        {{ visit_form.submit() }}
+    </form>
+
+
+    <a href="{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}">Назад к деталям заявителя</a>
+{% endblock %}

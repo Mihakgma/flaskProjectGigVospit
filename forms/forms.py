@@ -225,7 +225,7 @@ class VizitForm(FlaskForm):
     attestation_type_id = SelectField('Тип аттестации', coerce=int, validators=[DataRequired()])
     work_field_id = SelectField('Сфера деятельности', coerce=int, validators=[DataRequired()])
     applicant_type_id = SelectField('Тип заявителя', coerce=int, validators=[DataRequired()])
-    visit_date = DateTimeField('Дата визита', format='%Y-%m-%d', validators=[DataRequired()])
+    visit_date = DateField('Дата визита', format='%d-%m-%Y', validators=[DataRequired()])
     submit = SubmitField('Добавить визит')
 
     def __init__(self, *args, **kwargs):
@@ -254,3 +254,41 @@ class ApplicantSearchForm(FlaskForm):
                                     validators=[Optional()],
                                     filters=(names_fix,))
     submit = SubmitField('Найти')
+
+
+class ApplicantEditForm(FlaskForm):
+    first_name = StringField('Имя',
+                             validators=[DataRequired(), Length(max=80)],
+                             filters=(names_fix,))
+    last_name = StringField('Фамилия',
+                            validators=[DataRequired(), Length(max=80)],
+                            filters=(names_fix,))
+    middle_name = StringField('Отчество',
+                              validators=[Length(max=80)],
+                              filters=(names_fix,))
+    medbook_number = StringField('Номер медицинской книжки',
+                                 validators=[Length(max=50), validate_med_book],
+                                 filters=(elmk_snils_fix,))
+    snils_number = StringField('СНИЛС',
+                               validators=[Length(max=14), validate_snils],
+                               filters=(elmk_snils_fix,))
+    passport_number = StringField('Номер паспорта', validators=[Length(max=20)])
+    birth_date = DateField(
+        'Дата рождения',
+        format='%Y-%m-%d',
+        validators=[
+            DataRequired(),
+            validate_birth_date
+        ]
+    )
+    registration_address = StringField('Адрес регистрации',
+                                       validators=[Length(max=200)],
+                                       filters=(names_fix,))
+    residence_address = StringField('Адрес проживания',
+                                    validators=[Length(max=200)],
+                                    filters=(names_fix,))
+    phone_number = StringField('Телефон',
+                               validators=[Length(max=20)],
+                               filters=(phone_number_fix,))
+    email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
+    submit = SubmitField('Сохранить')
