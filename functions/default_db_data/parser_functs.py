@@ -192,6 +192,13 @@ def transform_applicants_data(df_in: pd.DataFrame,
                                     update_colname='additional_info',
                                     values_from_colname=fio_colname,
                                     merge_on_colname='snils_number')
+    df_applicants['registration_address'] = df_applicants['registration_address'] \
+        .apply(lambda x: names_fix(x) if type(x) is str else np.nan)
+    df_applicants['residence_address'] = df_applicants['residence_address'] \
+        .apply(lambda x: names_fix(x) if type(x) is str else np.nan)
+    df_applicants['email'] = df_applicants['email'] \
+        .apply(lambda x: x if x != 0 else np.nan)
+
     df_vizits = df_applicants[['passport_number', 'snils_number']].copy()
     vizit_id_colname = 'applicant_id'
     vizit_created_colname = 'created_at'

@@ -18,7 +18,7 @@ from functions import validate_birth_date
 from wtforms.widgets import CheckboxInput, ListWidget
 
 from functions.data_fix import (names_fix,
-                                elmk_snils_fix)
+                                elmk_snils_fix, phone_number_fix)
 from functions.validators.med_book_validator import validate_med_book
 from functions.validators.snils_validator import validate_snils
 
@@ -48,9 +48,15 @@ class AddApplicantForm(FlaskForm):
             validate_birth_date
         ]
     )
-    registration_address = StringField('Адрес регистрации', validators=[Length(max=200)])
-    residence_address = StringField('Адрес проживания', validators=[Length(max=200)])
-    phone_number = StringField('Телефон', validators=[Length(max=20)])
+    registration_address = StringField('Адрес регистрации',
+                                       validators=[Length(max=200)],
+                                       filters=(names_fix,))
+    residence_address = StringField('Адрес проживания',
+                                    validators=[Length(max=200)],
+                                    filters=(names_fix,))
+    phone_number = StringField('Телефон',
+                               validators=[Length(max=20)],
+                               filters=(phone_number_fix,))
     email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
     submit = SubmitField('Добавить заявителя')
 
@@ -150,25 +156,31 @@ class UserAddForm(FlaskForm):
 
 
 class OrganizationAddForm(FlaskForm):
-    name = StringField('Название организации', validators=[
-        DataRequired(message="Обязательно введите название"),
-        Length(max=200, message="Максимальное количество символов: 200")
-    ])
+    name = StringField('Название организации',
+                       validators=[
+                           DataRequired(message="Обязательно введите название"),
+                           Length(max=200, message="Максимальное количество символов: 200")
+                       ],
+                       filters=(names_fix,))
 
-    inn = StringField('ИНН', validators=[
-        DataRequired(message="Обязательно введите ИНН"),
-        Length(min=10, max=12, message="ИНН должен содержать 10 или 12 цифр")
-    ])
+    inn = StringField('ИНН',
+                      validators=[
+                          DataRequired(message="Обязательно введите ИНН"),
+                          Length(min=10, max=12, message="ИНН должен содержать 10 или 12 цифр")
+                      ],
+                      filters=(elmk_snils_fix,))
 
-    address = StringField('Адрес', validators=[
-        Optional(),  # Адрес необязателен
-        Length(max=200, message="Максимальное количество символов: 200")
-    ])
+    address = StringField('Адрес',
+                          validators=[
+                              Optional(),  # Адрес необязателен
+                              Length(max=200, message="Максимальное количество символов: 200")],
+                          filters=(names_fix,))
 
     phone_number = StringField('Номер телефона', validators=[
         Optional(),  # Телефон необязателен
         Length(max=20, message="Максимальное количество символов: 20")
-    ])
+    ],
+                               filters=(phone_number_fix,))
 
     email = StringField('Email', validators=[
         Optional(),  # Email необязателен
