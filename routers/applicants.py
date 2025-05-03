@@ -110,19 +110,19 @@ def search_applicants():
             if len(form.last_name.data) < 2:
                 flash('Фамилия должна содержать не менее 2 символов', 'error')
                 return render_template('search_applicants.html', form=form, applicants=applicants)
-            search_criteria['last_name'] = form.last_name.data.strip().upper()  # upper() для фамилии
+            search_criteria['last_name'] = form.last_name.data
 
         if form.registration_address.data:
             if len(form.registration_address.data) < 2:
                 flash('Адрес регистрации должен содержать не менее 2 символов', 'error')
                 return render_template('search_applicants.html', form=form, applicants=applicants)
-            search_criteria['registration_address'] = form.registration_address.data  # без lower() для адреса
+            search_criteria['registration_address'] = form.registration_address.data
 
         if form.residence_address.data:
             if len(form.residence_address.data) < 2:
                 flash('Адрес проживания должен содержать не менее 2 символов', 'error')
                 return render_template('search_applicants.html', form=form, applicants=applicants)
-            search_criteria['residence_address'] = form.residence_address.data  # без lower() для адреса
+            search_criteria['residence_address'] = form.residence_address.data
 
         if 'snils_part1' in request.form:
             snils_parts = [request.form.get(f'snils_part{i}') for i in range(1, 5)]

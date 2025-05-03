@@ -237,7 +237,9 @@ class VizitForm(FlaskForm):
 
 
 class ApplicantSearchForm(FlaskForm):
-    last_name = StringField('Фамилия', validators=[Optional()])
+    last_name = StringField('Фамилия',
+                            validators=[Optional()],
+                            filters=(names_fix,))
     last_name_exact = BooleanField('Точное совпадение фамилии', default=False)  # Для полного совпадения
     snils_number = StringField('СНИЛС', validators=[Optional()])
     medbook_number = StringField('Номер медицинской книжки', validators=[Optional()])
@@ -245,6 +247,10 @@ class ApplicantSearchForm(FlaskForm):
     birth_date_end = DateField('Дата рождения (до)', validators=[Optional()])
     last_visit_start = DateField('Дата последнего визита (от)', validators=[Optional()])
     last_visit_end = DateField('Дата последнего визита (до)', validators=[Optional()])
-    registration_address = StringField('Адрес регистрации', validators=[Optional()])
-    residence_address = StringField('Адрес прописки', validators=[Optional()])
+    registration_address = StringField('Адрес регистрации',
+                                       validators=[Optional()],
+                                       filters=(names_fix,))
+    residence_address = StringField('Адрес прописки',
+                                    validators=[Optional()],
+                                    filters=(names_fix,))
     submit = SubmitField('Найти')
