@@ -17,12 +17,14 @@ from wtforms_sqlalchemy.fields import (QuerySelectField)
 from functions import validate_birth_date
 from wtforms.widgets import CheckboxInput, ListWidget
 
-from functions.data_fix import names_fix
+from functions.data_fix import (names_fix,
+                                elmk_snils_fix)
+from functions.validators.med_book_validator import validate_med_book
 
 
 class AddApplicantForm(FlaskForm):
     first_name = StringField('Имя',
-                             validators=[DataRequired(),Length(max=80)],
+                             validators=[DataRequired(), Length(max=80)],
                              filters=(names_fix,))
     last_name = StringField('Фамилия',
                             validators=[DataRequired(), Length(max=80)],
@@ -30,7 +32,9 @@ class AddApplicantForm(FlaskForm):
     middle_name = StringField('Отчество',
                               validators=[Length(max=80)],
                               filters=(names_fix,))
-    medbook_number = StringField('Номер медицинской книжки', validators=[Length(max=50)])
+    medbook_number = StringField('Номер медицинской книжки',
+                                 validators=[Length(max=50), validate_med_book],
+                                 filters=(elmk_snils_fix,))
     snils_number = StringField('СНИЛС', validators=[Length(max=14)])
     passport_number = StringField('Номер паспорта', validators=[Length(max=20)])
     birth_date = DateField(
@@ -43,12 +47,8 @@ class AddApplicantForm(FlaskForm):
     )
     registration_address = StringField('Адрес регистрации', validators=[Length(max=200)])
     residence_address = StringField('Адрес проживания', validators=[Length(max=200)])
-    phone_number = StringField('Телефон', validators=[Length(max=20)])  # Используем StringField
-    email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])  # Используем StringField
-    # contingent_id = SelectField('Контингент', coerce=int, validators=[DataRequired()])
-    # work_field_id = SelectField('Сфера деятельности', coerce=int, validators=[DataRequired()])
-    # applicant_type_id = SelectField('Тип заявителя', coerce=int, validators=[DataRequired()])
-    # attestation_type_id = SelectField('Тип аттестации', coerce=int, validators=[DataRequired()])
+    phone_number = StringField('Телефон', validators=[Length(max=20)])
+    email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
     submit = SubmitField('Добавить заявителя')
 
 
