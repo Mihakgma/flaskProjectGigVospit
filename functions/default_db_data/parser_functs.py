@@ -1,12 +1,10 @@
-# import re
-
 import numpy as np
 import pandas as pd
 import os
 import json
 
 from functions.data_fix import names_fix, phone_number_fix, elmk_snils_fix
-from functions.merge_update_dfs import merge_update_df
+from functions.default_db_data.merge_update_dfs import merge_update_df
 
 
 def excel_to_data_frame_parser(file: str,
@@ -115,7 +113,7 @@ def save_dataframe_to_json(df, file_path=None):
 def transform_applicants_data(df_in: pd.DataFrame,
                               fio_colname: str,
                               columns_info: dict,
-                              date_in_colname:str,
+                              date_in_colname: str,
                               *args,
                               **kwargs) -> pd.DataFrame:
     """Трансформация DataFrame заявителей с упрощенной логикой."""
@@ -215,6 +213,5 @@ def transform_applicants_data(df_in: pd.DataFrame,
     df_vizits[vizit_attestation_type_id_colname] = [4 for i in range(df_vizits.shape[0])]
     df_vizits[vizit_work_field_id_colname] = [36 for i in range(df_vizits.shape[0])]
     df_vizits[vizit_applicant_type_id_colname] = [4 for i in range(df_vizits.shape[0])]
-
 
     return df_applicants, df_vizits
