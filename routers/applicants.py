@@ -3,8 +3,8 @@ from flask import (Blueprint,
                    request,
                    redirect,
                    url_for,
-                   flash, abort)
-from flask_login import login_required, current_user
+                   flash)
+from flask_login import login_required
 
 from functions.access_control import role_required
 from models.models import (Applicant,
@@ -86,44 +86,46 @@ def applicant_details(applicant_id):
 @role_required('admin', 'moder', 'oper', )
 def edit_applicant(applicant_id):
     applicant = Applicant.query.get_or_404(applicant_id)
-
+    visits = Vizit.query.filter_by(applicant_id=applicant_id).all()
     applicant_form = ApplicantEditForm(obj=applicant)
-    visit_form = VizitForm()
+    vizit_form = VizitForm()
 
     if request.method == 'POST':
         if applicant_form.submit.data and applicant_form.validate_on_submit():
             applicant_form.populate_obj(applicant)
-            applicant.edited_by_user_id = current_user.id
-            applicant.edited_time = datetime.utcnow()
             db.session.commit()
             flash('Данные заявителя обновлены', 'success')
-            return redirect(url_for('applicants.applicant_details', applicant_id=applicant.id))
 
-        elif visit_form.submit.data and visit_form.validate_on_submit():
+        if vizit_form.submit_visit.data and vizit_form.validate_on_submit():
             try:
-                visit = Vizit(
-                    applicant_id=applicant.id,
-                    contingent_id=visit_form.contingent_id.data,  # <-- .data
-                    attestation_type_id=visit_form.attestation_type_id.data,  # <-- .data
-                    work_field_id=visit_form.work_field_id.data,  # <-- .data
-                    applicant_type_id=visit_form.applicant_type_id.data,  # <-- .data
-                    visit_date=visit_form.visit_date.data,
-                    additional_info=visit_form.additional_info.data,
-                )
-                db.session.add(visit)
-                applicant.vizits.append(visit)  # <--- Добавляем визит к заявителю (если используете relationship)
-                db.session.commit()  # <-- commit перенесен сюда
+                new_vizit = Vizit()
+                vizit_form.populate_obj(new_vizit)
+                new_vizit.applicant_id = applicant.id
+                new_vizit.visit_date = vizit_form.visit_date.data
+                new_vizit.additional_info = vizit_form.additional_info.data
+                db.session.add(new_vizit)
+                applicant.vizits.append(new_vizit)  # если используете relationship
+                db.session.commit()
                 flash('Визит добавлен', 'success')
-                return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
             except Exception as e:
                 db.session.rollback()
                 print(f"Ошибка при добавлении визита: {e}")
-                flash('Произошла ошибка при добавлении визита. Попробуйте позже.', 'danger')
+                flash(f"Ошибка при добавлении визита: {e}", 'danger')
+
+        # Выводим ошибки валидации формы заявителя, если они есть, вне зависимости от добавления визита.
+        if not applicant_form.validate_on_submit():
+            for field, errors in applicant_form.errors.items():
+                for error in errors:
+                    flash(f"Ошибка в поле '{applicant_form[field].label.text}': {error}", 'danger')
+
+        return redirect(url_for('applicants.edit_applicant',
+                                applicant_id=applicant.id))
 
     return render_template('edit_applicant.html',
                            applicant=applicant,
                            applicant_form=applicant_form,
-                           visit_form=visit_form)
+                           visit_form=vizit_form,
+                           visits=visits)
 
 
 @applicants_bp.route('/search_applicants', methods=['GET', 'POST'])

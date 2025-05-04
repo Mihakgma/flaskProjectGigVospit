@@ -234,7 +234,7 @@ class VizitForm(FlaskForm):
                                     validators=[
                                         Optional(),
                                         Length(max=300, message="Максимальное количество символов: 300")])
-    submit = SubmitField('Добавить визит')
+    submit_visit = SubmitField('Добавить визит')
 
     def __init__(self, *args, **kwargs):
         super(VizitForm, self).__init__(*args, **kwargs)

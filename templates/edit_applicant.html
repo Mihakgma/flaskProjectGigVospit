@@ -19,6 +19,39 @@
         {{ applicant_form.submit() }}
     </form>
 
+    <h2>Визиты</h2>
+    <button id="toggleVizits">Показать/Скрыть визиты</button>
+
+    <div id="vizits" style="display: none;">
+        <ul>
+            {% for vizit in visits %} <--- Изменено здесь
+                <li>
+                    Дата визита: {{ vizit.visit_date.strftime('%d.%m.%Y') }} <br>
+                    Контингент: {{ vizit.contingent.name }} <br>
+                    Тип аттестации: {{ vizit.attestation_type.name }} <br>
+                    Сфера деятельности: {{ vizit.work_field.name }} <br>
+                    Тип заявителя: {{ vizit.applicant_type.name }} <br>
+                    Контракты:
+                    <ul>
+                        {% for contract in vizit.contracts %}
+                            <li>
+                                <a href="{{ url_for('contract_details', contract_id=contract.id) }}">{{ contract.number }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+
+                </li>
+
+            {% endfor %}
+        </ul>
+    </div>
+
+    <h2>Контракты</h2>
+    <ul>
+        {% for contract in applicant.contracts %}
+            <li><a href="{{ url_for('contract_details', contract_id=contract.id) }}">{{ contract.number }}</a></li>
+        {% endfor %}
+    </ul>
 
     <h2>Добавить визит</h2>
     <form method="post" novalidate>
@@ -34,9 +67,19 @@
         {% endfor %}
 
 
-        {{ visit_form.submit() }}
+        {{ visit_form.submit_visit() }}
     </form>
 
 
     <a href="{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}">Назад к деталям заявителя</a>
+
+    document.getElementById('toggleVizits').addEventListener('click', function() {
+    var vizitsDiv = document.getElementById('vizits');
+    if (vizitsDiv.style.display === 'none') {
+    vizitsDiv.style.display = 'block';
+    } else {
+    vizitsDiv.style.display = 'none';
+    }
+    });
+
 {% endblock %}
