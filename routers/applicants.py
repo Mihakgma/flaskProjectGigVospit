@@ -41,6 +41,7 @@ def add_applicant():
                     vizit_form.populate_obj(new_vizit)
                     new_vizit.applicant_id = new_applicant.id
                     new_vizit.visit_date = vizit_form.visit_date.data
+                    new_vizit.additional_info = vizit_form.additional_info.data
                     db.session.add(new_vizit)
                     new_applicant.vizits.append(new_vizit)
 
@@ -97,21 +98,27 @@ def edit_applicant(applicant_id):
             db.session.commit()
             flash('Данные заявителя обновлены', 'success')
             return redirect(url_for('applicants.applicant_details', applicant_id=applicant.id))
+
         elif visit_form.submit.data and visit_form.validate_on_submit():
-            visit = Vizit(
-                applicant_id=applicant.id,
-                contingent_id=visit_form.contingent_id,
-                attestation_type_id=visit_form.attestation_type_id,
-                work_field_id=visit_form.work_field_id,
-                applicant_type_id=visit_form.applicant_type_id,
-                visit_date=visit_form.visit_date.data,
-            )
-            db.session.add(visit)
-            applicant.edited_by_user_id = current_user.id
-            applicant.edited_time = datetime.utcnow()
-            db.session.commit()
-            flash('Визит добавлен', 'success')
-            return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
+            try:
+                visit = Vizit(
+                    applicant_id=applicant.id,
+                    contingent_id=visit_form.contingent_id.data,  # <-- .data
+                    attestation_type_id=visit_form.attestation_type_id.data,  # <-- .data
+                    work_field_id=visit_form.work_field_id.data,  # <-- .data
+                    applicant_type_id=visit_form.applicant_type_id.data,  # <-- .data
+                    visit_date=visit_form.visit_date.data,
+                    additional_info=visit_form.additional_info.data,
+                )
+                db.session.add(visit)
+                applicant.vizits.append(visit)  # <--- Добавляем визит к заявителю (если используете relationship)
+                db.session.commit()  # <-- commit перенесен сюда
+                flash('Визит добавлен', 'success')
+                return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
+            except Exception as e:
+                db.session.rollback()
+                print(f"Ошибка при добавлении визита: {e}")
+                flash('Произошла ошибка при добавлении визита. Попробуйте позже.', 'danger')
 
     return render_template('edit_applicant.html',
                            applicant=applicant,

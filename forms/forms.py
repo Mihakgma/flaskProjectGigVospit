@@ -58,6 +58,10 @@ class AddApplicantForm(FlaskForm):
                                validators=[Length(max=20)],
                                filters=(phone_number_fix,))
     email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
+    additional_info = TextAreaField('Дополнительная информация',
+                                    validators=[
+                                        Optional(),
+                                        Length(max=300, message="Максимальное количество символов: 300")])
     submit = SubmitField('Добавить заявителя')
 
 
@@ -226,6 +230,10 @@ class VizitForm(FlaskForm):
     work_field_id = SelectField('Сфера деятельности', coerce=int, validators=[DataRequired()])
     applicant_type_id = SelectField('Тип заявителя', coerce=int, validators=[DataRequired()])
     visit_date = DateField('Дата визита', format='%d-%m-%Y', validators=[DataRequired()])
+    additional_info = TextAreaField('Дополнительная информация',
+                                    validators=[
+                                        Optional(),
+                                        Length(max=300, message="Максимальное количество символов: 300")])
     submit = SubmitField('Добавить визит')
 
     def __init__(self, *args, **kwargs):
@@ -291,4 +299,8 @@ class ApplicantEditForm(FlaskForm):
                                validators=[Length(max=20)],
                                filters=(phone_number_fix,))
     email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
+    additional_info = TextAreaField('Дополнительная информация',
+                                    validators=[
+                                        Optional(),
+                                        Length(max=300, message="Максимальное количество символов: 300")])
     submit = SubmitField('Сохранить')

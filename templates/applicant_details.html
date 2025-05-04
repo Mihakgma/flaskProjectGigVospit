@@ -72,6 +72,8 @@
         </dd>
         <dt>Начало редактирования:</dt>
         <dd>{{ applicant.editing_started_at.strftime('%d.%m.%Y %H:%M:%S') if applicant.editing_started_at else 'Не указано' }}</dd>
+        <dt>Дополнительная информация:</dt>
+        <dd>{{ applicant.additional_info }}</dd>
     </dl>
 
 
