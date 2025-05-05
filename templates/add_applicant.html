@@ -15,52 +15,22 @@
 </head>
 <body>
 <div class="container background-body-1">
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        <ul class="flashes">
-            {% for category, message in messages %}
-                <li class="{{ category }}">{{ message }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-{% endwith %}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
 
-<h1>Добавление заявителя</h1>
+    <h1>Добавление заявителя</h1>
 
-<form method="post">
-    {{ form.hidden_tag() }}
+    <form method="post">
+        {{ form.hidden_tag() }}
 
-    {% for field in form if field.name != 'csrf_token' %}
-        <div>
-            {{ field.label }}
-            {% if field.errors %}
-                <ul class="errors">
-                    {% for error in field.errors %}
-                        <li>{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-            {{ field(class_="input") }}
-        </div><br>
-    {% endfor %}
-
-    <button type="submit" name="submit_applicant">Добавить заявителя</button>
-
-    <h2>ДОБАВИТЬ ВИЗИТ (ОБЯЗАТЕЛЬНОЕ ТРЕБОВАНИЕ)</h2>
-    <img src="{{ url_for('static', filename='plus.gif') }}" alt="Добавить визит" style="cursor: pointer;">
-
-    <div id="vizit-form-container" style="display: none;">
-        {{ vizit_form.hidden_tag() }}
-
-        <div>
-            {{ vizit_form.visit_date.label }} {{ vizit_form.visit_date(type="date") }}
-            {% for error in vizit_form.visit_date.errors %}
-                <span style="color: red;">{{ error }}</span>
-            {% endfor %}
-        </div>
-        <br>
-
-        {% for field in vizit_form if field.name != 'csrf_token' and field.name != 'visit_date' %}
+        {% for field in form if field.name != 'csrf_token' %}
             <div>
                 {{ field.label }}
                 {% if field.errors %}
@@ -74,10 +44,40 @@
             </div><br>
         {% endfor %}
 
-        <button type="submit" name="submit_vizit">Добавить визит</button>
-        <br>
-    </div>
-</form>
+        <button type="submit" name="submit_applicant">Добавить заявителя</button>
+
+        <h2>ДОБАВИТЬ ВИЗИТ (ОБЯЗАТЕЛЬНОЕ ТРЕБОВАНИЕ)</h2>
+        <img src="{{ url_for('static', filename='plus.gif') }}" alt="Добавить визит" style="cursor: pointer;">
+
+        <div id="vizit-form-container" style="display: none;">
+            {{ vizit_form.hidden_tag() }}
+
+            <div>
+                {{ vizit_form.visit_date.label }} {{ vizit_form.visit_date(type="date") }}
+                {% for error in vizit_form.visit_date.errors %}
+                    <span style="color: red;">{{ error }}</span>
+                {% endfor %}
+            </div>
+            <br>
+
+            {% for field in vizit_form if field.name != 'csrf_token' and field.name != 'visit_date' %}
+                <div>
+                    {{ field.label }}
+                    {% if field.errors %}
+                        <ul class="errors">
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    {{ field(class_="input") }}
+                </div><br>
+            {% endfor %}
+
+            <button type="submit" name="submit_vizit">Добавить визит</button>
+            <br>
+        </div>
+    </form>
 </div>
 </body>
 </html>
