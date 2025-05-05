@@ -6,6 +6,7 @@ from flask import (Blueprint,
                    jsonify,
                    request)
 from flask_login import login_required
+from sqlalchemy.sql.functions import func
 
 from functions.access_control import role_required
 from models.models import Organization
@@ -81,6 +82,12 @@ def search_organizations():
 
     organizations = Organization.query.filter(Organization.name.ilike(f"%{q}%")).paginate(page=page, per_page=30,
                                                                                           error_out=False)
+    # work with sqlite3 db
+    if organizations.total == 0:
+        print("sqlite3 db detected!")
+        organizations = Organization.query.filter(
+            func.upper(Organization.name).like(f"%{q.upper()}%")  # или lower() для обоих
+        ).paginate(page=page, per_page=30, error_out=False)
 
     return jsonify({
         'items': [{'id': org.id, 'text': org.name} for org in organizations.items],

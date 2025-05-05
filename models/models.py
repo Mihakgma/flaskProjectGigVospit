@@ -3,7 +3,7 @@ from datetime import datetime
 from werkzeug.security import check_password_hash
 
 from database import db
-from sqlalchemy import ForeignKey, Text, Table
+from sqlalchemy import ForeignKey, Table
 from sqlalchemy.types import String, Integer, Boolean, DateTime
 from flask_login import UserMixin  # Для интеграции с Flask-Login
 
