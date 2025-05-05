@@ -24,8 +24,6 @@ from functions.data_fix import (names_fix,
 from functions.validators.med_book_validator import validate_med_book
 from functions.validators.snils_validator import validate_snils
 
-# from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
-# from wtforms.fields import StringField, PasswordField, SubmitField
 from models import (User,
                     Role,
                     Department,
@@ -79,17 +77,6 @@ class AddApplicantForm(FlaskForm):
     submit = SubmitField('Добавить заявителя')
 
 
-class AddContractForm(FlaskForm):
-    number = StringField('Номер контракта', validators=[DataRequired(), Length(max=50)])
-    contract_date = DateField('Дата заключения', format='%Y-%m-%d', validators=[DataRequired()])
-    name = TextAreaField('Название контракта', validators=[DataRequired()])
-    expiration_date = DateField('Дата истечения', format='%Y-%m-%d', validators=[Optional()])
-    is_extended = BooleanField('Продлен')
-    organization_id = SelectField('Организация', coerce=int, validators=[DataRequired()])
-    additional_info = TextAreaField('Дополнительная информация')
-    submit = SubmitField('Добавить контракт')
-
-
 class LoginForm(FlaskForm):
     username = StringField('Имя пользователя', validators=[DataRequired()])
     password = PasswordField('Пароль', validators=[DataRequired()])
@@ -139,10 +126,10 @@ class UserAddForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Пароль', validators=[DataRequired(), Length(min=8)])
     phone = StringField('Номер телефона', validators=[
-        Optional(),  # Телефон необязателен
+        Optional(),
         Length(max=11, message="Максимальное количество символов: 11")
     ],
-                               filters=(phone_number_fix,))
+                        filters=(phone_number_fix,))
     dept_id = QuerySelectField('Отдел',
                                query_factory=lambda: Department.query.all(),
                                get_label='name', allow_blank=True, blank_text='Выберите отдел')
@@ -187,12 +174,12 @@ class OrganizationAddForm(FlaskForm):
 
     address = StringField('Адрес',
                           validators=[
-                              Optional(),  # Адрес необязателен
+                              Optional(),
                               Length(max=200, message="Максимальное количество символов: 200")],
                           filters=(names_fix,))
 
     phone_number = StringField('Номер телефона', validators=[
-        Optional(),  # Телефон необязателен
+        Optional(),
         Length(max=20, message="Максимальное количество символов: 20")
     ],
                                filters=(phone_number_fix,))
@@ -211,7 +198,6 @@ class OrganizationAddForm(FlaskForm):
 
     submit = SubmitField('Сохранить')
 
-    # Валидатор для проверки уникальности ИНН
     def validate_inn(self, field):
         organization = Organization.query.filter_by(inn=field.data).first()
         if organization:
@@ -226,12 +212,11 @@ class AddContractForm(FlaskForm):
     is_extended = BooleanField('Продлён')
     additional_info = TextAreaField('Дополнительная информация')
     # applicants = SelectMultipleField('Заявители', coerce=int, choices=[])
-    organization_id = SelectField('Организация', coerce=int, choices=[])  # Поле для выбора организации
+    organization_id = SelectField('Организация', coerce=int, choices=[])
     submit = SubmitField('Сохранить')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # self.applicants.choices = [(a.id, a.full_name) for a in Applicant.query.all()]
         self.organization_id.choices = [(o.id, o.name) for o in Organization.query.all()]
 
 
@@ -240,7 +225,7 @@ class VizitForm(FlaskForm):
     attestation_type_id = SelectField('Тип аттестации', coerce=int, validators=[DataRequired()])
     work_field_id = SelectField('Сфера деятельности', coerce=int, validators=[DataRequired()])
     applicant_type_id = SelectField('Тип заявителя', coerce=int, validators=[DataRequired()])
-    visit_date = DateField('Дата визита', format='%d-%m-%Y', validators=[DataRequired()])
+    visit_date = DateField('Дата визита', validators=[DataRequired()])
     additional_info = TextAreaField('Дополнительная информация',
                                     validators=[
                                         Optional(),

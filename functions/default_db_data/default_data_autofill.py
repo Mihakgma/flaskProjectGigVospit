@@ -109,7 +109,7 @@ def load_initial_data(data_dir, db):
 
 def db_load_data(db, data_dir="initial_data"):
     try:
-        load_initial_data(data_dir, db)
+        # load_initial_data(data_dir, db)
         print("Database initialized and data loaded successfully.")
     except Exception as e:
         print(f"Error initializing database: {e}")

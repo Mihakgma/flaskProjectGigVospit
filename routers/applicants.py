@@ -4,7 +4,7 @@ from flask import (Blueprint,
                    redirect,
                    url_for,
                    flash)
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 from functions.access_control import role_required
 from models.models import (Applicant,
@@ -93,10 +93,13 @@ def edit_applicant(applicant_id):
     if request.method == 'POST':
         if applicant_form.submit.data and applicant_form.validate_on_submit():
             applicant_form.populate_obj(applicant)
+            applicant.edited_time = datetime.utcnow()
+            applicant.edited_by_user_id = current_user.id
             db.session.commit()
             flash('Данные заявителя обновлены', 'success')
+            return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
 
-        if vizit_form.submit_visit.data and vizit_form.validate_on_submit():
+        elif vizit_form.submit_visit.data and vizit_form.validate_on_submit():
             try:
                 new_vizit = Vizit()
                 vizit_form.populate_obj(new_vizit)
@@ -105,8 +108,11 @@ def edit_applicant(applicant_id):
                 new_vizit.additional_info = vizit_form.additional_info.data
                 db.session.add(new_vizit)
                 applicant.vizits.append(new_vizit)  # если используете relationship
+                applicant.edited_time = datetime.utcnow()
+                applicant.edited_by_user_id = current_user.id
                 db.session.commit()
                 flash('Визит добавлен', 'success')
+                return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
             except Exception as e:
                 db.session.rollback()
                 print(f"Ошибка при добавлении визита: {e}")
@@ -117,6 +123,11 @@ def edit_applicant(applicant_id):
             for field, errors in applicant_form.errors.items():
                 for error in errors:
                     flash(f"Ошибка в поле '{applicant_form[field].label.text}': {error}", 'danger')
+
+        if not vizit_form.validate_on_submit():
+            for field, errors in vizit_form.errors.items():
+                for error in errors:
+                    flash(f"Ошибка в поле '{vizit_form[field].label.text}': {error}", 'danger')
 
         return redirect(url_for('applicants.edit_applicant',
                                 applicant_id=applicant.id))
