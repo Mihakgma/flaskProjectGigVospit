@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "flaskprojectgigvospit"
 version = "0.1.0"
-description = "this is education project for trying to create application for hygien education job"
+description = "this is an application for hygien education job"
 authors = ["Tabakaev Mihail <mihakgma86@hotmail.com>"]
 readme = "README.md"
 package-mode = false
@@ -21,6 +21,7 @@ flask-login = "0.6.3"
 flask-migrate = "4.1.0"
 wtforms-sqlalchemy = "0.3"
 flask-script = "2.0.6"
+sqlalchemy-utils = "^0.41.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
