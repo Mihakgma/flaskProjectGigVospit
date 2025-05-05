@@ -1,8 +1,8 @@
 import secrets
-from waitress import serve
+# from waitress import serve
 
 from flask import Flask
-from database import init_app, db
+from database import db, init_app
 from models import User
 from routers import (auth_bp,
                      routes_bp,
@@ -28,7 +28,8 @@ def create_app():
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'  # Роут для входа, если пользователь не авторизован
     login_manager.init_app(app)
-    init_app(app)
+
+    init_app(app, db=db)
     app.register_blueprint(auth_bp, url_prefix='/auth')
 
     @login_manager.user_loader

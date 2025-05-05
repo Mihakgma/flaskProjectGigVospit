@@ -26,7 +26,7 @@ def users():
 
 
 @users_bp.route('/add', methods=['GET', 'POST'])
-@role_required('admin', )
+# @role_required('admin', )
 def add_user():
     form = UserAddForm()
     # form.populate_role_choices()

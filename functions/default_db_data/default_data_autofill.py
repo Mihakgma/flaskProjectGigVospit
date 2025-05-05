@@ -1,6 +1,8 @@
+from sqlalchemy.exc import IntegrityError
+
 from models.models import (Role, Status, Department, ApplicantType,
                            Contingent, WorkField, AttestationType,
-                           Organization, Applicant, Vizit, User, user_roles)
+                           Organization, Applicant, Vizit, User)
 
 import json
 import os
@@ -40,6 +42,13 @@ def load_initial_data(data_dir, db):
 
                 for id, entry in data.items():
                     try:
+                        filter_kwargs = {'id': int(id)}  # Или другое уникальное поле: 'code': entry.get('code')
+                        existing_instance = db.session.query(Model).filter_by(**filter_kwargs).first()
+
+                        if existing_instance:
+                            print(f"Skipping existing {Model.__name__} with id {id}")
+                            continue
+
                         instance = Model(**entry)
 
                         # Преобразование дат для конкретных моделей
@@ -49,12 +58,20 @@ def load_initial_data(data_dir, db):
                         elif isinstance(instance, Vizit):
                             instance.visit_date = datetime.strptime(entry.get('visit_date', ''), '%d.%m.%Y')
 
-                        # Сохраняем экземпляр в сессии
-                        db.session.add(instance)
-
-                    except Exception as e:
-                        db.session.rollback()
-                        print(f"Error adding {Model.__name__} from {filename}: {entry}: {e}")
+                        try:  # Отдельный try-except для db.session.add и commit
+                            db.session.add(instance)
+                            db.session.commit()
+                        except IntegrityError as e:
+                            db.session.rollback()
+                            print(f"Integrity error adding {Model.__name__} from {filename}: {entry}: {e}")
+                            # Продолжаем обработку следующих записей
+                        except Exception as e:  # Другие ошибки при добавлении
+                            db.session.rollback()
+                            print(f"Error adding {Model.__name__} from {filename}: {entry}: {e}")
+                            # Продолжаем обработку следующих записей
+                    except Exception as e:  # Ошибки создания экземпляра модели
+                        print(f"Error creating instance of {Model.__name__} from {filename}: {entry}: {e}")
+                        # Продолжаем обработку следующих записей
 
             except json.JSONDecodeError as e:
                 print(f"Error decoding JSON in {filename}: {e}")

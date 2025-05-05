@@ -9,7 +9,6 @@ package-mode = false
 [tool.poetry.dependencies]
 python = "3.8.10"
 flask = "2.3.2"
-psycopg2-binary = "2.9.10"
 werkzeug = "3.0.6"
 wtforms = "3.0.0"
 waitress = "2.1.2"
@@ -21,7 +20,13 @@ flask-login = "0.6.3"
 flask-migrate = "4.1.0"
 wtforms-sqlalchemy = "0.3"
 flask-script = "2.0.6"
-sqlalchemy-utils = "^0.41.2"
+sqlalchemy-utils = "0.41.2"
+psycopg2 = "2.8.6"
+psycopg2-binary = "2.8.6"
+numpy = "1.21.0"
+scipy = "1.7.0"
+pandas = "1.5.3"
+
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

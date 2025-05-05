@@ -87,7 +87,7 @@
         <ul>
             {% for vizit in applicant.vizits %}
                 <li>
-                    Дата создания: {{ vizit.visit_date.strftime('%d.%m.%Y') }} <br>
+                    Дата визита: {{ vizit.visit_date.strftime('%d.%m.%Y') }} <br>
                     Контингент: {{ vizit.contingent.name }} <br>
                     Тип аттестации: {{ vizit.attestation_type.name }} <br>
                     Сфера деятельности: {{ vizit.work_field.name }} <br>

@@ -15,7 +15,7 @@ class Role(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     code = db.Column(db.String(10), unique=True, nullable=False)
-    description = db.Column(db.Text(length=300), default=None, nullable=True)
+    description = db.Column(db.Text, default=None, nullable=True)
 
     def __repr__(self):
         return f'<Role {self.name}>'
@@ -25,7 +25,7 @@ class Status(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     code = db.Column(String(7), nullable=False, unique=True)
-    description = db.Column(db.Text(length=300), default=None, nullable=True)
+    description = db.Column(db.Text, default=None, nullable=True)
 
     def __repr__(self):
         return f'<Status {self.name}>'
@@ -35,7 +35,7 @@ class Department(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     code = db.Column(String(5), nullable=False, unique=True)
-    description = db.Column(db.Text(length=300), default=None, nullable=True)
+    description = db.Column(db.Text, default=None, nullable=True)
 
     def __repr__(self):
         return f'<Department {self.name}>'
@@ -57,7 +57,7 @@ class User(db.Model, UserMixin):
     is_logged_in = db.Column(db.Boolean, default=False, nullable=True)
     logged_in_time = db.Column(db.DateTime, default=None, nullable=True)
     last_commit_time = db.Column(db.DateTime, default=None, nullable=True)
-    info = db.Column(db.Text(length=300), default=None, nullable=True)
+    info = db.Column(db.Text, default=None, nullable=True)
 
     def get_id(self):  # Необходимо для Flask-Login
         return str(self.id)
@@ -75,7 +75,7 @@ class ApplicantType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(String(10), nullable=False)
     code = db.Column(String(3), nullable=False, unique=True)
-    additional_info = db.Column(db.Text(length=300), default=None, nullable=True)
+    additional_info = db.Column(db.Text, default=None, nullable=True)
     vizits = db.relationship('Vizit', back_populates='applicant_type')
 
 
@@ -83,15 +83,15 @@ class Contingent(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(30), nullable=False)
     code = db.Column(String(5), nullable=False, unique=True)
-    additional_info = db.Column(db.Text(length=300), default=None, nullable=True)
+    additional_info = db.Column(db.Text, default=None, nullable=True)
     vizits = db.relationship('Vizit', back_populates='contingent')
 
 
 class WorkField(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+    name = db.Column(db.String(200), nullable=False)
     code = db.Column(String(10), nullable=False, unique=True)
-    additional_info = db.Column(db.Text(length=300), default=None, nullable=True)
+    additional_info = db.Column(db.Text, default=None, nullable=True)
     vizits = db.relationship('Vizit', back_populates='work_field')
 
 
@@ -99,7 +99,7 @@ class AttestationType(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(String(10), nullable=False)
     code = db.Column(String(7), nullable=False, unique=True)
-    additional_info = db.Column(db.Text(length=300), default=None, nullable=True)
+    additional_info = db.Column(db.Text, default=None, nullable=True)
     vizits = db.relationship("Vizit", back_populates="attestation_type")
 
 
@@ -111,7 +111,7 @@ class Organization(db.Model):
     phone_number = db.Column(String(20))
     email = db.Column(String(120))
     is_active = db.Column(Boolean, nullable=False)
-    additional_info = db.Column(db.Text(length=300), default=None, nullable=True)
+    additional_info = db.Column(db.Text, default=None, nullable=True)
 
     @validates('inn')
     def validate_inn(self, key, inn):
@@ -127,11 +127,11 @@ class Contract(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     number = db.Column(String(50), nullable=False)
     contract_date = db.Column(DateTime, nullable=False)
-    name = db.Column(db.Text(length=100), default=None, nullable=True)
+    name = db.Column(db.Text, default=None, nullable=True)
     expiration_date = db.Column(DateTime, nullable=True)
     is_extended = db.Column(Boolean, nullable=False)
     organization_id = db.Column(Integer, ForeignKey('organization.id'))
-    additional_info = db.Column(db.Text(length=300), default=None, nullable=True)
+    additional_info = db.Column(db.Text, default=None, nullable=True)
     # Определяем отношение один ко многим с таблицей Organization
     organization = db.relationship('Organization', backref='contracts')
 
@@ -172,7 +172,7 @@ class Applicant(db.Model):
     vizits = db.relationship('Vizit', secondary=applicant_vizit,
                              backref=db.backref('applicants', cascade=None),
                              lazy='subquery')
-    additional_info = db.Column(db.Text(length=300), default=None, nullable=True)
+    additional_info = db.Column(db.Text, default=None, nullable=True)
 
     @property
     def full_name(self):
@@ -196,4 +196,4 @@ class Vizit(db.Model):
     applicant_type = db.relationship('ApplicantType', back_populates='vizits')
     contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'), nullable=True)
     # contract = db.relationship('Contract', backref='vizits_contract')
-    additional_info = db.Column(db.Text(length=300), default=None, nullable=True)
+    additional_info = db.Column(db.Text, default=None, nullable=True)

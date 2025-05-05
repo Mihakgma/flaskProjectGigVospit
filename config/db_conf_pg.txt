@@ -1,0 +1,1 @@
+postgresql://postgres:Ex-machina6891@localhost:5432/gig_vospit

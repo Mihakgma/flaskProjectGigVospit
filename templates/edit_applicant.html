@@ -24,14 +24,14 @@
 
     <div id="vizits" style="display: none;">
         <ul>
-            {% for vizit in visits %} <--- Изменено здесь
+            {% for vizit in visits %}
                 <li>
                     Дата визита: {{ vizit.visit_date.strftime('%d.%m.%Y') }} <br>
                     Контингент: {{ vizit.contingent.name }} <br>
                     Тип аттестации: {{ vizit.attestation_type.name }} <br>
                     Сфера деятельности: {{ vizit.work_field.name }} <br>
                     Тип заявителя: {{ vizit.applicant_type.name }} <br>
-                    Контракты:
+                    Контракты (договоры):
                     <ul>
                         {% for contract in vizit.contracts %}
                             <li>
@@ -72,14 +72,14 @@
 
 
     <a href="{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}">Назад к деталям заявителя</a>
-
-    document.getElementById('toggleVizits').addEventListener('click', function() {
-    var vizitsDiv = document.getElementById('vizits');
-    if (vizitsDiv.style.display === 'none') {
-    vizitsDiv.style.display = 'block';
-    } else {
-    vizitsDiv.style.display = 'none';
-    }
-    });
-
+    <script>
+        document.getElementById('toggleVizits').addEventListener('click', function () {
+            var vizitsDiv = document.getElementById('vizits');
+            if (vizitsDiv.style.display === 'none') {
+                vizitsDiv.style.display = 'block';
+            } else {
+                vizitsDiv.style.display = 'none';
+            }
+        });
+    </script>
 {% endblock %}

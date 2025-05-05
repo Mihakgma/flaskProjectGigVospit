@@ -138,7 +138,11 @@ class UserAddForm(FlaskForm):
     username = StringField('Имя пользователя', validators=[DataRequired(), Length(min=2, max=20)])
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Пароль', validators=[DataRequired(), Length(min=8)])
-    phone = StringField('Телефон')
+    phone = StringField('Номер телефона', validators=[
+        Optional(),  # Телефон необязателен
+        Length(max=11, message="Максимальное количество символов: 11")
+    ],
+                               filters=(phone_number_fix,))
     dept_id = QuerySelectField('Отдел',
                                query_factory=lambda: Department.query.all(),
                                get_label='name', allow_blank=True, blank_text='Выберите отдел')

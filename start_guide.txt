@@ -8,3 +8,35 @@ for running application from windows shell:
 for stopping app:
 
 Ctrl + C
+
+for running postgresql db:
+1) in terminal run command: psql -U postgres
+(need to install psycopg2-binary = "2.9.10", postgres and add postgres to path variable);
+2) input Пароль пользователя postgres (my universal password);
+3) in terminal run command: CREATE DATABASE gig_vospit;
+4) in terminal run command: GRANT ALL PRIVILEGES ON DATABASE your_database_name TO your_username;
+copy file 'db_conf_pg.txt' to dir config;
+
+
+5) if error about pg python package maybe it will work:
+rm -rf venv
+pip cache purge
+python -m venv venv
+source venv/Scripts/activate
+pip install poetry
+poetry install
+
+pip uninstall psycopg2-binary
+pip install psycopg2-binary --global-option="--with-pgconfig=C:/Program Files/PostgreSQL/<версия>/bin/pg_config"
+
+run check_dll.bat to check postgres dlls...
+
+strart:
+venv/Scripts/activate
+poetry shell
+python app.py
+
+
+migrations:
+flask db migrate
+flask db upgrade
