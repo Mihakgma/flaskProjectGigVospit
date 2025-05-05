@@ -24,3 +24,10 @@
     background-size: cover;
     background-position: center;
 }
+
+.background-body-1 {
+    background-image: url("../muzhik.jpg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
