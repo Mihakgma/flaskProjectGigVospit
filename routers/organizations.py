@@ -86,3 +86,10 @@ def search_organizations():
         'items': [{'id': org.id, 'text': org.name} for org in organizations.items],
         'total_count': organizations.total
     })
+
+
+@orgs_bp.route('/check_inn')
+def check_inn():
+    inn = request.args.get('inn')
+    organization = Organization.query.filter_by(inn=inn).first()
+    return jsonify({'exists': organization is not None})
