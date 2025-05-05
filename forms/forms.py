@@ -7,11 +7,13 @@ from wtforms import (StringField,
                      TextAreaField,
                      PasswordField,
                      SelectMultipleField)
-from wtforms.fields.datetime import DateTimeField
 from wtforms.validators import (DataRequired,
                                 Length,
                                 Email,
-                                Optional, InputRequired)
+                                EqualTo,
+                                ValidationError,
+                                Optional,
+                                InputRequired)
 from wtforms_sqlalchemy.fields import (QuerySelectField)
 
 from functions import validate_birth_date
@@ -21,6 +23,18 @@ from functions.data_fix import (names_fix,
                                 elmk_snils_fix, phone_number_fix)
 from functions.validators.med_book_validator import validate_med_book
 from functions.validators.snils_validator import validate_snils
+
+# from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
+# from wtforms.fields import StringField, PasswordField, SubmitField
+from models import (User,
+                    Role,
+                    Department,
+                    Status,
+                    Organization,
+                    AttestationType,
+                    Contingent,
+                    WorkField,
+                    ApplicantType)
 
 
 class AddApplicantForm(FlaskForm):
@@ -81,13 +95,6 @@ class LoginForm(FlaskForm):
     password = PasswordField('Пароль', validators=[DataRequired()])
     remember_me = BooleanField('Запомнить меня')
     submit = SubmitField('Войти')
-
-
-from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
-from wtforms.fields import StringField, PasswordField, SubmitField
-from models import User, Role, Department, Status, \
-    Organization, AttestationType, Contingent, \
-    WorkField, ApplicantType  # Предположительно, модели расположены в отдельном модуле
 
 
 class RegistrationForm(FlaskForm):

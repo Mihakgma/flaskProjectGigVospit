@@ -2,7 +2,9 @@ from flask import (Blueprint,
                    render_template,
                    redirect,
                    url_for,
-                   flash)
+                   flash,
+                   jsonify,
+                   request)
 from flask_login import login_required
 
 from functions.access_control import role_required
@@ -68,3 +70,19 @@ def organization_details(organization_id):
     return render_template('organization_details.html',
                            organization=organization,
                            title="Детали организации")
+
+
+@orgs_bp.route('/search')
+@login_required
+@role_required('admin', 'moder', 'oper', )
+def search_organizations():
+    q = request.args.get('q')
+    page = int(request.args.get('page', 1))
+
+    organizations = Organization.query.filter(Organization.name.ilike(f"%{q}%")).paginate(page=page, per_page=30,
+                                                                                          error_out=False)
+
+    return jsonify({
+        'items': [{'id': org.id, 'text': org.name} for org in organizations.items],
+        'total_count': organizations.total
+    })

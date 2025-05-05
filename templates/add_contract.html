@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <!-- Твой основной контент формы -->
+    <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+    <link href="{{ url_for('static', filename='css/select2.min.css') }}" rel="stylesheet"/>
+
+
     <h1>Добавить договор (контракт)</h1>
     <form method="POST">
         {{ form.hidden_tag() }}
@@ -12,11 +15,12 @@
             {{ form.expiration_date.label }} {{ form.expiration_date() }}<br>
             {{ form.is_extended.label }} {{ form.is_extended() }}<br>
             {{ form.additional_info.label }} {{ form.additional_info(cols=30, rows=10) }}<br>
-{#            {{ form.applicants.label }}<br>#}
-{#            {{ form.applicants() }}<br>#}
             {{ form.organization_id.label }}<br>
-            {{ form.organization_id() }}<br>
+            {{ form.organization_id(id="organization_select") }}<br>
             {{ form.submit() }}
         </div>
     </form>
+
+    <script src="{{ url_for('static', filename='js/select2_init.js') }}"></script>
+
 {% endblock %}
