@@ -19,4 +19,8 @@
     color: red;
 }
 
-/* ... стили для других категорий ... */
+.background-body {
+    background-image: url("../devka.jpg");
+    background-size: cover;
+    background-position: center;
+}

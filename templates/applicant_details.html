@@ -92,27 +92,22 @@
                     Тип аттестации: {{ vizit.attestation_type.name }} <br>
                     Сфера деятельности: {{ vizit.work_field.name }} <br>
                     Тип заявителя: {{ vizit.applicant_type.name }} <br>
-                    Контракты:
-                    <ul>
-                        {% for contract in vizit.contracts %}
-                            <li>
-                                <a href="{{ url_for('contract_details', contract_id=contract.id) }}">{{ contract.number }}</a>
-                            </li>
-                        {% endfor %}
-                    </ul>
-
+                    Контракт:
+                    {% if vizit.contract %}
+                        <p>
+                            <a href="{{ url_for('contracts.contract_details', contract_id=vizit.contract.id) }}">{{ vizit.contract.number }}</a>
+                        </p>
+                        <p>Срок действия от {{ vizit.contract.contract_date }} и
+                            до {{ vizit.contract.expiration_date }}</p>
+                    {% else %}
+                        <p>Визит не прикреплен к контракту (договору).</p>
+                    {% endif %}
                 </li>
 
             {% endfor %}
         </ul>
     </div>
 
-    <h2>Контракты</h2>
-    <ul>
-        {% for contract in applicant.contracts %}
-            <li><a href="{{ url_for('contract_details', contract_id=contract.id) }}">{{ contract.number }}</a></li>
-        {% endfor %}
-    </ul>
 
     </body>
     </html>

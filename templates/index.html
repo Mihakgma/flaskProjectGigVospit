@@ -1,18 +1,21 @@
 {% extends 'base.html' %}
-{% block content %}
-    <h1>Главное меню:</h1>
 
-    <ul>
-        {% for item in routes %}
-            <li>
-                <a href="
+{% block content %}
+    <div class="container background-body">
+        <h1>Главное меню:</h1>
+
+        <ul>
+            {% for item in routes %}
+                <li>
+                    <a href="
                 {% if item.route %}
                     {{ url_for(item.route) }}
                 {% endif %}
             ">
-                    {{ item.title }}
-                </a>
-            </li>
-        {% endfor %}
-    </ul>
+                        {{ item.title }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 {% endblock %}

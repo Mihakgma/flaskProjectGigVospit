@@ -75,6 +75,9 @@ def add_applicant():
 def applicant_details(applicant_id):
     applicant = Applicant.query.get_or_404(applicant_id)
     visits = Vizit.query.filter_by(applicant_id=applicant_id).all()
+    for visit in visits:
+        if not visit.contract:
+            flash(f"Визит от {visit.visit_date} не прикреплен к контракту (договору).", category='warning')
     return render_template('applicant_details.html',
                            applicant=applicant,
                            visits=visits,
