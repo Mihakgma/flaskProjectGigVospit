@@ -1,0 +1,79 @@
+<!-- templates/search_contracts.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+
+    <h1>Поиск контрактов</h1>
+
+    <form method="GET" action="{{ url_for('contracts.search_contracts') }}" id="search_form">
+        <label for="q">Название организации:</label>
+        <input type="text" id="q" name="q" value="{{ request.args.get('q', '') }}"><br>
+
+        <label for="contract_name">Название контракта:</label>
+        <input type="text" id="contract_name" name="contract_name"
+               value="{{ request.args.get('contract_name', '') }}"><br>
+
+        <label for="start_date">Дата подписания (от):</label>
+        <input type="date" id="start_date" name="start_date" value="{{ request.args.get('start_date', '') }}"><br>
+
+        <label for="end_date">Дата подписания (до):</label>
+        <input type="date" id="end_date" name="end_date" value="{{ request.args.get('end_date', '') }}"><br>
+
+        <label for="expiration_start_date">Дата окончания (от):</label>
+        <input type="date" id="expiration_start_date" name="expiration_start_date"
+               value="{{ request.args.get('expiration_start_date', '') }}"><br>
+
+        <label for="expiration_end_date">Дата окончания (до):</label>
+        <input type="date" id="expiration_end_date" name="expiration_end_date"
+               value="{{ request.args.get('expiration_end_date', '') }}"><br>
+
+
+        <input type="submit" value="Найти">
+
+    <button type="button" onclick="resetForm()">Очистить</button>
+
+        <script>
+            function resetForm() {
+                document.getElementById("search_form").reset();
+
+                document.getElementById('q').value = '';
+                document.getElementById('contract_name').value = '';
+                document.getElementById('start_date').value = '';
+                document.getElementById('end_date').value = '';
+                document.getElementById('expiration_start_date').value = '';
+                document.getElementById('expiration_end_date').value = '';
+            }
+        </script>
+
+    </form>
+
+    {% if contracts %} <!-- Проверяем, есть ли результаты -->
+        <table>
+            <thead>
+            <tr>
+                <th>Номер</th>
+                <th>Название</th>
+                <th>Организация</th>
+                <th>Дата заключения</th>
+                <th>Дата окончания</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for contract in contracts %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('contracts.contract_details', contract_id=contract.id) }}">{{ contract.number }}</a>
+                    </td>
+                    <td>{{ contract.name }}</td>
+                    <td>{{ contract.organization_name }}</td>
+                    <td>{{ contract.contract_date }}</td>
+                    <td>{{ contract.expiration_date }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        <p></p>
+        <p><i>ВСЕГО НАЙДЕНО КОНТРАКТОВ:</i> <b> {{ total_count }}</b> </p>
+    {% endif %}
+
+{% endblock %}

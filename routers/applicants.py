@@ -11,7 +11,7 @@ from models.models import (Applicant,
                            Vizit, User)
 from database import db
 
-from datetime import timezone, date, datetime
+from datetime import timezone, datetime
 
 from forms.forms import (AddApplicantForm,
                          VizitForm, ApplicantSearchForm, ApplicantEditForm)
@@ -92,12 +92,14 @@ def edit_applicant(applicant_id):
     visits = Vizit.query.filter_by(applicant_id=applicant_id).all()
     applicant_form = ApplicantEditForm(obj=applicant)
     vizit_form = VizitForm()
+    applicant.edited_time = datetime.utcnow()
+    applicant.edited_by_user_id = current_user.id
 
     if request.method == 'POST':
         if applicant_form.submit.data and applicant_form.validate_on_submit():
             applicant_form.populate_obj(applicant)
-            applicant.edited_time = datetime.utcnow()
-            applicant.edited_by_user_id = current_user.id
+            # applicant.edited_time = datetime.utcnow()
+            # applicant.edited_by_user_id = current_user.id
             db.session.commit()
             flash('Данные заявителя обновлены', 'success')
             return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
@@ -111,8 +113,8 @@ def edit_applicant(applicant_id):
                 new_vizit.additional_info = vizit_form.additional_info.data
                 db.session.add(new_vizit)
                 applicant.vizits.append(new_vizit)  # если используете relationship
-                applicant.edited_time = datetime.utcnow()
-                applicant.edited_by_user_id = current_user.id
+                # applicant.edited_time = datetime.utcnow()
+                # applicant.edited_by_user_id = current_user.id
                 db.session.commit()
                 flash('Визит добавлен', 'success')
                 return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))

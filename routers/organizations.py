@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from flask import (Blueprint,
                    render_template,
                    redirect,
@@ -6,10 +8,12 @@ from flask import (Blueprint,
                    jsonify,
                    request)
 from flask_login import login_required
+from sqlalchemy import text
+from sqlalchemy.orm import load_only
 from sqlalchemy.sql.functions import func
 
 from functions.access_control import role_required
-from models.models import Organization
+from models.models import Organization, Contract
 from database import db
 
 from sqlalchemy.exc import IntegrityError
@@ -100,3 +104,55 @@ def check_inn():
     inn = request.args.get('inn')
     organization = Organization.query.filter_by(inn=inn).first()
     return jsonify({'exists': organization is not None})
+
+
+@orgs_bp.route('/search')
+@login_required
+@role_required('admin', 'moder', 'oper')
+def search_orgs():
+    q = request.args.get('q')
+    page = int(request.args.get('page', 1))
+
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    contract_name = request.args.get('contract_name')
+
+    # Обработка дат. Важно! Проверка на корректный формат
+    try:
+        if start_date:
+            start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d').date()
+        if end_date:
+            end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'error': 'Неверный формат даты'}), 400
+
+    query = Contract.query.options(load_only('id', 'organization_id', 'name', 'contract_date', 'expiration_date'))
+
+    if q:
+        query = query.join(Organization, Contract.organization_id == Organization.id) \
+            .filter(text(f"LOWER(Organization.name) LIKE LOWER('%{q}%')"))  # Поиск без upper()
+
+    if start_date:
+        query = query.filter(Contract.contract_date >= start_date)
+
+    if end_date:
+        query = query.filter(Contract.contract_date <= end_date)
+
+    if contract_name:
+        query = query.filter(Contract.name.ilike(f"%{contract_name}%"))
+
+    organizations = query.paginate(page=page, per_page=30, error_out=False)
+
+    results = []
+    for contract in organizations.items:
+        item = {
+            'id': contract.id,
+            'name': contract.name,
+            'organization_id': contract.organization_id,
+            'contract_date': contract.contract_date.isoformat() if contract.contract_date else None,
+            'expiration_date': contract.expiration_date.isoformat() if contract.expiration_date else None,
+            'detail_url': f'/contracts/{contract.id}'
+        }
+        results.append(item)
+
+    return jsonify({'items': results, 'total_count': organizations.total})
