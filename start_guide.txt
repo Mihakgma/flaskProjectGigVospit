@@ -31,7 +31,7 @@ pip install psycopg2-binary --global-option="--with-pgconfig=C:/Program Files/Po
 
 run check_dll.bat to check postgres dlls...
 
-strart:
+start:
 venv/Scripts/activate
 poetry shell
 python app.py
@@ -40,3 +40,7 @@ python app.py
 migrations:
 flask db migrate
 flask db upgrade
+
+
+NB!
+choose start options and uncomment DB tables uploading at first application start.

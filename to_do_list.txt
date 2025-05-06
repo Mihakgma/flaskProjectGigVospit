@@ -1,0 +1,10 @@
+1) link previously created contract to visit in applicant edit page
+2) link created visits to contract on a new contract page
+3) link created visits to contract on edit contract page
+4) orgs search page
+5) contracts search page
+6) edited by user filter to applicant search page
+7) edited when date filter to applicant search page
+8) vizits number filter to applicant search page
+9) pyvot tables page with downloading excel files feature
+...
