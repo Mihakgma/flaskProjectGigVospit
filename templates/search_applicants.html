@@ -57,6 +57,21 @@
         <hr>
         <div>{{ form.residence_address.label }} {{ form.residence_address(id='residence_address') }}</div>
 
+        <div>
+            {{ form.edited_by_user.label }}
+            {{ form.edited_by_user(id='edited_by_user') }}
+        </div>
+
+
+        <div>
+            {{ form.edited_time_start.label }}
+            {{ form.edited_time_start(class_="datepicker") }}
+        </div>
+        <div>
+            {{ form.edited_time_end.label }}
+            {{ form.edited_time_end(class_="datepicker") }}
+        </div>
+
 
         {{ form.submit() }}
 
@@ -79,6 +94,7 @@
                 document.getElementById('last_visit_end').value = '';
                 document.getElementById('registration_address').value = '';
                 document.getElementById('residence_address').value = '';
+                document.getElementById('edited_by_user').value = 'Все';
             }
         </script>
 

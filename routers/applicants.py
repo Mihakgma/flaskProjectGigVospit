@@ -8,14 +8,14 @@ from flask_login import login_required, current_user
 
 from functions.access_control import role_required
 from models.models import (Applicant,
-                           Vizit)
+                           Vizit, User)
 from database import db
 
 from datetime import timezone, date, datetime
 
 from forms.forms import (AddApplicantForm,
                          VizitForm, ApplicantSearchForm, ApplicantEditForm)
-from sqlalchemy import and_
+from sqlalchemy import and_, event
 from sqlalchemy.sql.expression import func
 
 applicants_bp = Blueprint('applicants', __name__)  # Создаем blueprint
@@ -148,6 +148,9 @@ def edit_applicant(applicant_id):
 def search_applicants():
     form = ApplicantSearchForm(request.form)  # Используем request.form для POST
     applicants = []
+    users = User.query.all()
+    form.edited_by_user.choices = [(user.id, user.username) for user in users]
+    form.edited_by_user.choices.insert(0, (0, 'Все'))  # добавляем выбор всех пользователей
 
     if request.method == 'POST' and form.validate_on_submit():
         search_criteria = {}
@@ -196,6 +199,15 @@ def search_applicants():
                     flash('Номер медкнижки должен содержать только цифры', 'error')
                     return render_template('search_applicants.html', form=form, applicants=applicants)
 
+        if form.edited_by_user.data:  # Если выбран пользователь
+            search_criteria['edited_by_user'] = form.edited_by_user.data
+
+        if form.edited_time_start.data:  # Если указана начальная дата
+            search_criteria['edited_time_start'] = form.edited_time_start.data
+
+        if form.edited_time_end.data:  # Если указана конечная дата
+            search_criteria['edited_time_end'] = form.edited_time_end.data
+
         for field_name in ['birth_date', 'last_visit']:
             start_date = form[f'{field_name}_start'].data
             end_date = form[f'{field_name}_end'].data
@@ -239,6 +251,12 @@ def search_applicants():
                 filters.append(last_visit_sq.c.last_visit_date >= value)
             elif field_name == 'last_visit_end':
                 filters.append(last_visit_sq.c.last_visit_date <= value)
+            elif field_name == 'edited_by_user':
+                filters.append(Applicant.edited_by_user_id == value)
+            elif field_name == 'edited_time_start':
+                filters.append(Applicant.edited_time >= value)
+            elif field_name == 'edited_time_end':
+                filters.append(Applicant.edited_time <= value)
             else:
                 filters.append(getattr(Applicant, field_name) == value)
 
@@ -253,3 +271,9 @@ def search_applicants():
         form=form,
         applicants=applicants
     )
+
+
+# @event.listens_for(Applicant, 'before_update')
+# def receive_before_update(mapper, connection, target):
+#     target.edited_time = datetime.utcnow()
+#     target.edited_by_user = current_user.id # Записываем id текущего пользователя
