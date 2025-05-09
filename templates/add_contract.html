@@ -14,6 +14,14 @@
             {{ form.additional_info.label }} {{ form.additional_info(cols=30, rows=10) }}<br>
             {{ form.organization_id.label }}<br>
             {{ form.organization_id(id="organization_select") }}<br>
+{#            {% for applicant in applicants %}#}
+{#                <h3>{{ applicant.full_name }}</h3>#}
+{#                {% for vizit in applicant.vizits %}#}
+{#                    <input type="radio" name="vizit_id" value="{{ vizit.id }}">#}
+{#                    {{ vizit.date }} - {{ vizit.description }}<br>#}
+{#                {% endfor %}#}
+{#            {% endfor %}#}
+
             {{ form.submit() }}
         </div>
     </form>

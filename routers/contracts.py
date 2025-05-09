@@ -10,7 +10,7 @@ from flask_login import login_required
 from sqlalchemy.orm import load_only
 
 from functions.access_control import role_required
-from models.models import Contract, Organization
+from models.models import Contract, Organization, Vizit
 from database import db
 
 from forms.forms import AddContractForm
@@ -36,10 +36,9 @@ def add_contract():
                     organization_id=form.organization_id.data,  # Присваиваем выбранную организацию
                     additional_info=form.additional_info.data
                 )
-
-                # Подключаем выбранных заявителей к контракту
-                # applicants = Applicant.query.filter(Applicant.id.in_(form.applicants.data)).all()
-                # new_contract.applicants.extend(applicants)
+                # vizit = Vizit.query.get(form.vizit_id.data)
+                # if vizit:
+                #     new_contract.vizits.append(vizit)
 
                 db.session.add(new_contract)
                 db.session.commit()

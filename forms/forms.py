@@ -33,6 +33,7 @@ from models import (User,
                     Contingent,
                     WorkField,
                     ApplicantType)
+from models.models import Vizit
 
 
 class AddApplicantForm(FlaskForm):
@@ -211,13 +212,16 @@ class AddContractForm(FlaskForm):
     expiration_date = DateField('Срок окончания', format='%Y-%m-%d')
     is_extended = BooleanField('Продлён')
     additional_info = TextAreaField('Дополнительная информация')
-    # applicants = SelectMultipleField('Заявители', coerce=int, choices=[])
+    # vizit_id = SelectField('Визит', coerce=int, choices=[])  # Новое поле
     organization_id = SelectField('Организация', coerce=int, choices=[])
     submit = SubmitField('Сохранить')
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(AddContractForm, self).__init__(*args, **kwargs)
         self.organization_id.choices = [(o.id, o.name) for o in Organization.query.all()]
+        # self.vizit_id.choices = [(v.id,
+        #                           f"{v.applicant.last_name} {v.applicant.first_name} {v.applicant.middle_name} ({v.visit_date.strftime('%Y-%m-%d')})")
+        #                          for v in Vizit.query.all()]
 
 
 class VizitForm(FlaskForm):

@@ -195,7 +195,6 @@ class Vizit(db.Model):
     work_field = db.relationship('WorkField', back_populates='vizits')
     applicant_type = db.relationship('ApplicantType', back_populates='vizits')
     contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'), nullable=True)
-    # contract = db.relationship('Contract', backref='vizits_contract')
     contract = db.relationship('Contract',
                                backref=db.backref('vizits', cascade=None),
                                lazy='subquery')
