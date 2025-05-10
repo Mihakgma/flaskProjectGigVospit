@@ -20,9 +20,10 @@ users_bp = Blueprint('users', __name__)
 
 @users_bp.route('/users')
 @login_required
-def users():
-    users = User.query.all()
-    return render_template('list.html', users=users)
+@role_required('admin', 'moder', )
+def user_list():
+    users_lst = User.query.all()
+    return render_template('user_list.html', users=users_lst)
 
 
 @users_bp.route('/add', methods=['GET', 'POST'])

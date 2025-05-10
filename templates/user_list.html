@@ -1,0 +1,90 @@
+{% extends 'base.html' %} {# Или ваш основной шаблон #}
+
+{% block title %}Список пользователей{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h1>Список пользователей системы</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {# Ссылка для добавления нового пользователя, если есть такой функционал #}
+        {# <p><a href="{{ url_for('users_bp.register_user') }}" class="btn btn-success mb-3">Добавить нового пользователя</a></p> #}
+
+        {% if users %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="thead-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Имя пользователя (логин)</th>
+                        <th>Фамилия</th>
+                        <th>Имя</th>
+                        <th>Отчество</th>
+                        <th>Email</th>
+                        <th>Телефон</th>
+                        <th>Отдел</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for user_item in users %}
+                        <tr>
+                            <td>{{ user_item.id }}</td>
+                            <td>{{ user_item.username }}</td>
+                            <td>{{ user_item.last_name }}</td>
+                            <td>{{ user_item.first_name }}</td>
+                            <td>{{ user_item.middle_name if user_item.middle_name else '' }}</td>
+                            <td>{{ user_item.email }}</td>
+                            <td>{{ user_item.phone if user_item.phone else 'Не указан' }}</td>
+                            <td>
+                                {% if user_item.department and user_item.department.name %}
+                                    {{ user_item.department.name }}
+                                {% elif user_item.department %}
+                                    Отдел #{{ user_item.department.id }} (нет имени)
+                                {% else %}
+                                    Не указан
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user_item.status and user_item.status.name %}
+                                    {{ user_item.status.name }}
+                                {% elif user_item.status %}
+                                    Статус #{{ user_item.status.id }} (нет имени)
+                                {% else %}
+                                    Не указан
+                                {% endif %}
+                            </td>
+                            <td>
+                                РЕДАКТИРОВАТЬ ЮЗЕРА БУДЕТ ЗДЕСЬ!!!
+{#                                <a href="{{ url_for('users.edit_user', user_id=user_item.id) }}"#}
+{#                                   class="btn btn-sm btn-outline-warning">#}
+{#                                    Редактировать#}
+{#                                </a>#}
+                                {# Можно добавить другие действия, например, просмотр деталей, если такой роут есть #}
+                                {# <a href="{{ url_for('users_bp.view_user_details', user_id=user_item.id) }}" class="btn btn-sm btn-outline-info ml-1">Детали</a> #}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-info" role="alert">
+                В системе пока нет зарегистрированных пользователей.
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

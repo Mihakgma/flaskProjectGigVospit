@@ -36,9 +36,6 @@ def add_contract():
                     organization_id=form.organization_id.data,  # Присваиваем выбранную организацию
                     additional_info=form.additional_info.data
                 )
-                # vizit = Vizit.query.get(form.vizit_id.data)
-                # if vizit:
-                #     new_contract.vizits.append(vizit)
 
                 db.session.add(new_contract)
                 db.session.commit()
