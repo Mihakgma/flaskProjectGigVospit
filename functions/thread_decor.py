@@ -22,7 +22,7 @@ def thread(func):
             name=func.__name__,
             daemon=True)
         current_thread.start()
-        # return func(*args, **kwargs)
+        return func(*args, **kwargs)
 
     return wrapper
 
