@@ -33,7 +33,7 @@ from models import (User,
                     Contingent,
                     WorkField,
                     ApplicantType)
-from models.models import Vizit
+from models.models import Vizit, Contract
 
 
 class AddApplicantForm(FlaskForm):
@@ -205,6 +205,10 @@ class OrganizationAddForm(FlaskForm):
             raise ValidationError("Организация с указанным ИНН уже зарегистрирована.")
 
 
+def active_contracts_factory():
+    # Можно добавить фильтр, например, только активные или не истекшие контракты
+    return Contract.query.order_by(Contract.number).all()
+
 class AddContractForm(FlaskForm):
     number = StringField('Номер договора', validators=[InputRequired()])
     contract_date = DateField('Дата подписания', format='%Y-%m-%d', validators=[InputRequired()])
@@ -234,6 +238,14 @@ class VizitForm(FlaskForm):
                                     validators=[
                                         Optional(),
                                         Length(max=300, message="Максимальное количество символов: 300")])
+    contract = QuerySelectField(
+        'Выберите контракт',
+        query_factory=lambda: Contract.query.all(),  # Получаем все контракты
+        get_label='number',  # Это поле будет отображаться в форме
+        allow_blank=True,  # Позволяет не выбирать контракт, если не требуется
+        blank_text='-- Не выбрано --',
+        validators=[Optional()]
+    )
     submit_visit = SubmitField('Добавить визит')
 
     def __init__(self, *args, **kwargs):

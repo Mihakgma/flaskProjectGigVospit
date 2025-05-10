@@ -65,11 +65,11 @@
 
         <div>
             {{ form.edited_time_start.label }}
-            {{ form.edited_time_start(class_="datepicker") }}
+            {{ form.edited_time_start(class_="datepicker", id='edited_time_start') }}
         </div>
         <div>
             {{ form.edited_time_end.label }}
-            {{ form.edited_time_end(class_="datepicker") }}
+            {{ form.edited_time_end(class_="datepicker", id='edited_time_end') }}
         </div>
 
 
@@ -95,6 +95,8 @@
                 document.getElementById('registration_address').value = '';
                 document.getElementById('residence_address').value = '';
                 document.getElementById('edited_by_user').value = 'Все';
+                document.getElementById('edited_time_start').value = '';
+                document.getElementById('edited_time_end').value = '';
             }
         </script>
 

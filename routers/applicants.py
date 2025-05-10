@@ -86,7 +86,7 @@ def applicant_details(applicant_id):
 
 @applicants_bp.route('/applicant/<int:applicant_id>/edit', methods=['GET', 'POST'])
 @login_required
-@role_required('admin', 'moder', 'oper', )
+@role_required('admin', 'moder', 'oper')
 def edit_applicant(applicant_id):
     applicant = Applicant.query.get_or_404(applicant_id)
     visits = Vizit.query.filter_by(applicant_id=applicant_id).all()
@@ -98,8 +98,6 @@ def edit_applicant(applicant_id):
     if request.method == 'POST':
         if applicant_form.submit.data and applicant_form.validate_on_submit():
             applicant_form.populate_obj(applicant)
-            # applicant.edited_time = datetime.utcnow()
-            # applicant.edited_by_user_id = current_user.id
             db.session.commit()
             flash('Данные заявителя обновлены', 'success')
             return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
@@ -111,10 +109,13 @@ def edit_applicant(applicant_id):
                 new_vizit.applicant_id = applicant.id
                 new_vizit.visit_date = vizit_form.visit_date.data
                 new_vizit.additional_info = vizit_form.additional_info.data
+
+                # Если выбран контракт, привязываем его
+                if vizit_form.contract.data:
+                    new_vizit.contract_id = vizit_form.contract.data.id  # Привязываем контракт к визиту
+
                 db.session.add(new_vizit)
-                applicant.vizits.append(new_vizit)  # если используете relationship
-                # applicant.edited_time = datetime.utcnow()
-                # applicant.edited_by_user_id = current_user.id
+                applicant.vizits.append(new_vizit)  # Если используете relationship
                 db.session.commit()
                 flash('Визит добавлен', 'success')
                 return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
@@ -123,7 +124,7 @@ def edit_applicant(applicant_id):
                 print(f"Ошибка при добавлении визита: {e}")
                 flash(f"Ошибка при добавлении визита: {e}", 'danger')
 
-        # Выводим ошибки валидации формы заявителя, если они есть, вне зависимости от добавления визита.
+        # Выводим ошибки валидации формы заявителя, если они есть
         if not applicant_form.validate_on_submit():
             for field, errors in applicant_form.errors.items():
                 for error in errors:
@@ -134,8 +135,7 @@ def edit_applicant(applicant_id):
                 for error in errors:
                     flash(f"Ошибка в поле '{vizit_form[field].label.text}': {error}", 'danger')
 
-        return redirect(url_for('applicants.edit_applicant',
-                                applicant_id=applicant.id))
+        return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
 
     return render_template('edit_applicant.html',
                            applicant=applicant,
@@ -273,7 +273,6 @@ def search_applicants():
         form=form,
         applicants=applicants
     )
-
 
 # @event.listens_for(Applicant, 'before_update')
 # def receive_before_update(mapper, connection, target):
