@@ -31,3 +31,10 @@
     background-repeat: no-repeat;
     background-position: center;
 }
+
+.background-body-2 {
+    background-image: url("../syschik.jpg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: right;
+}
