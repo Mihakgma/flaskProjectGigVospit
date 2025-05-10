@@ -9,5 +9,20 @@
     <p>Описание: {{ contract.name }}</p>
     <p>Дополнительная информация: {{ contract.additional_info }}</p>
 
-    <a href="{{ url_for('contracts.add_contract') }}" class="btn btn-info">Вернуться назад</a>
+<hr>
+    <h2>Статистика по визитам:</h2>
+    <p><strong>Количество прикрепленных визитов:</strong> {{ num_related_vizits }}</p>
+    <p><strong>Количество уникальных заявителей с прикрепленными визитами:</strong> {{ num_unique_applicants }}</p>
+
+    {% if num_related_vizits > 0 %}
+        <p>
+        ЗДЕСЬ БУДЕТ ПЕРЕХОД К СПИСКУ ВИЗИТОВ, КОТОРЫЕ ПРИКРЕПЛЕНЫ К ТЕКУЩЕМУ КОНТРАКТУ...
+{#            <a href="{{ url_for('contracts.list_vizits_for_contract', contract_id=contract.id) }}" class="btn btn-info">#}
+{#                Посмотреть все визиты по этому контракту#}
+{#            </a>#}
+        </p>
+    {% endif %}
+
+{#    <p><a href="{{ url_for('your_contracts_blueprint.edit_contract', contract_id=contract.id) }}" class="btn btn-warning">Редактировать контракт</a></p>#}
+    <p><a href="{{ url_for('contracts.search_contracts') }}" class="btn btn-secondary">К поиску контрактов</a></p>
 {% endblock %}

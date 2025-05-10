@@ -7,7 +7,7 @@ from flask import (Blueprint,
                    url_for,
                    flash, jsonify)
 from flask_login import login_required
-from sqlalchemy.orm import load_only
+from sqlalchemy.orm import load_only, joinedload
 
 from functions.access_control import role_required
 from models.models import Contract, Organization, Vizit
@@ -56,8 +56,33 @@ def add_contract():
 @login_required
 @role_required('anyone')
 def contract_details(contract_id):
-    contract = Contract.query.get_or_404(contract_id)
-    return render_template('contract_details.html', contract=contract)
+    contract = Contract.query.options(
+        joinedload(Contract.organization)  # Если есть связь с организацией
+    ).get_or_404(contract_id)
+
+    # 1. Получаем все визиты, прикрепленные к этому контракту
+    # Если lazy='dynamic' в модели Contract для vizits:
+    # related_vizits_query = contract.vizits
+    # related_vizits_list = related_vizits_query.all()
+    # Иначе, если lazy=True или eager loading настроен:
+    related_vizits_list = Vizit.query.filter_by(contract_id=contract.id).all()
+
+    # 2. Количество визитов, к которым прикреплен текущий контракт
+    num_related_vizits = len(related_vizits_list)
+
+    # 3. Количество уникальных заявителей, к визитам которых прикреплен текущий контракт
+    unique_applicant_ids = set()
+    if related_vizits_list:  # Проверяем, что список не пуст
+        for vizit in related_vizits_list:
+            if vizit.applicant_id:  # Убедимся, что у визита есть заявитель
+                unique_applicant_ids.add(vizit.applicant_id)
+
+    num_unique_applicants = len(unique_applicant_ids)
+
+    return render_template('contract_details.html',  # Имя вашего шаблона деталей контракта
+                           contract=contract,
+                           num_related_vizits=num_related_vizits,
+                           num_unique_applicants=num_unique_applicants)
 
 
 @contracts_bp.route('/search', methods=['GET'])
