@@ -15,7 +15,7 @@ from database import db
 
 from forms.forms import AddContractForm
 
-contracts_bp = Blueprint('contracts', __name__)  # Создаем blueprint
+contracts_bp = Blueprint('contracts', __name__)
 
 
 @contracts_bp.route('/add', methods=['GET', 'POST'])

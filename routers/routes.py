@@ -14,7 +14,6 @@ ROUTES_INFO = [
     {'title': 'Добавить организацию', 'route': 'organizations.add_organization'},
     {'title': 'Добавить контракт', 'route': 'contracts.add_contract'},
     {'title': 'Искать контракты', 'route': 'contracts.search_contracts'},
-    {'title': 'Регистрация', 'route': 'auth.register'},
     {'title': 'Вход', 'route': 'auth.login'},
     # {'title': 'Выход', 'route': 'auth.logout'}
 ]

@@ -8,56 +8,14 @@ from flask import (Blueprint,
 from models.models import (User,
                            Role)
 
-from database import db
+from werkzeug.security import check_password_hash
 
-from werkzeug.security import generate_password_hash, check_password_hash
-
-from forms.forms import (LoginForm,
-                         RegistrationForm)
-import logging
+from forms.forms import (LoginForm)
 
 from flask_login import (login_user,
-                         logout_user,
-                         current_user)
+                         logout_user)
 
-auth_bp = Blueprint('auth', __name__)  # Создаем blueprint
-
-
-@auth_bp.route('/register', methods=['GET', 'POST'])
-# @role_required('admin')
-def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('routes.index'))
-
-    form = RegistrationForm()
-    form.populate_role_choices()  # Загружаем роли для выбора
-
-    if form.validate_on_submit():
-        hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
-
-        # Создаем новый экземпляр пользователя
-        new_user = User(
-            last_name=form.last_name.data,
-            first_name=form.first_name.data,
-            username=form.username.data,
-            email=form.email.data,
-            password=hashed_password
-        )
-
-        # Присваиваем выбранные роли
-        new_user.roles.extend(Role.query.filter(Role.id.in_(form.roles.data)).all())
-
-        try:
-            db.session.add(new_user)
-            db.session.commit()
-            flash('Вы успешно зарегистрировались!', category='success')
-            return redirect(url_for('auth.login'))
-        except Exception as e:
-            db.session.rollback()
-            flash('Возникла ошибка при регистрации. Попробуйте снова позже.', category='danger')
-            logging.error(str(e))  # Логирование исключения
-
-    return render_template('register.html', title='Регистрация', form=form)
+auth_bp = Blueprint('auth', __name__)
 
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -85,7 +43,7 @@ def login():
 
 
 @auth_bp.route('/logout')
-# @login_required  # Защищаем роут logout
+# @login_required
 def logout():
     form = LoginForm()
     logout_user()

@@ -18,7 +18,7 @@ from forms.forms import (AddApplicantForm,
 from sqlalchemy import and_, event
 from sqlalchemy.sql.expression import func
 
-applicants_bp = Blueprint('applicants', __name__)  # Создаем blueprint
+applicants_bp = Blueprint('applicants', __name__)
 
 
 @applicants_bp.route('/add', methods=['GET', 'POST'])

@@ -51,39 +51,39 @@
 
 
     <h2>Добавить визит</h2>
-<form method="post" novalidate>
-    {{ visit_form.hidden_tag() }}
-    {% for field in visit_form if field.name not in ['csrf_token', 'submit_visit'] %}
+    <form method="post" novalidate>
+        {{ visit_form.hidden_tag() }}
+        {% for field in visit_form if field.name not in ['csrf_token', 'submit_visit'] %}
+            <div>
+                {{ field.label }}
+                {{ field() }}
+                {% for error in field.errors %}
+                    <span style="color: red;">{{ error }}</span>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
         <div>
-            {{ field.label }}
-            {{ field() }}
-            {% for error in field.errors %}
+            {{ visit_form.contract.label }}<br>
+            {{ visit_form.contract() }}
+            {% for error in visit_form.contract.errors %}
                 <span style="color: red;">{{ error }}</span>
             {% endfor %}
         </div>
-    {% endfor %}
 
-    <div>
-        {{ visit_form.contract.label }}<br>
-        {{ visit_form.contract() }}
-        {% for error in visit_form.contract.errors %}
-            <span style="color: red;">{{ error }}</span>
-        {% endfor %}
-    </div>
+        {{ visit_form.submit_visit() }}
+    </form>
 
-    {{ visit_form.submit_visit() }}
-</form>
-
-<a href="{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}">Назад к деталям заявителя</a>
-<script>
-    document.getElementById('toggleVizits').addEventListener('click', function () {
-        var vizitsDiv = document.getElementById('vizits');
-        if (vizitsDiv.style.display === 'none') {
-            vizitsDiv.style.display = 'block';
-        } else {
-            vizitsDiv.style.display = 'none';
-        }
-    });
-</script>
+    <a href="{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}">Назад к деталям заявителя</a>
+    <script>
+        document.getElementById('toggleVizits').addEventListener('click', function () {
+            var vizitsDiv = document.getElementById('vizits');
+            if (vizitsDiv.style.display === 'none') {
+                vizitsDiv.style.display = 'block';
+            } else {
+                vizitsDiv.style.display = 'none';
+            }
+        });
+    </script>
 
 {% endblock %}
