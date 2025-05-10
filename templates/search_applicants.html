@@ -105,6 +105,15 @@
 
     {% if applicants %}
         <h2>Результаты поиска:</h2>
+        <div class="mt-4">
+            <form action="{{ url_for('applicants.export_found_data') }}" method="POST">
+                {# Передаем ID найденных заявителей как строку, разделенную запятыми #}
+                <input type="hidden" name="applicant_ids" value="{{ applicant_ids_for_export | join(',') }}">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Выгрузить найденных в Excel
+                </button>
+            </form>
+        </div>
         <ul>
             {% for applicant in applicants %}
                 <li>

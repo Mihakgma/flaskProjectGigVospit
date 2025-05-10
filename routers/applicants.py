@@ -1,14 +1,19 @@
+from io import BytesIO
+
+import pandas as pd
 from flask import (Blueprint,
                    render_template,
                    request,
                    redirect,
                    url_for,
-                   flash)
+                   flash, send_file)
 from flask_login import login_required, current_user
+from sqlalchemy.orm import joinedload
 
+from functions import thread
 from functions.access_control import role_required
 from models.models import (Applicant,
-                           Vizit, User)
+                           Vizit, User, Contract)
 from database import db
 
 from datetime import timezone, datetime
@@ -153,6 +158,7 @@ def search_applicants():
     users = User.query.all()
     form.edited_by_user.choices = [(user.id, user.username) for user in users]
     form.edited_by_user.choices.insert(0, (0, 'Все'))  # добавляем выбор всех пользователей
+    applicant_ids_for_export = []
 
     if request.method == 'POST' and form.validate_on_submit():
         search_criteria = {}
@@ -268,10 +274,167 @@ def search_applicants():
 
         applicants = query.all()
 
+        if applicants:  # Убедимся, что список не пуст
+            applicant_ids_for_export = [app.id for app in applicants]
+        else:
+            applicant_ids_for_export = []
+
     return render_template(
         'search_applicants.html',
         form=form,
-        applicants=applicants
+        applicants=applicants,
+        applicant_ids_for_export=applicant_ids_for_export
+    )
+
+
+@applicants_bp.route('/export/found_data', methods=['POST'])
+@login_required
+@role_required('admin', 'dload')
+@thread
+def export_found_data():
+    applicant_ids_str = request.form.get('applicant_ids')
+    if not applicant_ids_str:
+        flash('Не выбраны заявители для экспорта.', 'warning')
+        return redirect(url_for('your_blueprint.search_applicants'))  # Вернитесь на страницу поиска
+
+    try:
+        applicant_ids = [int(id_str) for id_str in applicant_ids_str.split(',') if id_str.strip()]
+    except ValueError:
+        flash('Некорректный формат ID заявителей.', 'error')
+        return redirect(url_for('your_blueprint.search_applicants'))
+
+    if not applicant_ids:
+        flash('Список ID заявителей для экспорта пуст.', 'warning')
+        return redirect(url_for('your_blueprint.search_applicants'))
+
+    # --- Сбор данных для листа "Заявители" ---
+    applicants_query = db.session.query(Applicant).options(
+        # Загружаем связанные данные, чтобы избежать N+1 запросов и иметь доступ к именам
+        # joinedload(Applicant.gender),
+        # joinedload(Applicant.citizenship),
+        # joinedload(Applicant.registration_region),
+        # joinedload(Applicant.residence_region),
+        joinedload(Applicant.edited_by_user).joinedload(User.department),  # Если нужно ФИО и отдел редактора
+        # Добавьте joinedload для всех FK, которые вы хотите заменить на имена
+        # например, joinedload(Applicant.some_other_relation)
+    ).filter(Applicant.id.in_(applicant_ids)).order_by(Applicant.last_name, Applicant.first_name)
+
+    found_applicants = applicants_query.all()
+
+    applicants_data_for_excel = []
+    for app in found_applicants:
+        data_row = {
+            'ID': app.id,
+            'Фамилия': app.last_name,
+            'Имя': app.first_name,
+            'Отчество': app.middle_name,
+            'Дата рождения': app.birth_date.strftime('%d.%m.%Y') if app.birth_date else None,
+            # 'Пол': app.gender.name if app.gender else None,  # Предполагаем, что у Gender есть поле 'name'
+            # 'Гражданство': app.citizenship.name if app.citizenship else None,  # Предполагаем 'name'
+            'СНИЛС': app.snils_number,
+            'Мед. книжка №': app.medbook_number,
+            # 'Регион регистрации': app.registration_region.name if app.registration_region else None,
+            # Предполагаем 'name'
+            'Адрес регистрации': app.registration_address,
+            # 'Регион проживания': app.residence_region.name if app.residence_region else None,  # Предполагаем 'name'
+            'Адрес проживания': app.residence_address,
+            'Телефон': app.phone_number,
+            'Email': app.email,
+            # 'Дата создания записи': app.created_time.strftime('%d.%m.%Y %H:%M:%S') if app.created_time else None,
+            'Дата последнего редактирования': app.edited_time.strftime(
+                '%d.%m.%Y %H:%M:%S') if app.edited_time else None,
+            'Кем редактировано (логин)': app.edited_by_user.username if app.edited_by_user else None,
+            'Доп. информация': app.additional_info
+            # Исключаем: is_editing_now, editing_by_id, editing_started_at
+        }
+        applicants_data_for_excel.append(data_row)
+    df_applicants = pd.DataFrame(applicants_data_for_excel)
+
+    # --- Сбор данных для листа "Визиты" ---
+    vizits_query = db.session.query(Vizit).options(
+        joinedload(Vizit.applicant),  # для medbook_number, snils_number
+        joinedload(Vizit.contingent),
+        joinedload(Vizit.attestation_type),
+        joinedload(Vizit.work_field),
+        joinedload(Vizit.applicant_type),
+        joinedload(Vizit.contract).joinedload(Contract.organization)  # Чтобы сразу получить организацию контракта
+    ).filter(Vizit.applicant_id.in_(applicant_ids)).order_by(Vizit.applicant_id, Vizit.visit_date)
+
+    found_vizits = vizits_query.all()
+
+    vizits_data_for_excel = []
+    contract_ids_from_vizits = set()  # Для сбора уникальных ID контрактов
+
+    for vizit in found_vizits:
+        if vizit.contract_id:
+            contract_ids_from_vizits.add(vizit.contract_id)
+        data_row = {
+            'Мед. книжка заявителя': vizit.applicant.medbook_number if vizit.applicant else None,
+            'СНИЛС заявителя': vizit.applicant.snils_number if vizit.applicant else None,
+            'ID визита': vizit.id,
+            'ID заявителя (FK)': vizit.applicant_id,  # Можно добавить ФИО для удобства
+            'ФИО заявителя': f"{vizit.applicant.last_name} {vizit.applicant.first_name} {vizit.applicant.middle_name or ''}".strip() if vizit.applicant else None,
+            'Дата визита': vizit.visit_date.strftime('%d.%m.%Y %H:%M:%S') if vizit.visit_date else None,
+            'Контингент': vizit.contingent.name if vizit.contingent else None,  # Предполагаем 'name'
+            'Тип аттестации': vizit.attestation_type.name if vizit.attestation_type else None,  # Предполагаем 'name'
+            'Область работ': vizit.work_field.name if vizit.work_field else None,  # Предполагаем 'name'
+            'Тип заявителя (в визите)': vizit.applicant_type.name if vizit.applicant_type else None,
+            # Предполагаем 'name'
+            'ID контракта (FK)': vizit.contract_id,
+            'Номер контракта': vizit.contract.number if vizit.contract else None,
+            'Доп. информация по визиту': vizit.additional_info
+        }
+        vizits_data_for_excel.append(data_row)
+    df_vizits = pd.DataFrame(vizits_data_for_excel)
+
+    # --- Сбор данных для листа "Контракты" ---
+    contracts_data_for_excel = []
+    if contract_ids_from_vizits:
+        contracts_query = db.session.query(Contract).options(
+            joinedload(Contract.organization)  # Для ИНН организации
+        ).filter(Contract.id.in_(list(contract_ids_from_vizits))).order_by(Contract.contract_date)
+
+        found_contracts = contracts_query.all()
+
+        for contract in found_contracts:
+            data_row = {
+                'ID контракта': contract.id,
+                'Номер контракта': contract.number,
+                'Наименование контракта': contract.name,
+                'Дата заключения': contract.contract_date.strftime('%d.%m.%Y') if contract.contract_date else None,
+                'Срок действия до': contract.expiration_date.strftime('%d.%m.%Y') if contract.expiration_date else None,
+                'Пролонгирован': 'Да' if contract.is_extended else 'Нет',
+                'ID организации (FK)': contract.organization_id,
+                'ИНН организации': contract.organization.inn if contract.organization and hasattr(contract.organization,
+                                                                                                  'inn') else None,
+                # Предполагаем у Organization есть 'inn'
+                'Наименование организации': contract.organization.name if contract.organization and hasattr(
+                    contract.organization, 'name') else None,
+                'Доп. информация по контракту': contract.additional_info
+            }
+            contracts_data_for_excel.append(data_row)
+    df_contracts = pd.DataFrame(contracts_data_for_excel)
+
+    # --- Генерация Excel файла ---
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df_applicants.to_excel(writer, sheet_name='Заявители', index=False)
+        df_vizits.to_excel(writer, sheet_name='Визиты', index=False)
+        if not df_contracts.empty:
+            df_contracts.to_excel(writer, sheet_name='Контракты', index=False)
+        # Если df_contracts пуст, лист "Контракты" просто не будет создан, что нормально.
+
+    output.seek(0)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"export_applicants_{timestamp}.xlsx"
+
+    return send_file(
+        output,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,  # Для Flask 2.0+ используйте download_name
+        download_name=filename  # Для Flask 2.0+
+        # attachment_filename=filename # Для старых версий Flask
     )
 
 # @event.listens_for(Applicant, 'before_update')

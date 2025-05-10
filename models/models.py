@@ -165,6 +165,7 @@ class Applicant(db.Model):
     phone_number = db.Column(String(11), nullable=True)
     email = db.Column(String(120), nullable=True)
     edited_by_user_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
+    edited_by_user = db.relationship('User', foreign_keys=[edited_by_user_id])
     edited_time = db.Column(DateTime, nullable=True)
     is_editing_now = db.Column(Boolean, nullable=True)
     editing_by_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
@@ -185,6 +186,7 @@ class Vizit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     applicant_id = db.Column(db.Integer, db.ForeignKey('applicant.id'), nullable=False)
     # applicant = db.relationship('Applicant', backref=db.backref('vizits', cascade=None), lazy=True)
+    applicant = db.relationship('Applicant',back_populates='vizits')
     visit_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # Дата оформления
     contingent_id = db.Column(db.Integer, db.ForeignKey('contingent.id'), nullable=False)
     attestation_type_id = db.Column(db.Integer, db.ForeignKey('attestation_type.id'), nullable=False)
