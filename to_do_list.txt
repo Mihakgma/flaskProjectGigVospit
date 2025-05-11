@@ -15,6 +15,7 @@ BACKEND:
 1.14) vizits number filter to applicant search page                      - (?)
 1.15) pyvot tables page with downloading excel files feature
 1.16) add viz-s and applicants number attached to a contract (details)   - DONE
+1.17) applicant search result download as excel file                     - DONE
 
 DATA BASE:
 2.1) switch DB from SQLite3 to PostgreSQL                                - DONE
@@ -28,7 +29,7 @@ FRONTEND:
 
 MULTITHREADING / ASYNC:
 4.1) add asyncio to some parts of a project                              - (?)
-4.2) add threading to IO-bound application processes (pyv tables, ...)   - (?)
+4.2) add threading to IO-bound application processes (pyv tables, ...)   - DONE
 
 TOOLS:
 5.1) added tool for dependency management to project                     - DONE

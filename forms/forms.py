@@ -85,77 +85,72 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Войти')
 
 
-class RegistrationForm(FlaskForm):
-    last_name = StringField('Фамилия', validators=[DataRequired(), Length(max=80)])
-    first_name = StringField('Имя', validators=[DataRequired(), Length(max=80)])
-    middle_name = StringField('Отчество', validators=[Length(max=80)], default='')
-    username = StringField('Логин', validators=[
-        DataRequired(),
-        Length(min=2, max=20),
-        # Валидатор уникальности логина
-        lambda form, field: (
-                                    User.query.filter_by(username=field.data).first() and
-                                    ValidationError('Это имя пользователя уже занято. Пожалуйста, выберите другое.')
-                            ) or True
-    ])
-    email = StringField('Электронная почта', validators=[
-        DataRequired(),
-        Email(),
-        # Валидатор уникальности email
-        lambda form, field: (
-                                    User.query.filter_by(email=field.data).first() and
-                                    ValidationError('Этот email уже занят. Пожалуйста, выберите другой.')
-                            ) or True
-    ])
-    password = PasswordField('Пароль', validators=[DataRequired(), Length(min=8)])
-    confirm_password = PasswordField('Подтверждение пароля', validators=[DataRequired(), EqualTo('password')])
-    roles = SelectMultipleField('Роли', choices=[], coerce=int,
-                                widget=CheckboxInput())  # Коэрсируем строки в целые числа
-    submit = SubmitField('Зарегистрироваться')
-
-    def populate_role_choices(self):
-        """Метод для наполнения списка доступных ролей"""
-        roles = Role.query.all()
-        self.roles.choices = [(role.id, role.name) for role in roles]
-
-
-class UserAddForm(FlaskForm):
-    first_name = StringField('Имя', validators=[DataRequired()])
-    last_name = StringField('Фамилия', validators=[DataRequired()])
+class UserForm(FlaskForm):  # Переименовали для общего использования
+    first_name = StringField('Имя', validators=[DataRequired(message="Поле 'Имя' обязательно для заполнения.")])
+    last_name = StringField('Фамилия', validators=[DataRequired(message="Поле 'Фамилия' обязательно для заполнения.")])
     middle_name = StringField('Отчество')
-    username = StringField('Имя пользователя', validators=[DataRequired(), Length(min=2, max=20)])
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Пароль', validators=[DataRequired(), Length(min=8)])
+    username = StringField('Имя пользователя (логин)',
+                           validators=[DataRequired(message="Поле 'Имя пользователя' обязательно для заполнения."),
+                                       Length(min=2, max=20)])
+    email = StringField('Email', validators=[DataRequired(message="Поле 'Email' обязательно для заполнения."),
+                                             Email(message="Некорректный формат email.")])
+    password = PasswordField('Пароль',
+                             validators=[Optional(), Length(min=8, message="Пароль должен быть не менее 8 символов.")])
     phone = StringField('Номер телефона', validators=[
         Optional(),
-        Length(max=11, message="Максимальное количество символов: 11")
-    ],
-                        filters=(phone_number_fix,))
+        Length(max=11, message="Номер телефона не должен превышать 11 символов.")
+        # Если используете фильтр: filters=(phone_number_fix,)
+    ])
     dept_id = QuerySelectField('Отдел',
-                               query_factory=lambda: Department.query.all(),
-                               get_label='name', allow_blank=True, blank_text='Выберите отдел')
-
+                               query_factory=lambda: Department.query.order_by(Department.name).all(),
+                               get_label='name',
+                               allow_blank=False,  # Если отдел всегда должен быть выбран
+                               validators=[DataRequired(message="Необходимо выбрать отдел.")]
+                               )
     status_id = QuerySelectField('Статус',
-                                 query_factory=lambda: Status.query.all(),
-                                 get_label='name', allow_blank=True, blank_text='Выберите статус')
-    roles = SelectMultipleField('Роли', coerce=int, widget=ListWidget(prefix_label=False),
-                                option_widget=CheckboxInput())
-    info = TextAreaField('Дополнительно')
-    submit = SubmitField('Добавить пользователя')
+                                 query_factory=lambda: Status.query.order_by(Status.name).all(),
+                                 get_label='name',
+                                 allow_blank=False,  # Если статус всегда должен быть выбран
+                                 validators=[DataRequired(message="Необходимо выбрать статус.")]
+                                 )
+    roles = SelectMultipleField('Роли',
+                                coerce=int,
+                                widget=ListWidget(prefix_label=False),
+                                option_widget=CheckboxInput(),
+                                validators=[DataRequired(message="Выберите хотя бы одну роль.")]
+                                )
+    info = TextAreaField('Дополнительная информация')
+    submit = SubmitField('Сохранить')  # Кнопка будет 'Добавить' или 'Сохранить изменения' в зависимости от контекста
 
-    def __init__(self, *args, **kwargs):
-        super(UserAddForm, self).__init__(*args, **kwargs)
-        self.roles.choices = [(role.id, role.name) for role in Role.query.all()]
+    def __init__(self, *args, original_username=None, original_email=None, **kwargs):
+        super(UserForm, self).__init__(*args, **kwargs)
+        self.original_username = original_username
+        self.original_email = original_email
+        # Заполняем choices для ролей, если они еще не установлены (например, при GET)
+        # или если они были сброшены (при создании формы с request.form при POST)
+        if not self.roles.choices or not args:
+            self.roles.choices = [(role.id, role.name) for role in Role.query.order_by(Role.name).all()]
+            if not self.roles.choices:  # Если ролей в БД нет вообще
+                self.roles.choices = []
 
-    def validate_username(self, username):
-        user = User.query.filter_by(username=username.data).first()
+    def validate_username(self, username_field):
+        # Если имя пользователя не изменилось, и мы редактируем существующего пользователя
+        if self.original_username and username_field.data.lower() == self.original_username.lower():
+            return
+        # Проверка на уникальность для нового имени или при добавлении
+        user = User.query.filter(
+            User.username.ilike(username_field.data)).first()  # ilike для регистронезависимого сравнения
         if user:
-            raise ValidationError('Это имя пользователя уже занято.')
+            raise ValidationError('Это имя пользователя уже занято. Пожалуйста, выберите другое.')
 
-    def validate_email(self, email):
-        user = User.query.filter_by(email=email.data).first()
+    def validate_email(self, email_field):
+        # Если email не изменился, и мы редактируем существующего пользователя
+        if self.original_email and email_field.data.lower() == self.original_email.lower():
+            return
+        # Проверка на уникальность для нового email или при добавлении
+        user = User.query.filter(User.email.ilike(email_field.data)).first()  # ilike для регистронезависимого сравнения
         if user:
-            raise ValidationError('Этот email уже занят.')
+            raise ValidationError('Этот email уже используется. Пожалуйста, укажите другой.')
 
 
 class OrganizationAddForm(FlaskForm):
@@ -208,6 +203,7 @@ class OrganizationAddForm(FlaskForm):
 def active_contracts_factory():
     # Можно добавить фильтр, например, только активные или не истекшие контракты
     return Contract.query.order_by(Contract.number).all()
+
 
 class AddContractForm(FlaskForm):
     number = StringField('Номер договора', validators=[InputRequired()])

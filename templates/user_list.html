@@ -68,13 +68,16 @@
                                 {% endif %}
                             </td>
                             <td>
-                                РЕДАКТИРОВАТЬ ЮЗЕРА БУДЕТ ЗДЕСЬ!!!
-{#                                <a href="{{ url_for('users.edit_user', user_id=user_item.id) }}"#}
-{#                                   class="btn btn-sm btn-outline-warning">#}
-{#                                    Редактировать#}
-{#                                </a>#}
-                                {# Можно добавить другие действия, например, просмотр деталей, если такой роут есть #}
-                                {# <a href="{{ url_for('users_bp.view_user_details', user_id=user_item.id) }}" class="btn btn-sm btn-outline-info ml-1">Детали</a> #}
+                                <a href="{{ url_for('users.edit_user', user_id=user_item.id) }}"
+                                   class="btn btn-sm btn-outline-warning mr-1" title="Редактировать">
+                                    <i class="fas fa-edit"></i> {# Если используете Font Awesome для иконок #}
+                                    {# Редактировать #} {# Или просто текст #}
+                                </a>
+                                <a href="{{ url_for('users.user_details', user_id=user_item.id) }}"
+                                   class="btn btn-sm btn-outline-info" title="Просмотр">
+                                    <i class="fas fa-eye"></i> {# Если используете Font Awesome #}
+                                    {# Просмотр #} {# Или просто текст #}
+                                </a>
                             </td>
                         </tr>
                     {% endfor %}

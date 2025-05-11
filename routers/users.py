@@ -2,7 +2,7 @@ from flask import (Blueprint,
                    render_template,
                    redirect,
                    url_for,
-                   flash)
+                   flash, request, current_app)
 from flask_login import login_required
 
 from functions.access_control import role_required
@@ -13,7 +13,7 @@ from database import db
 from werkzeug.security import generate_password_hash
 from sqlalchemy.exc import IntegrityError
 
-from forms.forms import UserAddForm
+from forms.forms import UserForm
 
 users_bp = Blueprint('users', __name__)
 
@@ -27,71 +27,115 @@ def user_list():
 
 
 @users_bp.route('/add', methods=['GET', 'POST'])
-@role_required('admin', )
+@login_required
+@role_required('admin')
 def add_user():
-    form = UserAddForm()
-    # form.populate_role_choices()
-
+    form = UserForm()
     if form.validate_on_submit():
         try:
-            existing_user = User.query.filter_by(username=form.username.data).first()
-            if existing_user:
-                flash('Имя пользователя уже существует.', 'danger')
-                return render_template('add_user.html', form=form)
+            # Валидаторы формы уже проверят уникальность username и email
+            hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256') \
+                if form.password.data else None  # Пароль обязателен при добавлении
 
-            hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
+            if not hashed_password:  # Дополнительная проверка, что пароль введен при добавлении
+                flash('Пароль обязателен при создании нового пользователя.', 'danger')
+                return render_template('user_form.html', form=form, title='Добавление нового пользователя',
+                                       submit_button_text='Добавить')
 
-            role_objects = []
-            for role_id in form.roles.data:
-                role = Role.query.get(role_id)
-                if role is not None:
-                    role_objects.append(role)
+            selected_roles = Role.query.filter(Role.id.in_(form.roles.data)).all()
 
             new_user = User(
                 first_name=form.first_name.data,
                 last_name=form.last_name.data,
-                middle_name=form.middle_name.data,
+                middle_name=form.middle_name.data if form.middle_name.data else None,
                 username=form.username.data,
                 email=form.email.data,
                 password=hashed_password,
-                phone=form.phone.data,
-                dept_id=form.dept_id.data.id,
-                status_id=form.status_id.data.id,
-                info=form.info.data,
-                roles=role_objects
+                phone=form.phone.data if form.phone.data else None,
+                department=form.dept_id.data,  # QuerySelectField возвращает объект модели
+                status=form.status_id.data,  # QuerySelectField возвращает объект модели
+                info=form.info.data if form.info.data else None,
+                roles=selected_roles
             )
-
             db.session.add(new_user)
             db.session.commit()
-
             flash('Новый пользователь успешно добавлен!', 'success')
-            return redirect(url_for('users.user_details', user_id=new_user.id))
-
+            return redirect(url_for('users_bp.user_details', user_id=new_user.id))
         except IntegrityError as e:
             db.session.rollback()
-
-            if 'UNIQUE constraint failed' in str(e):
-                if 'username' in str(e):
-                    flash('Пользователь с таким именем пользователя уже существует.', 'danger')
-                elif 'email' in str(e):
-                    flash('Пользователь с таким email уже существует.', 'danger')
-                elif 'user_code' in str(e):  # Проверяем на уникальность user_code
-                    flash('Пользователь с таким кодом пользователя уже существует.', 'danger')
-                else:  # обрабатываем все остальные UNIQUE constraint failed ошибки
-                    flash(f'Ошибка базы данных: {e.orig.msg}', 'danger')
-            else:
-                flash(f'Ошибка базы данных: {e.orig.msg}', 'danger')
-            return render_template('add_user.html',
-                                   form=form)
-
+            current_app.logger.error(f"IntegrityError on user add: {e}")
+            flash('Ошибка базы данных. Возможно, такое имя пользователя или email уже существует.', 'danger')
         except Exception as e:
             db.session.rollback()
+            current_app.logger.error(f"Exception on user add: {e}")
             flash(f'Произошла непредвиденная ошибка: {str(e)}', 'danger')
-            return render_template('add_user.html',
-                                   form=form)
 
-    return render_template('add_user.html',
-                           form=form)
+    return render_template('user_form.html', form=form, title='Добавление нового пользователя',
+                           submit_button_text='Добавить')
+
+
+@users_bp.route('/edit/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+@role_required('admin', 'moder')  # Укажите нужные роли
+def edit_user(user_id):
+    user_to_edit = User.query.get_or_404(user_id)
+    # Передаем original_username и original_email для валидаторов
+    form = UserForm(obj=user_to_edit, original_username=user_to_edit.username, original_email=user_to_edit.email)
+
+    if form.validate_on_submit():
+        try:
+            user_to_edit.first_name = form.first_name.data
+            user_to_edit.last_name = form.last_name.data
+            user_to_edit.middle_name = form.middle_name.data if form.middle_name.data else None
+            user_to_edit.username = form.username.data
+            user_to_edit.email = form.email.data
+            user_to_edit.phone = form.phone.data if form.phone.data else None
+            user_to_edit.department = form.dept_id.data  # QuerySelectField возвращает объект
+            user_to_edit.status = form.status_id.data  # QuerySelectField возвращает объект
+            user_to_edit.info = form.info.data if form.info.data else None
+
+            if form.password.data:  # Обновляем пароль, только если он введен
+                user_to_edit.password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
+
+            selected_roles = Role.query.filter(Role.id.in_(form.roles.data)).all()
+            user_to_edit.roles = selected_roles
+
+            db.session.commit()
+            flash('Данные пользователя успешно обновлены!', 'success')
+            return redirect(url_for('users_bp.user_details', user_id=user_to_edit.id))
+        except IntegrityError as e:
+            db.session.rollback()
+            current_app.logger.error(f"IntegrityError on user edit: {e}")
+            flash('Ошибка базы данных. Возможно, такое имя пользователя или email уже занято другим пользователем.',
+                  'danger')
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Exception on user edit: {e}")
+            flash(f'Произошла непредвиденная ошибка при обновлении: {str(e)}', 'danger')
+    elif request.method == 'POST':  # Если POST и форма невалидна
+        flash('Пожалуйста, исправьте ошибки в форме.', 'warning')
+
+    # Для GET-запроса или если POST-запрос не прошел валидацию,
+    # форма должна быть предзаполнена данными (obj=user_to_edit это делает).
+    # Явно устанавливаем data для полей, где obj может не сработать идеально,
+    # или для обеспечения консистентности.
+    if request.method == 'GET':
+        form.first_name.data = user_to_edit.first_name
+        form.last_name.data = user_to_edit.last_name
+        form.middle_name.data = user_to_edit.middle_name
+        form.username.data = user_to_edit.username
+        form.email.data = user_to_edit.email
+        form.phone.data = user_to_edit.phone
+        form.dept_id.data = user_to_edit.department
+        form.status_id.data = user_to_edit.status
+        form.info.data = user_to_edit.info
+        form.roles.data = [role.id for role in user_to_edit.roles]  # Для SelectMultipleField нужны ID
+
+    return render_template('user_form.html',
+                           form=form,
+                           title=f'Редактирование пользователя: {user_to_edit.username}',
+                           submit_button_text='Сохранить изменения',
+                           user=user_to_edit)  # Передаем пользователя для контекста в шаблоне
 
 
 @users_bp.route('/details/<int:user_id>/',

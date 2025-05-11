@@ -1,0 +1,162 @@
+{# templates/user_form.html (или users/user_form.html, если блюпринт имеет свою папку шаблонов) #}
+{% extends "base.html" %}
+{# Если у вас есть макросы для рендеринга полей, импортируйте их #}
+{# {% from "_formhelpers.html" import render_field %} #}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h3>{{ title }}</h3>
+        <hr>
+
+        {# Отображение flash-сообщений #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    {{ form.last_name.label(class="form-control-label") }}
+                    {{ form.last_name(class="form-control " + ("is-invalid" if form.last_name.errors else "")) }}
+                    {% if form.last_name.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.last_name.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="form-group col-md-4">
+                    {{ form.first_name.label(class="form-control-label") }}
+                    {{ form.first_name(class="form-control " + ("is-invalid" if form.first_name.errors else "")) }}
+                    {% if form.first_name.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.first_name.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="form-group col-md-4">
+                    {{ form.middle_name.label(class="form-control-label") }}
+                    {{ form.middle_name(class="form-control " + ("is-invalid" if form.middle_name.errors else "")) }}
+                    {% if form.middle_name.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.middle_name.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    {{ form.username.label(class="form-control-label") }}
+                    {{ form.username(class="form-control " + ("is-invalid" if form.username.errors else "")) }}
+                    {% if form.username.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.username.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="form-group col-md-6">
+                    {{ form.email.label(class="form-control-label") }}
+                    {{ form.email(class="form-control " + ("is-invalid" if form.email.errors else "")) }}
+                    {% if form.email.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.email.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                {{ form.password.label(class="form-control-label") }}
+                {{ form.password(class="form-control " + ("is-invalid" if form.password.errors else "")) }}
+                {% if form.password.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.password.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+                {% if user %} {# Подсказка для страницы редактирования, если 'user' передан в контекст #}
+                    <small class="form-text text-muted">Оставьте поле пустым, если не хотите менять пароль.</small>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.phone.label(class="form-control-label") }}
+                {{ form.phone(class="form-control " + ("is-invalid" if form.phone.errors else "")) }}
+                {% if form.phone.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.phone.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    {{ form.dept_id.label(class="form-control-label") }}
+                    {{ form.dept_id(class="form-control custom-select " + ("is-invalid" if form.dept_id.errors else "")) }}
+                    {% if form.dept_id.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.dept_id.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="form-group col-md-6">
+                    {{ form.status_id.label(class="form-control-label") }}
+                    {{ form.status_id(class="form-control custom-select " + ("is-invalid" if form.status_id.errors else "")) }}
+                    {% if form.status_id.errors %}
+                        <div class="invalid-feedback">
+                            {% for error in form.status_id.errors %}{{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                {{ form.roles.label(class="form-control-label") }} <br>
+                {# WTForms рендерит SelectMultipleField с виджетами CheckboxInput как список чекбоксов #}
+                <div class="{{ 'is-invalid' if form.roles.errors else '' }}">
+                    {% for subfield in form.roles %}
+                        <div class="form-check form-check-inline">
+                            {{ subfield(class="form-check-input") }}
+                            {{ subfield.label(class="form-check-label") }}
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if form.roles.errors %}
+                    <div class="invalid-feedback d-block"> {# d-block чтобы ошибка была видна #}
+                        {% for error in form.roles.errors %}
+                            <span>{{ error }}</span><br>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.info.label(class="form-control-label") }}
+                {{ form.info(class="form-control " + ("is-invalid" if form.info.errors else ""), rows="3") }}
+                {% if form.info.errors %}
+                    <div class="invalid-feedback">
+                        {% for error in form.info.errors %}{{ error }}{% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">{{ submit_button_text }}</button>
+                <a href="{{ url_for('users.user_list') }}" class="btn btn-secondary">Отмена</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}
