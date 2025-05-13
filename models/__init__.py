@@ -1,4 +1,5 @@
 __all__ = [
+    'BaseModel',
     'Role',
     'Status',
     'Department',
@@ -12,7 +13,8 @@ __all__ = [
     'Applicant'
 ]
 
-from .models import (Role,
+from .models import (BaseModel,
+                     Role,
                      Status,
                      Department,
                      User,

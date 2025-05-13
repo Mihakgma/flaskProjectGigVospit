@@ -27,6 +27,7 @@ numpy = "1.21.0"
 scipy = "1.7.0"
 pandas = "1.5.3"
 openpyxl = "3.1.0"
+pytest = "8.3.5"
 
 
 [build-system]

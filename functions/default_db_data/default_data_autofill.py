@@ -27,10 +27,10 @@ def load_initial_data(data_dir, db):
         "status.json": Status,
         "department.json": Department,
         "role.json": Role,
+        "user.json": User,
         "organization.json": Organization,
         "applicant.json": Applicant,
         "vizit.json": Vizit,
-        "user.json": User
     }
 
     for filename, Model in model_map.items():

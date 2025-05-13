@@ -2,21 +2,21 @@
   "1": {
     "name": "очно",
     "code": "offline",
-    "additional_info": "..."
+    "info": "..."
   },
   "2": {
     "name": "заочно",
     "code": "online",
-    "additional_info": "..."
+    "info": "..."
   },
   "3": {
     "name": "гиг.тест",
     "code": "gigtest",
-    "additional_info": "..."
+    "info": "..."
   },
   "4": {
     "name": "иное",
     "code": "other",
-    "additional_info": "все остальные типы аттестации"
+    "info": "все остальные типы аттестации"
   }
 }

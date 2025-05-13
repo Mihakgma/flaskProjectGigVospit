@@ -13,9 +13,13 @@ BACKEND:
 1.12) edited by user filter to applicant search page                     - DONE
 1.13) edited when date filter to applicant search page                   - DONE
 1.14) vizits number filter to applicant search page                      - (?)
-1.15) pyvot tables page with downloading excel files feature
+1.15) pyvot tables page with downloading excel files feature             - (?)
 1.16) add viz-s and applicants number attached to a contract (details)   - DONE
 1.17) applicant search result download as excel file                     - DONE
+1.18) in contract made combo of date+number+org fields = unique          !!!
+1.19) in DB fix applicant and vizits relation (One-To-Many)              !!!
+1.20) add fields create_at, create_by_user_id for applicants, vizits     !!!
+1.21) add fields create_at, create_by_user_id for another tables         - (?)
 
 DATA BASE:
 2.1) switch DB from SQLite3 to PostgreSQL                                - DONE
@@ -26,6 +30,7 @@ DATA BASE:
 FRONTEND:
 3.1) add frontend framework                                              - (?)
 3.2) navigation bar                                                      - DONE
+3.3) css, js, templates (jinja2) added                                   - DONE
 
 MULTITHREADING / ASYNC:
 4.1) add asyncio to some parts of a project                              - (?)

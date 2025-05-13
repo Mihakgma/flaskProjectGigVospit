@@ -1,63 +1,73 @@
 from datetime import datetime
 
+import pytz
 from werkzeug.security import check_password_hash
 
 from database import db
 from sqlalchemy import ForeignKey, Table
-from sqlalchemy.types import String, Integer, Boolean, DateTime
-from flask_login import UserMixin  # Для интеграции с Flask-Login
+from sqlalchemy.types import String, Integer, Boolean, DateTime, Text
+from flask_login import UserMixin
 
 from sqlalchemy.orm import validates
 from sqlalchemy.exc import IntegrityError
 
-
-class Role(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-    code = db.Column(db.String(10), unique=True, nullable=False)
-    description = db.Column(db.Text, default=None, nullable=True)
-
-    def __repr__(self):
-        return f'<Role {self.name}>'
+nsk_tz = pytz.timezone('Asia/Novosibirsk')
 
 
-class Status(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
+def get_current_nsk_time():  # Переименовал для ясности
+    """Возвращает текущее время в новосибирской временной зоне."""
+    return datetime.now(nsk_tz)
+
+
+class BaseModel(db.Model):
+    __abstract__ = True  # Правильное имя атрибута для абстрактных моделей
+
+    # Чтобы id всегда шел первым, определите его первым в классе.
+    # SQLAlchemy обычно сохраняет порядок определения столбцов.
+    id = db.Column(Integer, primary_key=True)
+
+    created_at = db.Column(DateTime(timezone=True), default=get_current_nsk_time)
+    updated_at = db.Column(DateTime(timezone=True), default=get_current_nsk_time, onupdate=get_current_nsk_time)
+    info = db.Column(Text, default='')
+
+    def __repr__(self):  # Правильное имя магического метода __repr__
+        class_name = self.__class__.__name__  # Правильное получение имени класса
+        if hasattr(self, 'name') and getattr(self, 'name') is not None:  # Добавил проверку на None
+            return f"<{class_name}(id={self.id}, name='{self.name!r}')>"
+        else:
+            return f"<{class_name}(id={self.id})>"
+
+
+class Role(BaseModel):
+    name = db.Column(String(50), nullable=False)
+    code = db.Column(String(10), unique=True, nullable=False)
+
+
+class Status(BaseModel):
+    name = db.Column(String(50), nullable=False)
     code = db.Column(String(7), nullable=False, unique=True)
-    description = db.Column(db.Text, default=None, nullable=True)
-
-    def __repr__(self):
-        return f'<Status {self.name}>'
 
 
-class Department(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
+class Department(BaseModel):
+    name = db.Column(String(100), nullable=False)
     code = db.Column(String(5), nullable=False, unique=True)
-    description = db.Column(db.Text, default=None, nullable=True)
-
-    def __repr__(self):
-        return f'<Department {self.name}>'
 
 
-class User(db.Model, UserMixin):
-    id = db.Column(db.Integer, primary_key=True)
-    last_name = db.Column(db.String(80), nullable=False)  # Фамилия
-    first_name = db.Column(db.String(80), nullable=False)  # Имя
-    middle_name = db.Column(db.String(80), nullable=True)  # Отчество
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(128), nullable=False)  # Пароль
-    phone = db.Column(db.String(11), nullable=True)  # Телефон
-    dept_id = db.Column(db.Integer, ForeignKey('department.id'), nullable=False)  # ID отдела
-    status_id = db.Column(db.Integer, ForeignKey('status.id'), nullable=False)  # ID статуса
+class User(BaseModel, UserMixin):
+    last_name = db.Column(String(80), nullable=False)  # Фамилия
+    first_name = db.Column(String(80), nullable=False)  # Имя
+    middle_name = db.Column(String(80), nullable=True)  # Отчество
+    username = db.Column(String(80), unique=True, nullable=False)
+    email = db.Column(String(120), unique=True, nullable=False)
+    password = db.Column(String(128), nullable=False)  # Пароль
+    phone = db.Column(String(11), nullable=True)  # Телефон
+    dept_id = db.Column(Integer, ForeignKey('department.id'), nullable=False)  # ID отдела
+    status_id = db.Column(Integer, ForeignKey('status.id'), nullable=False)  # ID статуса
     department = db.relationship('Department', backref='users', lazy='joined')
     status = db.relationship('Status', backref='users', lazy='joined')
-    is_logged_in = db.Column(db.Boolean, default=False, nullable=True)
-    logged_in_time = db.Column(db.DateTime, default=None, nullable=True)
-    last_commit_time = db.Column(db.DateTime, default=None, nullable=True)
-    info = db.Column(db.Text, default=None, nullable=True)
+    is_logged_in = db.Column(Boolean, default=False, nullable=True)
+    logged_in_time = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
+    last_commit_time = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
 
     def get_id(self):  # Необходимо для Flask-Login
         return str(self.id)
@@ -71,47 +81,41 @@ class User(db.Model, UserMixin):
         return check_password_hash(self.password, password)
 
 
-class ApplicantType(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class ApplicantType(BaseModel):
     name = db.Column(String(10), nullable=False)
     code = db.Column(String(3), nullable=False, unique=True)
-    additional_info = db.Column(db.Text, default=None, nullable=True)
     vizits = db.relationship('Vizit', back_populates='applicant_type')
 
 
-class Contingent(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(30), nullable=False)
+class Contingent(BaseModel):
+    name = db.Column(String(30), nullable=False)
     code = db.Column(String(5), nullable=False, unique=True)
-    additional_info = db.Column(db.Text, default=None, nullable=True)
     vizits = db.relationship('Vizit', back_populates='contingent')
 
 
-class WorkField(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(200), nullable=False)
+class WorkField(BaseModel):
+    name = db.Column(String(200), nullable=False)
     code = db.Column(String(10), nullable=False, unique=True)
-    additional_info = db.Column(db.Text, default=None, nullable=True)
     vizits = db.relationship('Vizit', back_populates='work_field')
 
 
-class AttestationType(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class AttestationType(BaseModel):
     name = db.Column(String(10), nullable=False)
     code = db.Column(String(7), nullable=False, unique=True)
-    additional_info = db.Column(db.Text, default=None, nullable=True)
     vizits = db.relationship("Vizit", back_populates="attestation_type")
 
 
-class Organization(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class Organization(BaseModel):
     name = db.Column(String(200), nullable=False)
     inn = db.Column(String(12), unique=True)
     address = db.Column(String(200))
     phone_number = db.Column(String(20))
     email = db.Column(String(120))
     is_active = db.Column(Boolean, nullable=False)
-    additional_info = db.Column(db.Text, default=None, nullable=True)
+    created_by_user_id = db.Column(Integer, ForeignKey('user.id'),
+                                   default=1,
+                                   nullable=False)
+    created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])
 
     @validates('inn')
     def validate_inn(self, key, inn):
@@ -123,57 +127,54 @@ class Organization(db.Model):
         return inn
 
 
-class Contract(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class Contract(BaseModel):
     number = db.Column(String(50), nullable=False)
-    contract_date = db.Column(DateTime, nullable=False)
-    name = db.Column(db.Text, default=None, nullable=True)
-    expiration_date = db.Column(DateTime, nullable=True)
+    contract_date = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
+    name = db.Column(Text, default=None, nullable=True)
+    expiration_date = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=True)
     is_extended = db.Column(Boolean, nullable=False)
     organization_id = db.Column(Integer, ForeignKey('organization.id'))
-    additional_info = db.Column(db.Text, default=None, nullable=True)
     # Определяем отношение один ко многим с таблицей Organization
     organization = db.relationship('Organization', backref='contracts')
+    created_by_user_id = db.Column(Integer, ForeignKey('user.id'),
+                                   default=1,
+                                   nullable=False)
+    created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])
 
 
 user_roles = Table('user_roles', db.metadata,
-                   db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-                   db.Column('role_id', db.Integer, db.ForeignKey('role.id'))
+                   db.Column('user_id', Integer, db.ForeignKey('user.id')),
+                   db.Column('role_id', Integer, db.ForeignKey('role.id'))
                    )
-
-# --- Relationships (после объявления таблиц связей) ---
-applicant_vizit = db.Table(
-    'applicant_vizit', db.metadata,  # Изменил имя таблицы для ясности
-    db.Column('applicant_id', db.Integer, db.ForeignKey('applicant.id'), primary_key=True),
-    db.Column('vizit_id', db.Integer, db.ForeignKey('vizit.id'), primary_key=True)
-)
 
 User.roles = db.relationship('Role', secondary=user_roles, backref=db.backref('users', lazy=True))
 
 
-class Applicant(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
+class Applicant(BaseModel):
     first_name = db.Column(String(80), nullable=False)
     middle_name = db.Column(String(80), nullable=True)
-    last_name = db.Column(db.String(80), nullable=False)
+    last_name = db.Column(String(80), nullable=False)
     medbook_number = db.Column(String(50), unique=True, nullable=False)
-    snils_number = db.Column(String(14), unique=True, nullable=False)  # 11 цифр + 3 разделителя
-    passport_number = db.Column(String(20), nullable=True)  # 10 цифр (или 4+6)
-    birth_date = db.Column(DateTime, nullable=False)
+    snils_number = db.Column(String(11), unique=True, nullable=False)
+    passport_number = db.Column(String(10), nullable=True)
+    birth_date = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
     registration_address = db.Column(String(200), nullable=True)
     residence_address = db.Column(String(200), nullable=True)
     phone_number = db.Column(String(11), nullable=True)
     email = db.Column(String(120), nullable=True)
     edited_by_user_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
     edited_by_user = db.relationship('User', foreign_keys=[edited_by_user_id])
-    edited_time = db.Column(DateTime, nullable=True)
     is_editing_now = db.Column(Boolean, nullable=True)
     editing_by_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
-    editing_started_at = db.Column(DateTime, nullable=True)
-    vizits = db.relationship('Vizit', secondary=applicant_vizit,
-                             backref=db.backref('applicants', cascade=None),
+    editing_started_at = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=True)
+    vizits = db.relationship('Vizit',
+                             back_populates='applicant',  # Связывает с атрибутом 'applicant' в модели Vizit
+                             cascade='all, delete-orphan',  # Если удалить Applicant, удалятся и все его Vizit
                              lazy='subquery')
-    additional_info = db.Column(db.Text, default=None, nullable=True)
+    created_by_user_id = db.Column(Integer, ForeignKey('user.id'),
+                                   default=1,
+                                   nullable=False)
+    created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])
 
     @property
     def full_name(self):
@@ -182,22 +183,19 @@ class Applicant(db.Model):
         return ' '.join([part for part in parts if part]).strip()
 
 
-class Vizit(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    applicant_id = db.Column(db.Integer, db.ForeignKey('applicant.id'), nullable=False)
-    # applicant = db.relationship('Applicant', backref=db.backref('vizits', cascade=None), lazy=True)
+class Vizit(BaseModel):
+    applicant_id = db.Column(Integer, db.ForeignKey('applicant.id'), nullable=False)
     applicant = db.relationship('Applicant', back_populates='vizits')
-    visit_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)  # Дата оформления
-    contingent_id = db.Column(db.Integer, db.ForeignKey('contingent.id'), nullable=False)
-    attestation_type_id = db.Column(db.Integer, db.ForeignKey('attestation_type.id'), nullable=False)
-    work_field_id = db.Column(db.Integer, db.ForeignKey('work_field.id'), nullable=False)
-    applicant_type_id = db.Column(db.Integer, db.ForeignKey('applicant_type.id'), nullable=False)
+    visit_date = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)  # Дата оформления
+    contingent_id = db.Column(Integer, db.ForeignKey('contingent.id'), nullable=False)
+    attestation_type_id = db.Column(Integer, db.ForeignKey('attestation_type.id'), nullable=False)
+    work_field_id = db.Column(Integer, db.ForeignKey('work_field.id'), nullable=False)
+    applicant_type_id = db.Column(Integer, db.ForeignKey('applicant_type.id'), nullable=False)
     contingent = db.relationship('Contingent', back_populates='vizits')
     attestation_type = db.relationship('AttestationType', back_populates='vizits')
     work_field = db.relationship('WorkField', back_populates='vizits')
     applicant_type = db.relationship('ApplicantType', back_populates='vizits')
-    contract_id = db.Column(db.Integer, db.ForeignKey('contract.id'), nullable=True)
+    contract_id = db.Column(Integer, db.ForeignKey('contract.id'), nullable=True)
     contract = db.relationship('Contract',
                                backref=db.backref('vizits', cascade=None),
                                lazy='subquery')
-    additional_info = db.Column(db.Text, default=None, nullable=True)

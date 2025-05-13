@@ -184,12 +184,12 @@ def transform_applicants_data(df_in: pd.DataFrame,
                        'residence_address',
                        'phone_number',
                        'email',
-                       'additional_info']
+                       'info']
     df_out[nullable_fields] = df_out[nullable_fields].replace('', np.nan)
 
     df_applicants = merge_update_df(df_left=df_out,
                                     df_right=temp_df,
-                                    update_colname='additional_info',
+                                    update_colname='info',
                                     values_from_colname=fio_colname,
                                     merge_on_colname='snils_number')
     df_applicants['registration_address'] = df_applicants['registration_address'] \
