@@ -58,7 +58,7 @@
             {% endif %}
         </dd>
         <dt>Время редактирования:</dt>
-        <dd>{{ applicant.edited_time.strftime('%d.%m.%Y %H:%M:%S') if applicant.edited_time else 'Не указано' }}</dd>
+        <dd>{{ applicant.updated_at.strftime('%d.%m.%Y %H:%M:%S') if applicant.updated_at else 'Не указано' }}</dd>
         <dt>Редактируется сейчас:</dt>
         <dd>{{ 'Да' if applicant.is_editing_now else 'Нет' }}</dd>
         <dt>Редактирует:</dt>

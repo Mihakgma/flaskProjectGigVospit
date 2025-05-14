@@ -34,7 +34,7 @@ def add_contract():
                     expiration_date=form.expiration_date.data,
                     is_extended=form.is_extended.data,
                     organization_id=form.organization_id.data,  # Присваиваем выбранную организацию
-                    additional_info=form.additional_info.data
+                    info=form.info.data
                 )
 
                 db.session.add(new_contract)
@@ -114,7 +114,7 @@ def search_contracts():  # Название функции изменено
         Contract.expiration_date,
         Contract.is_extended,
         Contract.organization_id,
-        Contract.additional_info
+        Contract.info
     ))
 
     if q:  # Поиск по названию организации

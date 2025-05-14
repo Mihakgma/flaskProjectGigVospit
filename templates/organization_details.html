@@ -7,6 +7,6 @@
     <p>Телефон: {{ organization.phone_number }}</p>
     <p>Email: {{ organization.email }}</p>
     <p>Статус: {% if organization.is_active %}Активна{% else %}Неактивна{% endif %}</p>
-    <p>Дополнительная информация: {{ organization.additional_info }}</p>
+    <p>Дополнительная информация: {{ organization.info }}</p>
 
 {% endblock %}

@@ -38,7 +38,7 @@ def add_organization():
                 phone_number=form.phone_number.data,
                 email=form.email.data,
                 is_active=form.is_active.data,
-                additional_info=form.additional_info.data
+                info=form.info.data
             )
             db.session.add(org)
             db.session.commit()

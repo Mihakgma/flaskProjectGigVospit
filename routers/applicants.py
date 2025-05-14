@@ -46,7 +46,7 @@ def add_applicant():
                     vizit_form.populate_obj(new_vizit)
                     new_vizit.applicant_id = new_applicant.id
                     new_vizit.visit_date = vizit_form.visit_date.data
-                    new_vizit.additional_info = vizit_form.additional_info.data
+                    new_vizit.info = vizit_form.info.data
                     db.session.add(new_vizit)
                     new_applicant.vizits.append(new_vizit)
 
@@ -97,7 +97,6 @@ def edit_applicant(applicant_id):
     visits = Vizit.query.filter_by(applicant_id=applicant_id).all()
     applicant_form = ApplicantEditForm(obj=applicant)
     vizit_form = VizitForm()
-    applicant.edited_time = datetime.utcnow()
     applicant.edited_by_user_id = current_user.id
 
     if request.method == 'POST':
@@ -113,7 +112,7 @@ def edit_applicant(applicant_id):
                 vizit_form.populate_obj(new_vizit)
                 new_vizit.applicant_id = applicant.id
                 new_vizit.visit_date = vizit_form.visit_date.data
-                new_vizit.additional_info = vizit_form.additional_info.data
+                new_vizit.info = vizit_form.info.data
 
                 # Если выбран контракт, привязываем его
                 if vizit_form.contract.data:
@@ -210,11 +209,11 @@ def search_applicants():
         if form.edited_by_user.data:  # Если выбран пользователь
             search_criteria['edited_by_user'] = form.edited_by_user.data
 
-        if form.edited_time_start.data:  # Если указана начальная дата
-            search_criteria['edited_time_start'] = form.edited_time_start.data
+        if form.updated_at_start.data:  # Если указана начальная дата
+            search_criteria['updated_at_start'] = form.updated_at_start.data
 
-        if form.edited_time_end.data:  # Если указана конечная дата
-            search_criteria['edited_time_end'] = form.edited_time_end.data
+        if form.updated_at_end.data:  # Если указана конечная дата
+            search_criteria['updated_at_end'] = form.updated_at_end.data
 
         for field_name in ['birth_date', 'last_visit']:
             start_date = form[f'{field_name}_start'].data
@@ -261,10 +260,10 @@ def search_applicants():
                 filters.append(last_visit_sq.c.last_visit_date <= value)
             elif field_name == 'edited_by_user':
                 filters.append(Applicant.edited_by_user_id == value)
-            elif field_name == 'edited_time_start':
-                filters.append(Applicant.edited_time >= value)
-            elif field_name == 'edited_time_end':
-                filters.append(Applicant.edited_time <= value)
+            elif field_name == 'updated_at_start':
+                filters.append(Applicant.updated_at >= value)
+            elif field_name == 'updated_at_end':
+                filters.append(Applicant.updated_at <= value)
             else:
                 filters.append(getattr(Applicant, field_name) == value)
 
@@ -341,10 +340,10 @@ def export_found_data():
             'Телефон': app.phone_number,
             'Email': app.email,
             # 'Дата создания записи': app.created_time.strftime('%d.%m.%Y %H:%M:%S') if app.created_time else None,
-            'Дата последнего редактирования': app.edited_time.strftime(
-                '%d.%m.%Y %H:%M:%S') if app.edited_time else None,
+            'Дата последнего редактирования': app.updated_at.strftime(
+                '%d.%m.%Y %H:%M:%S') if app.updated_at else None,
             'Кем редактировано (логин)': app.edited_by_user.username if app.edited_by_user else None,
-            'Доп. информация': app.additional_info
+            'Доп. информация': app.info
             # Исключаем: is_editing_now, editing_by_id, editing_started_at
         }
         applicants_data_for_excel.append(data_row)
@@ -382,7 +381,7 @@ def export_found_data():
             # Предполагаем 'name'
             'ID контракта (FK)': vizit.contract_id,
             'Номер контракта': vizit.contract.number if vizit.contract else None,
-            'Доп. информация по визиту': vizit.additional_info
+            'Доп. информация по визиту': vizit.info
         }
         vizits_data_for_excel.append(data_row)
     df_vizits = pd.DataFrame(vizits_data_for_excel)
@@ -410,7 +409,7 @@ def export_found_data():
                 # Предполагаем у Organization есть 'inn'
                 'Наименование организации': contract.organization.name if contract.organization and hasattr(
                     contract.organization, 'name') else None,
-                'Доп. информация по контракту': contract.additional_info
+                'Доп. информация по контракту': contract.info
             }
             contracts_data_for_excel.append(data_row)
     df_contracts = pd.DataFrame(contracts_data_for_excel)
@@ -439,5 +438,5 @@ def export_found_data():
 
 # @event.listens_for(Applicant, 'before_update')
 # def receive_before_update(mapper, connection, target):
-#     target.edited_time = datetime.utcnow()
+#     target.updated_at = datetime.utcnow()
 #     target.edited_by_user = current_user.id # Записываем id текущего пользователя

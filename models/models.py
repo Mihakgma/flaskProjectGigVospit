@@ -20,40 +20,40 @@ def get_current_nsk_time():  # Переименовал для ясности
 
 
 class BaseModel(db.Model):
-    __abstract__ = True  # Правильное имя атрибута для абстрактных моделей
-
-    # Чтобы id всегда шел первым, определите его первым в классе.
-    # SQLAlchemy обычно сохраняет порядок определения столбцов.
-    id = db.Column(Integer, primary_key=True)
+    __abstract__ = True
 
     created_at = db.Column(DateTime(timezone=True), default=get_current_nsk_time)
     updated_at = db.Column(DateTime(timezone=True), default=get_current_nsk_time, onupdate=get_current_nsk_time)
     info = db.Column(Text, default='')
 
-    def __repr__(self):  # Правильное имя магического метода __repr__
-        class_name = self.__class__.__name__  # Правильное получение имени класса
-        if hasattr(self, 'name') and getattr(self, 'name') is not None:  # Добавил проверку на None
+    def __repr__(self):
+        class_name = self.__class__.__name__
+        if hasattr(self, 'name') and getattr(self, 'name') is not None:
             return f"<{class_name}(id={self.id}, name='{self.name!r}')>"
         else:
             return f"<{class_name}(id={self.id})>"
 
 
 class Role(BaseModel):
+    id = db.Column(Integer, primary_key=True)
     name = db.Column(String(50), nullable=False)
     code = db.Column(String(10), unique=True, nullable=False)
 
 
 class Status(BaseModel):
+    id = db.Column(Integer, primary_key=True)
     name = db.Column(String(50), nullable=False)
     code = db.Column(String(7), nullable=False, unique=True)
 
 
 class Department(BaseModel):
+    id = db.Column(Integer, primary_key=True)
     name = db.Column(String(100), nullable=False)
     code = db.Column(String(5), nullable=False, unique=True)
 
 
 class User(BaseModel, UserMixin):
+    id = db.Column(Integer, primary_key=True)
     last_name = db.Column(String(80), nullable=False)  # Фамилия
     first_name = db.Column(String(80), nullable=False)  # Имя
     middle_name = db.Column(String(80), nullable=True)  # Отчество
@@ -82,30 +82,35 @@ class User(BaseModel, UserMixin):
 
 
 class ApplicantType(BaseModel):
+    id = db.Column(Integer, primary_key=True)
     name = db.Column(String(10), nullable=False)
     code = db.Column(String(3), nullable=False, unique=True)
     vizits = db.relationship('Vizit', back_populates='applicant_type')
 
 
 class Contingent(BaseModel):
+    id = db.Column(Integer, primary_key=True)
     name = db.Column(String(30), nullable=False)
     code = db.Column(String(5), nullable=False, unique=True)
     vizits = db.relationship('Vizit', back_populates='contingent')
 
 
 class WorkField(BaseModel):
+    id = db.Column(Integer, primary_key=True)
     name = db.Column(String(200), nullable=False)
     code = db.Column(String(10), nullable=False, unique=True)
     vizits = db.relationship('Vizit', back_populates='work_field')
 
 
 class AttestationType(BaseModel):
+    id = db.Column(Integer, primary_key=True)
     name = db.Column(String(10), nullable=False)
     code = db.Column(String(7), nullable=False, unique=True)
     vizits = db.relationship("Vizit", back_populates="attestation_type")
 
 
 class Organization(BaseModel):
+    id = db.Column(Integer, primary_key=True)
     name = db.Column(String(200), nullable=False)
     inn = db.Column(String(12), unique=True)
     address = db.Column(String(200))
@@ -128,6 +133,7 @@ class Organization(BaseModel):
 
 
 class Contract(BaseModel):
+    id = db.Column(Integer, primary_key=True)
     number = db.Column(String(50), nullable=False)
     contract_date = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
     name = db.Column(Text, default=None, nullable=True)
@@ -151,6 +157,7 @@ User.roles = db.relationship('Role', secondary=user_roles, backref=db.backref('u
 
 
 class Applicant(BaseModel):
+    id = db.Column(Integer, primary_key=True)
     first_name = db.Column(String(80), nullable=False)
     middle_name = db.Column(String(80), nullable=True)
     last_name = db.Column(String(80), nullable=False)
@@ -184,6 +191,7 @@ class Applicant(BaseModel):
 
 
 class Vizit(BaseModel):
+    id = db.Column(Integer, primary_key=True)
     applicant_id = db.Column(Integer, db.ForeignKey('applicant.id'), nullable=False)
     applicant = db.relationship('Applicant', back_populates='vizits')
     visit_date = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)  # Дата оформления

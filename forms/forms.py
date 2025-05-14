@@ -71,7 +71,7 @@ class AddApplicantForm(FlaskForm):
                                validators=[Length(max=20)],
                                filters=(phone_number_fix,))
     email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
-    additional_info = TextAreaField('Дополнительная информация',
+    info = TextAreaField('Дополнительная информация',
                                     validators=[
                                         Optional(),
                                         Length(max=300, message="Максимальное количество символов: 300")])
@@ -188,7 +188,7 @@ class OrganizationAddForm(FlaskForm):
 
     is_active = BooleanField('Организация активна?', default=True)
 
-    additional_info = TextAreaField('Дополнительная информация', validators=[
+    info = TextAreaField('Дополнительная информация', validators=[
         Optional()  # Дополнительная информация необязательна
     ])
 
@@ -211,7 +211,7 @@ class AddContractForm(FlaskForm):
     name = StringField('Название договора')
     expiration_date = DateField('Срок окончания', format='%Y-%m-%d')
     is_extended = BooleanField('Продлён')
-    additional_info = TextAreaField('Дополнительная информация')
+    info = TextAreaField('Дополнительная информация')
     # vizit_id = SelectField('Визит', coerce=int, choices=[])  # Новое поле
     organization_id = SelectField('Организация', coerce=int, choices=[])
     submit = SubmitField('Сохранить')
@@ -230,7 +230,7 @@ class VizitForm(FlaskForm):
     work_field_id = SelectField('Сфера деятельности', coerce=int, validators=[DataRequired()])
     applicant_type_id = SelectField('Тип заявителя', coerce=int, validators=[DataRequired()])
     visit_date = DateField('Дата визита', validators=[DataRequired()])
-    additional_info = TextAreaField('Дополнительная информация',
+    info = TextAreaField('Дополнительная информация',
                                     validators=[
                                         Optional(),
                                         Length(max=300, message="Максимальное количество символов: 300")])
@@ -271,8 +271,8 @@ class ApplicantSearchForm(FlaskForm):
                                     filters=(names_fix,))
     edited_by_user = SelectField('Кем изменено последний раз', coerce=int, choices=[],
                                  validators=[Optional()])  # Поле для выбора пользователя
-    edited_time_start = DateField('Дата последнего изменения (от)', format='%Y-%m-%d', validators=[Optional()])
-    edited_time_end = DateField('Дата последнего изменения (до)', format='%Y-%m-%d', validators=[Optional()])
+    updated_at_start = DateField('Дата последнего изменения (от)', format='%Y-%m-%d', validators=[Optional()])
+    updated_at_end = DateField('Дата последнего изменения (до)', format='%Y-%m-%d', validators=[Optional()])
     submit = SubmitField('Найти')
 
 
@@ -311,7 +311,7 @@ class ApplicantEditForm(FlaskForm):
                                validators=[Length(max=20)],
                                filters=(phone_number_fix,))
     email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
-    additional_info = TextAreaField('Дополнительная информация',
+    info = TextAreaField('Дополнительная информация',
                                     validators=[
                                         Optional(),
                                         Length(max=300, message="Максимальное количество символов: 300")])

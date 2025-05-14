@@ -64,12 +64,12 @@
 
 
             <div>
-                {{ form.edited_time_start.label }}
-                {{ form.edited_time_start(class_="datepicker", id='edited_time_start') }}
+                {{ form.updated_at_start.label }}
+                {{ form.updated_at_start(class_="datepicker", id='updated_at_start') }}
             </div>
             <div>
-                {{ form.edited_time_end.label }}
-                {{ form.edited_time_end(class_="datepicker", id='edited_time_end') }}
+                {{ form.updated_at_end.label }}
+                {{ form.updated_at_end(class_="datepicker", id='updated_at_end') }}
             </div>
 
 
@@ -95,8 +95,8 @@
                     document.getElementById('registration_address').value = '';
                     document.getElementById('residence_address').value = '';
                     document.getElementById('edited_by_user').value = 'Все';
-                    document.getElementById('edited_time_start').value = '';
-                    document.getElementById('edited_time_end').value = '';
+                    document.getElementById('updated_at_start').value = '';
+                    document.getElementById('updated_at_end').value = '';
                 }
             </script>
 
