@@ -8,6 +8,7 @@ from flask import (Blueprint,
                    flash, jsonify)
 from flask_login import login_required
 from sqlalchemy.orm import load_only, joinedload
+from wtforms.validators import ValidationError
 
 from functions.access_control import role_required
 from models.models import Contract, Organization, Vizit
@@ -27,6 +28,7 @@ def add_contract():
     if request.method == 'POST':
         if form.validate_on_submit():
             try:
+                form.check_duplicates()
                 new_contract = Contract(
                     number=form.number.data,
                     contract_date=form.contract_date.data,
@@ -36,11 +38,15 @@ def add_contract():
                     organization_id=form.organization_id.data,  # Присваиваем выбранную организацию
                     info=form.info.data
                 )
-
                 db.session.add(new_contract)
                 db.session.commit()
                 flash('Новый контракт успешно добавлен!', 'success')
                 return redirect(url_for('contract_details', contract_id=new_contract.id))
+            except ValidationError as e:
+                db.session.rollback()
+                # flash(e)
+                flash('Договор уже добавлен в БД.'
+                      'Пожалуйста, попробуйте внести другой номер, дату подписания или организацию.')
             except Exception as e:
                 db.session.rollback()
                 print(f"Ошибка при добавлении контракта: {e}")

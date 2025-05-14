@@ -4,7 +4,7 @@ import pytz
 from werkzeug.security import check_password_hash
 
 from database import db
-from sqlalchemy import ForeignKey, Table
+from sqlalchemy import ForeignKey, Table, UniqueConstraint
 from sqlalchemy.types import String, Integer, Boolean, DateTime, Text
 from flask_login import UserMixin
 
@@ -146,6 +146,13 @@ class Contract(BaseModel):
                                    default=1,
                                    nullable=False)
     created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])
+
+    __table_args__ = (
+        UniqueConstraint('number',
+                         'contract_date',
+                         'organization_id',
+                         name='unique_contract_constraint'),
+    )
 
 
 user_roles = Table('user_roles', db.metadata,

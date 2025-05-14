@@ -10,7 +10,6 @@ from wtforms import (StringField,
 from wtforms.validators import (DataRequired,
                                 Length,
                                 Email,
-                                EqualTo,
                                 ValidationError,
                                 Optional,
                                 InputRequired)
@@ -72,9 +71,9 @@ class AddApplicantForm(FlaskForm):
                                filters=(phone_number_fix,))
     email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
     info = TextAreaField('Дополнительная информация',
-                                    validators=[
-                                        Optional(),
-                                        Length(max=300, message="Максимальное количество символов: 300")])
+                         validators=[
+                             Optional(),
+                             Length(max=300, message="Максимальное количество символов: 300")])
     submit = SubmitField('Добавить заявителя')
 
 
@@ -219,9 +218,19 @@ class AddContractForm(FlaskForm):
     def __init__(self, *args, **kwargs):
         super(AddContractForm, self).__init__(*args, **kwargs)
         self.organization_id.choices = [(o.id, o.name) for o in Organization.query.all()]
-        # self.vizit_id.choices = [(v.id,
-        #                           f"{v.applicant.last_name} {v.applicant.first_name} {v.applicant.middle_name} ({v.visit_date.strftime('%Y-%m-%d')})")
-        #                          for v in Vizit.query.all()]
+
+    def check_duplicates(self):
+        # Проверка на дубликаты
+        existing_contract = Contract.query.filter_by(
+            number=self.number.data,
+            contract_date=self.contract_date.data,
+            organization_id=self.organization_id.data
+        ).first()
+
+        if existing_contract:
+            raise ValidationError(
+                'Договор уже добавлен в БД. Пожалуйста, попробуйте внести другой номер, дату подписания или организацию.')
+        return True
 
 
 class VizitForm(FlaskForm):
@@ -231,9 +240,9 @@ class VizitForm(FlaskForm):
     applicant_type_id = SelectField('Тип заявителя', coerce=int, validators=[DataRequired()])
     visit_date = DateField('Дата визита', validators=[DataRequired()])
     info = TextAreaField('Дополнительная информация',
-                                    validators=[
-                                        Optional(),
-                                        Length(max=300, message="Максимальное количество символов: 300")])
+                         validators=[
+                             Optional(),
+                             Length(max=300, message="Максимальное количество символов: 300")])
     contract = QuerySelectField(
         'Выберите контракт',
         query_factory=lambda: Contract.query.all(),  # Получаем все контракты
@@ -312,7 +321,7 @@ class ApplicantEditForm(FlaskForm):
                                filters=(phone_number_fix,))
     email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
     info = TextAreaField('Дополнительная информация',
-                                    validators=[
-                                        Optional(),
-                                        Length(max=300, message="Максимальное количество символов: 300")])
+                         validators=[
+                             Optional(),
+                             Length(max=300, message="Максимальное количество символов: 300")])
     submit = SubmitField('Сохранить')
