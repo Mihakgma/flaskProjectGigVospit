@@ -8,18 +8,20 @@ BACKEND:
 1.7) link prev. created contract to a new visit in applicant edit page   - DONE
 1.8) link created visits to contract on a new contract page
 1.9) link created visits to contract on edit contract page
-1.10) orgs search page                                                   - (?)
-1.11) contracts search page                                              - DONE
-1.12) edited by user filter to applicant search page                     - DONE
-1.13) edited when date filter to applicant search page                   - DONE
-1.14) vizits number filter to applicant search page                      - (?)
-1.15) pyvot tables page with downloading excel files feature             - (?)
-1.16) add viz-s and applicants number attached to a contract (details)   - DONE
-1.17) applicant search result download as excel file                     - DONE
-1.18) in contract made combo of date+number+org fields = unique          !!!
-1.19) in DB fix applicant and vizits relation (One-To-Many)              !!!
-1.20) add fields create_at, create_by_user_id for applicants, vizits     !!!
-1.21) add fields create_at, create_by_user_id for another tables         - (?)
+1.10) contracts search page                                              - DONE
+1.11) edited by user filter to applicant search page                     - DONE
+1.12) edited when date filter to applicant search page                   - DONE
+1.13) add vizits number filter to applicant search page                  - (?)
+1.14) pyvot tables page with downloading excel files feature             - (?)
+1.15) add viz-s and applicants number attached to a contract (details)   - DONE
+1.16) applicant search result download as excel file                     - DONE
+1.17) in contract made combo of date+number+org flds unique (constraint) - DONE
+1.18) in DB fix applicant and vizits relation (One-To-Many)              - DONE
+1.19) add fields create_at, create_by_user_id for applicants, vizits     - DONE
+1.20) add fields create_at, create_by_user_id for another tables         - DONE
+1.21) add search and edit pages for organizations                        !!!
+1.22) add search and edit pages for contracts                            !!!
+1.23) on add and edit applicant add snils, med book check button         !!!
 
 DATA BASE:
 2.1) switch DB from SQLite3 to PostgreSQL                                - DONE

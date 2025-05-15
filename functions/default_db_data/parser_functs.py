@@ -128,7 +128,7 @@ def transform_applicants_data(df_in: pd.DataFrame,
 
     handlers = {
         'fio': kwargs.get("names_fix", names_fix),
-        'phone': kwargs.get("phone_number_fix", phone_number_fix),
+        'phone_number': kwargs.get("phone_number_fix", phone_number_fix),
         'snils': kwargs.get("elmk_snils_fix", elmk_snils_fix),
     }
 

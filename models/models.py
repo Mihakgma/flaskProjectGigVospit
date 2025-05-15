@@ -60,7 +60,7 @@ class User(BaseModel, UserMixin):
     username = db.Column(String(80), unique=True, nullable=False)
     email = db.Column(String(120), unique=True, nullable=False)
     password = db.Column(String(128), nullable=False)  # Пароль
-    phone = db.Column(String(11), nullable=True)  # Телефон
+    phone_number = db.Column(String(11), nullable=True)  # Телефон
     dept_id = db.Column(Integer, ForeignKey('department.id'), nullable=False)  # ID отдела
     status_id = db.Column(Integer, ForeignKey('status.id'), nullable=False)  # ID статуса
     department = db.relationship('Department', backref='users', lazy='joined')
@@ -168,7 +168,7 @@ class Applicant(BaseModel):
     first_name = db.Column(String(80), nullable=False)
     middle_name = db.Column(String(80), nullable=True)
     last_name = db.Column(String(80), nullable=False)
-    medbook_number = db.Column(String(50), unique=True, nullable=False)
+    medbook_number = db.Column(String(12), unique=True, nullable=False)
     snils_number = db.Column(String(11), unique=True, nullable=False)
     passport_number = db.Column(String(10), nullable=True)
     birth_date = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
@@ -214,3 +214,7 @@ class Vizit(BaseModel):
     contract = db.relationship('Contract',
                                backref=db.backref('vizits', cascade=None),
                                lazy='subquery')
+    created_by_user_id = db.Column(Integer, ForeignKey('user.id'),
+                                   default=1,
+                                   nullable=False)
+    created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])

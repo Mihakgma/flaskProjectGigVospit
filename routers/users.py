@@ -60,7 +60,7 @@ def add_user():
             db.session.add(new_user)
             db.session.commit()
             flash('Новый пользователь успешно добавлен!', 'success')
-            return redirect(url_for('users_bp.user_details', user_id=new_user.id))
+            return redirect(url_for('users.user_details', user_id=new_user.id))
         except IntegrityError as e:
             db.session.rollback()
             current_app.logger.error(f"IntegrityError on user add: {e}")
@@ -89,7 +89,7 @@ def edit_user(user_id):
             user_to_edit.middle_name = form.middle_name.data if form.middle_name.data else None
             user_to_edit.username = form.username.data
             user_to_edit.email = form.email.data
-            user_to_edit.phone = form.phone.data if form.phone.data else None
+            user_to_edit.phone_number = form.phone.data if form.phone.data else None
             user_to_edit.department = form.dept_id.data  # QuerySelectField возвращает объект
             user_to_edit.status = form.status_id.data  # QuerySelectField возвращает объект
             user_to_edit.info = form.info.data if form.info.data else None
@@ -102,7 +102,7 @@ def edit_user(user_id):
 
             db.session.commit()
             flash('Данные пользователя успешно обновлены!', 'success')
-            return redirect(url_for('users_bp.user_details', user_id=user_to_edit.id))
+            return redirect(url_for('users.user_details', user_id=user_to_edit.id))
         except IntegrityError as e:
             db.session.rollback()
             current_app.logger.error(f"IntegrityError on user edit: {e}")
@@ -125,7 +125,7 @@ def edit_user(user_id):
         form.middle_name.data = user_to_edit.middle_name
         form.username.data = user_to_edit.username
         form.email.data = user_to_edit.email
-        form.phone.data = user_to_edit.phone
+        form.phone.data = user_to_edit.phone_number
         form.dept_id.data = user_to_edit.department
         form.status_id.data = user_to_edit.status
         form.info.data = user_to_edit.info
