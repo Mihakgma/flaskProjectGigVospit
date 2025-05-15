@@ -48,7 +48,7 @@
                             <td>{{ user_item.first_name }}</td>
                             <td>{{ user_item.middle_name if user_item.middle_name else '' }}</td>
                             <td>{{ user_item.email }}</td>
-                            <td>{{ user_item.phone if user_item.phone else 'Не указан' }}</td>
+                            <td>{{ user_item.phone_number if user_item.phone_number else 'Не указан' }}</td>
                             <td>
                                 {% if user_item.department and user_item.department.name %}
                                     {{ user_item.department.name }}

@@ -134,7 +134,7 @@ class TableDb(db.Model):
 
     id = db.Column(Integer, primary_key=True)
     # Используем рассчитанную максимальную длину и уникальность
-    name = db.Column(String(15), unique=True, nullable=False)
+    name = db.Column(String(20), unique=True, nullable=False)
 
     def __repr__(self):
         return f"<TableDb (id={self.id}, name={self.name!r})>"
@@ -142,25 +142,18 @@ class TableDb(db.Model):
 
 class EditLog(db.Model):
     __tablename__ = 'edit_log' # Явное имя таблицы
-
     id = db.Column(Integer, primary_key=True)
-
-    # Связь с таблицей TableNames
     table_db_id = db.Column(Integer, db.ForeignKey('table_db.id'), nullable=False)
     table_db = db.relationship('TableDb') # Отношение для удобного доступа к имени таблицы
-
     # ID обновленной записи в другой таблице (без внешнего ключа, как запрошено)
     updated_row_id = db.Column(Integer, nullable=False)
-
     # Время обновления
     row_updated_at = db.Column(DateTime(timezone=True),
                                default=get_current_nsk_time,  # Используем вашу функцию времени
                                nullable=False)
-
-    # Пользователь, который внес изменение
+    # Пользователь, который внес изменение в указанную таблицу
     updated_by_user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=False)
     updated_by_user = db.relationship('User') # Отношение для удобного доступа к пользователю
-
     # Дополнительная информация/заметки пользователя
     info = db.Column(Text, default='')
 
@@ -238,8 +231,11 @@ class Contract(BaseModel, CrudInfoModel):
 
 
 user_roles = Table('user_roles', db.metadata,
-                   db.Column('user_id', Integer, db.ForeignKey('user.id')),
-                   db.Column('role_id', Integer, db.ForeignKey('role.id'))
+                   # Указываем user_id как часть первичного ключа
+                   db.Column('user_id', Integer, db.ForeignKey('user.id'), primary_key=True),
+                   # Указываем role_id как часть первичного ключа
+                   db.Column('role_id', Integer, db.ForeignKey('role.id'), primary_key=True)
+                   # Композитный первичный ключ (user_id, role_id) автоматически обеспечивает уникальность этой пары
                    )
 
 User.roles = db.relationship('Role', secondary=user_roles, backref=db.backref('users', lazy=True))

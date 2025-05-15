@@ -51,7 +51,7 @@ def add_user():
                 username=form.username.data,
                 email=form.email.data,
                 password=hashed_password,
-                phone=form.phone.data if form.phone.data else None,
+                phone_number=form.phone_number.data if form.phone_number.data else None,
                 department=form.dept_id.data,  # QuerySelectField возвращает объект модели
                 status=form.status_id.data,  # QuerySelectField возвращает объект модели
                 info=form.info.data if form.info.data else None,
@@ -76,7 +76,7 @@ def add_user():
 
 @users_bp.route('/edit/<int:user_id>', methods=['GET', 'POST'])
 @login_required
-@role_required('admin', 'moder')  # Укажите нужные роли
+@role_required('admin')  # Укажите нужные роли
 def edit_user(user_id):
     user_to_edit = User.query.get_or_404(user_id)
     # Передаем original_username и original_email для валидаторов
@@ -89,7 +89,7 @@ def edit_user(user_id):
             user_to_edit.middle_name = form.middle_name.data if form.middle_name.data else None
             user_to_edit.username = form.username.data
             user_to_edit.email = form.email.data
-            user_to_edit.phone_number = form.phone.data if form.phone.data else None
+            user_to_edit.phone_number = form.phone_number.data if form.phone_number.data else None
             user_to_edit.department = form.dept_id.data  # QuerySelectField возвращает объект
             user_to_edit.status = form.status_id.data  # QuerySelectField возвращает объект
             user_to_edit.info = form.info.data if form.info.data else None
@@ -125,7 +125,7 @@ def edit_user(user_id):
         form.middle_name.data = user_to_edit.middle_name
         form.username.data = user_to_edit.username
         form.email.data = user_to_edit.email
-        form.phone.data = user_to_edit.phone_number
+        form.phone_number.data = user_to_edit.phone_number
         form.dept_id.data = user_to_edit.department
         form.status_id.data = user_to_edit.status
         form.info.data = user_to_edit.info

@@ -1,5 +1,5 @@
 import secrets
-# from waitress import serve
+from waitress import serve
 
 from flask import Flask
 from database import db, init_app
@@ -50,6 +50,6 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    # serve(app, host='0.0.0.0', port=8080)
+    serve(app, host='0.0.0.0', port=5000)
     # ДЛЯ ОТЛАДКИ ПРИЛОЖЕНИЯ ЗАПУСКАЕМ В РЕЖИМЕ ДЕБАГГИНГА!!!
-    app.run(debug=True)
+    # app.run(debug=True)

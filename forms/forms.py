@@ -95,11 +95,11 @@ class UserForm(FlaskForm):  # Переименовали для общего и�
                                              Email(message="Некорректный формат email.")])
     password = PasswordField('Пароль',
                              validators=[Optional(), Length(min=8, message="Пароль должен быть не менее 8 символов.")])
-    phone = StringField('Номер телефона', validators=[
+    phone_number = StringField('Номер телефона', validators=[
         Optional(),
         Length(max=11, message="Номер телефона не должен превышать 11 символов.")
-        # Если используете фильтр: filters=(phone_number_fix,)
-    ])
+    ],
+                               filters=(phone_number_fix,))
     dept_id = QuerySelectField('Отдел',
                                query_factory=lambda: Department.query.order_by(Department.name).all(),
                                get_label='name',
