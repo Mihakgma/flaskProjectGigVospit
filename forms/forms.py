@@ -278,7 +278,7 @@ class ApplicantSearchForm(FlaskForm):
     residence_address = StringField('Адрес прописки',
                                     validators=[Optional()],
                                     filters=(names_fix,))
-    edited_by_user = SelectField('Кем изменено последний раз', coerce=int, choices=[],
+    updated_by_user = SelectField('Кем изменено последний раз', coerce=int, choices=[],
                                  validators=[Optional()])  # Поле для выбора пользователя
     updated_at_start = DateField('Дата последнего изменения (от)', format='%Y-%m-%d', validators=[Optional()])
     updated_at_end = DateField('Дата последнего изменения (до)', format='%Y-%m-%d', validators=[Optional()])

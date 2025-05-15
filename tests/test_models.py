@@ -38,7 +38,7 @@ class IsolatedBaseModel(TestBase):
 
     # Вариант 2: Используем вашу целевую временную зону (если это важно для теста)
     # created_at = Column(DateTime(timezone=True), default=get_current_time_in_target_zone)
-    # updated_at = Column(DateTime(timezone=True), default=get_current_time_in_target_zone, onupdate=get_current_time_in_target_zone)
+    # row_updated_at = Column(DateTime(timezone=True), default=get_current_time_in_target_zone, onupdate=get_current_time_in_target_zone)
 
     def __repr__(self):
         parts = [f"id={self.id}"]
@@ -72,7 +72,7 @@ class TestIsolatedBaseModelRepr:
         role = TestRole(id=1, name="Admin")
         print(*[(k, v) for (k, v) in role.__dict__.items()], sep="\n")
         isolated_test_session.add(role)
-        isolated_test_session.commit()  # Здесь возникает ошибка, если created_at/updated_at некорректны
+        isolated_test_session.commit()  # Здесь возникает ошибка, если created_at/row_updated_at некорректны
         expected_output = "<TestRole(id=1, name='Admin')>"
         assert str(role) == expected_output
 

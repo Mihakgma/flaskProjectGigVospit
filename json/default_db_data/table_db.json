@@ -1,0 +1,35 @@
+{
+  "1": {
+    "name": "applicant"
+  },
+  "2": {
+    "name": "applicant_type"
+  },
+  "3": {
+    "name": "attestation_type"
+  },
+  "4": {
+    "name": "contingent"
+  },
+  "5": {
+    "name": "contract"
+  },
+  "6": {
+    "name": "department"
+  },
+  "7": {
+    "name": "organization"
+  },
+  "8": {
+    "name": "role"
+  },
+  "9": {
+    "name": "status"
+  },
+  "10": {
+    "name": "vizit"
+  },
+  "11": {
+    "name": "work_field"
+  }
+}

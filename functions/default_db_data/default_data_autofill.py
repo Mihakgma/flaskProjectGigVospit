@@ -1,8 +1,8 @@
 from sqlalchemy.exc import IntegrityError
 
-from models.models import (Role, Status, Department, ApplicantType,
-                           Contingent, WorkField, AttestationType,
-                           Organization, Applicant, Vizit, User)
+from models import (Role, Status, Department, ApplicantType,
+                    Contingent, WorkField, AttestationType,
+                    Organization, Applicant, Vizit, User, TableDb)
 
 import json
 import os
@@ -31,6 +31,7 @@ def load_initial_data(data_dir, db):
         "organization.json": Organization,
         "applicant.json": Applicant,
         "vizit.json": Vizit,
+        "table_db.json": TableDb,
     }
 
     for filename, Model in model_map.items():
@@ -96,7 +97,7 @@ def load_initial_data(data_dir, db):
 
 def db_load_data(db, data_dir="initial_data"):
     try:
-        # load_initial_data(data_dir, db)
+        load_initial_data(data_dir, db)
         print("Database initialized and data loaded successfully.")
     except Exception as e:
         print(f"Error initializing database: {e}")

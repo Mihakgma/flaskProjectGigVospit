@@ -97,7 +97,7 @@ def edit_applicant(applicant_id):
     visits = Vizit.query.filter_by(applicant_id=applicant_id).all()
     applicant_form = ApplicantEditForm(obj=applicant)
     vizit_form = VizitForm()
-    applicant.edited_by_user_id = current_user.id
+    applicant.updated_by_user_id = current_user.id
 
     if request.method == 'POST':
         if applicant_form.submit.data and applicant_form.validate_on_submit():
@@ -155,8 +155,8 @@ def search_applicants():
     form = ApplicantSearchForm(request.form)  # Используем request.form для POST
     applicants = []
     users = User.query.all()
-    form.edited_by_user.choices = [(user.id, user.username) for user in users]
-    form.edited_by_user.choices.insert(0, (0, 'Все'))  # добавляем выбор всех пользователей
+    form.updated_by_user.choices = [(user.id, user.username) for user in users]
+    form.updated_by_user.choices.insert(0, (0, 'Все'))  # добавляем выбор всех пользователей
     applicant_ids_for_export = []
 
     if request.method == 'POST' and form.validate_on_submit():
@@ -206,8 +206,8 @@ def search_applicants():
                     flash('Номер медкнижки должен содержать только цифры', 'error')
                     return render_template('search_applicants.html', form=form, applicants=applicants)
 
-        if form.edited_by_user.data:  # Если выбран пользователь
-            search_criteria['edited_by_user'] = form.edited_by_user.data
+        if form.updated_by_user.data:  # Если выбран пользователь
+            search_criteria['updated_by_user'] = form.updated_by_user.data
 
         if form.updated_at_start.data:  # Если указана начальная дата
             search_criteria['updated_at_start'] = form.updated_at_start.data
@@ -258,8 +258,8 @@ def search_applicants():
                 filters.append(last_visit_sq.c.last_visit_date >= value)
             elif field_name == 'last_visit_end':
                 filters.append(last_visit_sq.c.last_visit_date <= value)
-            elif field_name == 'edited_by_user':
-                filters.append(Applicant.edited_by_user_id == value)
+            elif field_name == 'updated_by_user':
+                filters.append(Applicant.updated_by_user_id == value)
             elif field_name == 'updated_at_start':
                 filters.append(Applicant.updated_at >= value)
             elif field_name == 'updated_at_end':
@@ -309,13 +309,8 @@ def export_found_data():
     # --- Сбор данных для листа "Заявители" ---
     applicants_query = db.session.query(Applicant).options(
         # Загружаем связанные данные, чтобы избежать N+1 запросов и иметь доступ к именам
-        # joinedload(Applicant.gender),
-        # joinedload(Applicant.citizenship),
-        # joinedload(Applicant.registration_region),
-        # joinedload(Applicant.residence_region),
-        joinedload(Applicant.edited_by_user).joinedload(User.department),  # Если нужно ФИО и отдел редактора
+        joinedload(Applicant.updated_by_user).joinedload(User.department),  # Если нужно ФИО и отдел редактора
         # Добавьте joinedload для всех FK, которые вы хотите заменить на имена
-        # например, joinedload(Applicant.some_other_relation)
     ).filter(Applicant.id.in_(applicant_ids)).order_by(Applicant.last_name, Applicant.first_name)
 
     found_applicants = applicants_query.all()
@@ -328,23 +323,16 @@ def export_found_data():
             'Имя': app.first_name,
             'Отчество': app.middle_name,
             'Дата рождения': app.birth_date.strftime('%d.%m.%Y') if app.birth_date else None,
-            # 'Пол': app.gender.name if app.gender else None,  # Предполагаем, что у Gender есть поле 'name'
-            # 'Гражданство': app.citizenship.name if app.citizenship else None,  # Предполагаем 'name'
             'СНИЛС': app.snils_number,
             'Мед. книжка №': app.medbook_number,
-            # 'Регион регистрации': app.registration_region.name if app.registration_region else None,
-            # Предполагаем 'name'
             'Адрес регистрации': app.registration_address,
-            # 'Регион проживания': app.residence_region.name if app.residence_region else None,  # Предполагаем 'name'
             'Адрес проживания': app.residence_address,
             'Телефон': app.phone_number,
             'Email': app.email,
-            # 'Дата создания записи': app.created_time.strftime('%d.%m.%Y %H:%M:%S') if app.created_time else None,
-            'Дата последнего редактирования': app.updated_at.strftime(
-                '%d.%m.%Y %H:%M:%S') if app.updated_at else None,
-            'Кем редактировано (логин)': app.edited_by_user.username if app.edited_by_user else None,
+            'Дата последнего редактирования': app.row_updated_at.strftime(
+                '%d.%m.%Y %H:%M:%S') if app.row_updated_at else None,
+            'Кем редактировано (логин)': app.updated_by_user.username if app.updated_by_user else None,
             'Доп. информация': app.info
-            # Исключаем: is_editing_now, editing_by_id, editing_started_at
         }
         applicants_data_for_excel.append(data_row)
     df_applicants = pd.DataFrame(applicants_data_for_excel)
@@ -378,7 +366,6 @@ def export_found_data():
             'Тип аттестации': vizit.attestation_type.name if vizit.attestation_type else None,  # Предполагаем 'name'
             'Область работ': vizit.work_field.name if vizit.work_field else None,  # Предполагаем 'name'
             'Тип заявителя (в визите)': vizit.applicant_type.name if vizit.applicant_type else None,
-            # Предполагаем 'name'
             'ID контракта (FK)': vizit.contract_id,
             'Номер контракта': vizit.contract.number if vizit.contract else None,
             'Доп. информация по визиту': vizit.info
@@ -438,5 +425,5 @@ def export_found_data():
 
 # @event.listens_for(Applicant, 'before_update')
 # def receive_before_update(mapper, connection, target):
-#     target.updated_at = datetime.utcnow()
-#     target.edited_by_user = current_user.id # Записываем id текущего пользователя
+#     target.row_updated_at = datetime.utcnow()
+#     target.updated_by_user = current_user.id # Записываем id текущего пользователя

@@ -63,11 +63,6 @@ def contract_details(contract_id):
         joinedload(Contract.organization)  # Если есть связь с организацией
     ).get_or_404(contract_id)
 
-    # 1. Получаем все визиты, прикрепленные к этому контракту
-    # Если lazy='dynamic' в модели Contract для vizits:
-    # related_vizits_query = contract.vizits
-    # related_vizits_list = related_vizits_query.all()
-    # Иначе, если lazy=True или eager loading настроен:
     related_vizits_list = Vizit.query.filter_by(contract_id=contract.id).all()
 
     # 2. Количество визитов, к которым прикреплен текущий контракт
@@ -91,14 +86,14 @@ def contract_details(contract_id):
 @contracts_bp.route('/search', methods=['GET'])
 @login_required
 @role_required('admin', 'moder', 'oper')
-def search_contracts():  # Название функции изменено
+def search_contracts():
     q = request.args.get('q')  # Название организации
     page = int(request.args.get('page', 1))
     start_date = request.args.get('start_date')  # Дата подписания (от)
     end_date = request.args.get('end_date')  # Дата подписания (до)
-    expiration_start_date = request.args.get('expiration_start_date')  # Дата окончания (от)
-    expiration_end_date = request.args.get('expiration_end_date')  # Дата окончания (до)
-    contract_name = request.args.get('contract_name')  # Название контракта
+    expiration_start_date = request.args.get('expiration_start_date')
+    expiration_end_date = request.args.get('expiration_end_date')
+    contract_name = request.args.get('contract_name')
 
     try:
         if start_date:
@@ -146,16 +141,16 @@ def search_contracts():  # Название функции изменено
     results = []
     for contract in contracts.items:
         org_name = None
-        if contract.organization_id:  # Проверяем, есть ли organization_id
+        if contract.organization_id:
             org = Organization.query.get(contract.organization_id)
             if org:
                 org_name = org.name
 
         results.append({
             'id': contract.id,
-            'number': contract.number,  # number добавлен
+            'number': contract.number,
             'name': contract.name,
-            'organization_name': org_name,  # Используем полученное имя организации
+            'organization_name': org_name,
             'contract_date': contract.contract_date.isoformat() if contract.contract_date else None,
             'expiration_date': contract.expiration_date.isoformat() if contract.expiration_date else None,
             'detail_url': f'/contracts/{contract.id}'

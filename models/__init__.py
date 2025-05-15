@@ -10,7 +10,9 @@ __all__ = [
     'AttestationType',
     'Organization',
     'Contract',
-    'Applicant'
+    'Applicant',
+    'TableDb',
+    'Vizit'
 ]
 
 from .models import (BaseModel,
@@ -24,4 +26,6 @@ from .models import (BaseModel,
                      AttestationType,
                      Organization,
                      Contract,
-                     Applicant)
+                     Applicant,
+                     TableDb,
+                     Vizit)

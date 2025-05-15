@@ -4,12 +4,13 @@ import pytz
 from werkzeug.security import check_password_hash
 
 from database import db
-from sqlalchemy import ForeignKey, Table, UniqueConstraint
+from sqlalchemy import Table, UniqueConstraint
 from sqlalchemy.types import String, Integer, Boolean, DateTime, Text
 from flask_login import UserMixin
 
 from sqlalchemy.orm import validates
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.declarative import declared_attr
 
 nsk_tz = pytz.timezone('Asia/Novosibirsk')
 
@@ -61,8 +62,8 @@ class User(BaseModel, UserMixin):
     email = db.Column(String(120), unique=True, nullable=False)
     password = db.Column(String(128), nullable=False)
     phone_number = db.Column(String(11), nullable=True)
-    dept_id = db.Column(Integer, ForeignKey('department.id'), nullable=False)
-    status_id = db.Column(Integer, ForeignKey('status.id'), nullable=False)
+    dept_id = db.Column(Integer, db.ForeignKey('department.id'), nullable=False)
+    status_id = db.Column(Integer, db.ForeignKey('status.id'), nullable=False)
     department = db.relationship('Department', backref='users', lazy='joined')
     status = db.relationship('Status', backref='users', lazy='joined')
     is_logged_in = db.Column(Boolean, default=False, nullable=True)
@@ -81,29 +82,93 @@ class User(BaseModel, UserMixin):
         return check_password_hash(self.password, password)
 
 
-class CrudInfoModel(db.Model):
-    __abstract__ = True
-
+class CrudInfoModel:
     is_editing_now = db.Column(Boolean, default=False, nullable=False)
-    editing_by_id = db.Column(Integer,
-                              ForeignKey('user.id'),
-                              default=1,
-                              nullable=False)
     editing_started_at = db.Column(DateTime(timezone=True),
-                                   default=get_current_nsk_time,
+                                   default=get_current_nsk_time,  # Используем правильную ссылку
                                    nullable=False)
-    created_by_user_id = db.Column(Integer,
-                                   ForeignKey('user.id'),
-                                   default=1,
-                                   nullable=False)
-    created_by_user = db.relationship('User',
-                                      foreign_keys=[created_by_user_id])
-    updated_by_user_id = db.Column(Integer,
-                                   ForeignKey('user.id'),
-                                   default=1,
-                                   nullable=False)
-    updated_by_user = db.relationship('User',
-                                      foreign_keys=[updated_by_user_id])
+
+    @declared_attr
+    def editing_by_user_id(cls):  # cls - это класс, который наследует миксин (например, Organization)
+        return db.Column(Integer,
+                         db.ForeignKey('user.id'),  # Используйте db.ForeignKey
+                         nullable=True)
+
+    @declared_attr
+    def editing_by_user(cls):
+        return db.relationship('User',
+                               foreign_keys=[cls.editing_by_user_id])
+
+    @declared_attr
+    def created_by_user_id(cls):
+        return db.Column(Integer,
+                         db.ForeignKey('user.id'),  # Используйте db.ForeignKey
+                         default=1,
+                         nullable=False)
+
+    # Отношения (relationships) ДОЛЖНЫ быть с @declared_attr в миксинах
+    @declared_attr
+    def created_by_user(cls):
+        return db.relationship('User',
+                               foreign_keys=[cls.created_by_user_id])
+
+    @declared_attr
+    def updated_by_user_id(cls):
+        return db.Column(Integer,
+                         db.ForeignKey('user.id'),  # Используйте db.ForeignKey
+                         default=1,
+                         nullable=False)
+
+    @declared_attr
+    def updated_by_user(cls):
+        # В relationship внутри @declared_attr миксина,
+        # нужно явно указывать foreign_keys и использовать cls.имя_колонки
+        return db.relationship('User',
+                               foreign_keys=[cls.updated_by_user_id])
+
+    is_committed_ok = db.Column(Boolean, default=True, nullable=False)
+
+
+class TableDb(db.Model):
+    __tablename__ = 'table_db' # Явное имя таблицы
+
+    id = db.Column(Integer, primary_key=True)
+    # Используем рассчитанную максимальную длину и уникальность
+    name = db.Column(String(15), unique=True, nullable=False)
+
+    def __repr__(self):
+        return f"<TableDb (id={self.id}, name={self.name!r})>"
+
+
+class EditLog(db.Model):
+    __tablename__ = 'edit_log' # Явное имя таблицы
+
+    id = db.Column(Integer, primary_key=True)
+
+    # Связь с таблицей TableNames
+    table_db_id = db.Column(Integer, db.ForeignKey('table_db.id'), nullable=False)
+    table_db = db.relationship('TableDb') # Отношение для удобного доступа к имени таблицы
+
+    # ID обновленной записи в другой таблице (без внешнего ключа, как запрошено)
+    updated_row_id = db.Column(Integer, nullable=False)
+
+    # Время обновления
+    row_updated_at = db.Column(DateTime(timezone=True),
+                               default=get_current_nsk_time,  # Используем вашу функцию времени
+                               nullable=False)
+
+    # Пользователь, который внес изменение
+    updated_by_user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=False)
+    updated_by_user = db.relationship('User') # Отношение для удобного доступа к пользователю
+
+    # Дополнительная информация/заметки пользователя
+    info = db.Column(Text, default='')
+
+    def __repr__(self):
+        return (f"<EditLog(id={self.id}, "
+                f"table='{self.table_db.name if self.table_db else 'N/A'}', "
+                f"row_id={self.updated_row_id}, "
+                f"row_updated_at={self.row_updated_at})>")
 
 
 class ApplicantType(BaseModel):
@@ -143,15 +208,6 @@ class Organization(BaseModel, CrudInfoModel):
     email = db.Column(String(120))
     is_active = db.Column(Boolean, nullable=False)
 
-    # created_by_user_id = db.Column(Integer, ForeignKey('user.id'),
-    #                                default=1,
-    #                                nullable=False)
-    # created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])
-    # updated_by_user_id = db.Column(Integer, ForeignKey('user.id'),
-    #                                default=1,
-    #                                nullable=False)
-    # updated_by_user = db.relationship('User', foreign_keys=[updated_by_user_id])
-
     @validates('inn')
     def validate_inn(self, key, inn):
         if inn is not None:
@@ -169,18 +225,9 @@ class Contract(BaseModel, CrudInfoModel):
     name = db.Column(Text, default=None, nullable=True)
     expiration_date = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=True)
     is_extended = db.Column(Boolean, nullable=False)
-    organization_id = db.Column(Integer, ForeignKey('organization.id'))
+    organization_id = db.Column(Integer, db.ForeignKey('organization.id'))
     # Определяем отношение один ко многим с таблицей Organization
     organization = db.relationship('Organization', backref='contracts')
-
-    # created_by_user_id = db.Column(Integer, ForeignKey('user.id'),
-    #                                default=1,
-    #                                nullable=False)
-    # created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])
-    # updated_by_user_id = db.Column(Integer, ForeignKey('user.id'),
-    #                                default=1,
-    #                                nullable=False)
-    # updated_by_user = db.relationship('User', foreign_keys=[updated_by_user_id])
 
     __table_args__ = (
         UniqueConstraint('number',
@@ -206,7 +253,9 @@ class Applicant(BaseModel, CrudInfoModel):
     medbook_number = db.Column(String(12), unique=True, nullable=False)
     snils_number = db.Column(String(11), unique=True, nullable=False)
     passport_number = db.Column(String(10), nullable=True)
-    birth_date = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
+    birth_date = db.Column(DateTime(timezone=True),
+                           default=get_current_nsk_time,
+                           nullable=False)
     registration_address = db.Column(String(200), nullable=True)
     residence_address = db.Column(String(200), nullable=True)
     phone_number = db.Column(String(11), nullable=True)
@@ -240,12 +289,3 @@ class Vizit(BaseModel, CrudInfoModel):
     contract = db.relationship('Contract',
                                backref=db.backref('vizits', cascade=None),
                                lazy='subquery')
-
-    # created_by_user_id = db.Column(Integer, ForeignKey('user.id'),
-    #                                default=1,
-    #                                nullable=False)
-    # created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])
-    # updated_by_user_id = db.Column(Integer, ForeignKey('user.id'),
-    #                                default=1,
-    #                                nullable=False)
-    # updated_by_user = db.relationship('User', foreign_keys=[updated_by_user_id])
