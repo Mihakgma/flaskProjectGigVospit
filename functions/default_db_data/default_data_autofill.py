@@ -76,19 +76,6 @@ def load_initial_data(data_dir, db):
             except json.JSONDecodeError as e:
                 print(f"Error decoding JSON in {filename}: {e}")
 
-    # После добавления всех объектов свяжем applicants и visits
-    # try:
-    #     # Связывание посещений с заявителями
-    #     for app in Applicant.query.all():
-    #         for visit in Vizit.query.filter(Vizit.applicant_id == app.id).all():
-    #             app.vizits.append(visit)
-    #
-    #     db.session.commit()  # Подтверждаем изменения
-    #     print("Database initialized and data loaded successfully.")
-    # except Exception as e:
-    #     db.session.rollback()
-    #     print(f"Error linking applicants to visits: {e}")
-
     # После добавления всех объектов свяжем пользователей и роли
     try:
         # Перечислим всех пользователей и соответствующие им роли последовательно

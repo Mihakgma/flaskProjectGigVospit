@@ -5,6 +5,8 @@ from flask_wtf import FlaskForm
 def validate_snils(form: FlaskForm, field):
     if type(field) is str:
         number_in = field
+    elif not field.data:
+        raise ValidationError('ПОЖАЛУЙСТА ВВЕДИТЕ НОМЕР СНИЛС!!!')
     else:
         number_in = field.data
     numbers = [i for i in number_in if i.isnumeric()]

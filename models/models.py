@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 nsk_tz = pytz.timezone('Asia/Novosibirsk')
 
 
-def get_current_nsk_time():  # Переименовал для ясности
+def get_current_nsk_time():
     """Возвращает текущее время в новосибирской временной зоне."""
     return datetime.now(nsk_tz)
 
@@ -54,15 +54,15 @@ class Department(BaseModel):
 
 class User(BaseModel, UserMixin):
     id = db.Column(Integer, primary_key=True)
-    last_name = db.Column(String(80), nullable=False)  # Фамилия
-    first_name = db.Column(String(80), nullable=False)  # Имя
-    middle_name = db.Column(String(80), nullable=True)  # Отчество
+    last_name = db.Column(String(80), nullable=False)
+    first_name = db.Column(String(80), nullable=False)
+    middle_name = db.Column(String(80), nullable=True)
     username = db.Column(String(80), unique=True, nullable=False)
     email = db.Column(String(120), unique=True, nullable=False)
-    password = db.Column(String(128), nullable=False)  # Пароль
-    phone_number = db.Column(String(11), nullable=True)  # Телефон
-    dept_id = db.Column(Integer, ForeignKey('department.id'), nullable=False)  # ID отдела
-    status_id = db.Column(Integer, ForeignKey('status.id'), nullable=False)  # ID статуса
+    password = db.Column(String(128), nullable=False)
+    phone_number = db.Column(String(11), nullable=True)
+    dept_id = db.Column(Integer, ForeignKey('department.id'), nullable=False)
+    status_id = db.Column(Integer, ForeignKey('status.id'), nullable=False)
     department = db.relationship('Department', backref='users', lazy='joined')
     status = db.relationship('Status', backref='users', lazy='joined')
     is_logged_in = db.Column(Boolean, default=False, nullable=True)
@@ -79,6 +79,31 @@ class User(BaseModel, UserMixin):
         :return: True, если пароль верный, False в противном случае
         """
         return check_password_hash(self.password, password)
+
+
+class CrudInfoModel(db.Model):
+    __abstract__ = True
+
+    is_editing_now = db.Column(Boolean, default=False, nullable=False)
+    editing_by_id = db.Column(Integer,
+                              ForeignKey('user.id'),
+                              default=1,
+                              nullable=False)
+    editing_started_at = db.Column(DateTime(timezone=True),
+                                   default=get_current_nsk_time,
+                                   nullable=False)
+    created_by_user_id = db.Column(Integer,
+                                   ForeignKey('user.id'),
+                                   default=1,
+                                   nullable=False)
+    created_by_user = db.relationship('User',
+                                      foreign_keys=[created_by_user_id])
+    updated_by_user_id = db.Column(Integer,
+                                   ForeignKey('user.id'),
+                                   default=1,
+                                   nullable=False)
+    updated_by_user = db.relationship('User',
+                                      foreign_keys=[updated_by_user_id])
 
 
 class ApplicantType(BaseModel):
@@ -109,7 +134,7 @@ class AttestationType(BaseModel):
     vizits = db.relationship("Vizit", back_populates="attestation_type")
 
 
-class Organization(BaseModel):
+class Organization(BaseModel, CrudInfoModel):
     id = db.Column(Integer, primary_key=True)
     name = db.Column(String(200), nullable=False)
     inn = db.Column(String(12), unique=True)
@@ -117,22 +142,27 @@ class Organization(BaseModel):
     phone_number = db.Column(String(20))
     email = db.Column(String(120))
     is_active = db.Column(Boolean, nullable=False)
-    created_by_user_id = db.Column(Integer, ForeignKey('user.id'),
-                                   default=1,
-                                   nullable=False)
-    created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])
+
+    # created_by_user_id = db.Column(Integer, ForeignKey('user.id'),
+    #                                default=1,
+    #                                nullable=False)
+    # created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])
+    # updated_by_user_id = db.Column(Integer, ForeignKey('user.id'),
+    #                                default=1,
+    #                                nullable=False)
+    # updated_by_user = db.relationship('User', foreign_keys=[updated_by_user_id])
 
     @validates('inn')
     def validate_inn(self, key, inn):
-        if inn is not None:  # Проверяем только если inn не Null
-            inn = str(inn).strip()  # Преобразуем в строку и удаляем пробелы
+        if inn is not None:
+            inn = str(inn).strip()
             if not (10 <= len(inn) <= 12) or not inn.isdigit():
                 raise IntegrityError("ИНН должен содержать от 10 до 12 цифр.")
 
         return inn
 
 
-class Contract(BaseModel):
+class Contract(BaseModel, CrudInfoModel):
     id = db.Column(Integer, primary_key=True)
     number = db.Column(String(50), nullable=False)
     contract_date = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
@@ -142,10 +172,15 @@ class Contract(BaseModel):
     organization_id = db.Column(Integer, ForeignKey('organization.id'))
     # Определяем отношение один ко многим с таблицей Organization
     organization = db.relationship('Organization', backref='contracts')
-    created_by_user_id = db.Column(Integer, ForeignKey('user.id'),
-                                   default=1,
-                                   nullable=False)
-    created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])
+
+    # created_by_user_id = db.Column(Integer, ForeignKey('user.id'),
+    #                                default=1,
+    #                                nullable=False)
+    # created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])
+    # updated_by_user_id = db.Column(Integer, ForeignKey('user.id'),
+    #                                default=1,
+    #                                nullable=False)
+    # updated_by_user = db.relationship('User', foreign_keys=[updated_by_user_id])
 
     __table_args__ = (
         UniqueConstraint('number',
@@ -163,7 +198,7 @@ user_roles = Table('user_roles', db.metadata,
 User.roles = db.relationship('Role', secondary=user_roles, backref=db.backref('users', lazy=True))
 
 
-class Applicant(BaseModel):
+class Applicant(BaseModel, CrudInfoModel):
     id = db.Column(Integer, primary_key=True)
     first_name = db.Column(String(80), nullable=False)
     middle_name = db.Column(String(80), nullable=True)
@@ -176,19 +211,10 @@ class Applicant(BaseModel):
     residence_address = db.Column(String(200), nullable=True)
     phone_number = db.Column(String(11), nullable=True)
     email = db.Column(String(120), nullable=True)
-    edited_by_user_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
-    edited_by_user = db.relationship('User', foreign_keys=[edited_by_user_id])
-    is_editing_now = db.Column(Boolean, nullable=True)
-    editing_by_id = db.Column(Integer, ForeignKey('user.id'), nullable=True)
-    editing_started_at = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=True)
     vizits = db.relationship('Vizit',
                              back_populates='applicant',  # Связывает с атрибутом 'applicant' в модели Vizit
                              cascade='all, delete-orphan',  # Если удалить Applicant, удалятся и все его Vizit
                              lazy='subquery')
-    created_by_user_id = db.Column(Integer, ForeignKey('user.id'),
-                                   default=1,
-                                   nullable=False)
-    created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])
 
     @property
     def full_name(self):
@@ -197,7 +223,7 @@ class Applicant(BaseModel):
         return ' '.join([part for part in parts if part]).strip()
 
 
-class Vizit(BaseModel):
+class Vizit(BaseModel, CrudInfoModel):
     id = db.Column(Integer, primary_key=True)
     applicant_id = db.Column(Integer, db.ForeignKey('applicant.id'), nullable=False)
     applicant = db.relationship('Applicant', back_populates='vizits')
@@ -214,7 +240,12 @@ class Vizit(BaseModel):
     contract = db.relationship('Contract',
                                backref=db.backref('vizits', cascade=None),
                                lazy='subquery')
-    created_by_user_id = db.Column(Integer, ForeignKey('user.id'),
-                                   default=1,
-                                   nullable=False)
-    created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])
+
+    # created_by_user_id = db.Column(Integer, ForeignKey('user.id'),
+    #                                default=1,
+    #                                nullable=False)
+    # created_by_user = db.relationship('User', foreign_keys=[created_by_user_id])
+    # updated_by_user_id = db.Column(Integer, ForeignKey('user.id'),
+    #                                default=1,
+    #                                nullable=False)
+    # updated_by_user = db.relationship('User', foreign_keys=[updated_by_user_id])
