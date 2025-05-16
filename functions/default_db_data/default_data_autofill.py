@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
 from models import (Role, Status, Department, ApplicantType,
@@ -35,6 +36,26 @@ def load_initial_data(data_dir, db):
     }
 
     for filename, Model in model_map.items():
+        # Получаем имя таблицы из имени модели (для логов)
+        model_name = Model.name if hasattr(Model, 'name') else Model.__name__
+
+        # Проверяем, пуста ли текущая таблица
+        try:
+            # Используем func.count() для эффективного подсчета записей
+            count = db.session.query(func.count(Model.id)).scalar()
+            # Если модель не имеет поля 'id', можно использовать func.count() без аргументов
+            # count = db.session.query(func.count()).select_from(Model).scalar()
+
+            if count > 0:
+                print(f"Таблица '{model_name}' не пуста ({count} записей). Пропускаем загрузку из {filename}.")
+                continue  # Переходим к следующему файлу/модели в цикле
+            else:
+                print(f"Таблица '{model_name}' пуста. Начинаем загрузку из {filename}.")
+
+        except Exception as e:
+            print(f"Ошибка при проверке пустоты таблицы '{model_name}': {e}. Попытаемся загрузить данные.")
+            # В случае ошибки при проверке, все равно пытаемся загрузить данные,
+            # чтобы избежать блокировки инициализации при временных проблемах
         filepath = os.path.join(data_dir, filename)
         if os.path.exists(filepath):
             try:
@@ -77,27 +98,57 @@ def load_initial_data(data_dir, db):
             except json.JSONDecodeError as e:
                 print(f"Error decoding JSON in {filename}: {e}")
 
-    # После добавления всех объектов свяжем пользователей и роли
+    print("--- Проверка и создание связей пользователь-роль ---")
     try:
-        # Перечислим всех пользователей и соответствующие им роли последовательно
-        users = User.query.order_by(User.id.asc()).all()
-        roles = Role.query.order_by(Role.id.asc()).all()
+        # Пример связывания: Допустим, мы хотим связать каждого пользователя с ролью по их порядку ID
+        # Или у вас есть более сложная логика связывания
+        users = db.session.query(User).order_by(User.id.asc()).all()
+        roles = db.session.query(Role).order_by(Role.id.asc()).all()
 
-        # Присваиваем каждой роли одного пользователя, соблюдая порядок ID
-        for i, user in enumerate(users):
-            if i < len(roles):
-                user.roles.append(roles[i])
+        # Пример простой логики связывания: связываем первого пользователя с первой ролью,
+        # второго со второй и т.д., пока не закончатся пользователи или роли
+        min_count = min(len(users), len(roles))
 
-        db.session.commit()  # Подтверждаем изменения
-        print("Пользователи и роли успешно связаны.")
+        linked_count = 0
+        for i in range(min_count):
+            user = users[i]
+            role = roles[i]
+
+            # !!! Важно: Проверяем, не имеет ли пользователь уже эту роль !!!
+            # Это стандартный способ SQLAlchemy для M2M связей, который предотвращает дублирование.
+            # Если связь уже есть, user.roles.append(role) просто ничего не сделает.
+            if role not in user.roles:
+                print(f"Создаем связь: Пользователь '{user.username}' с ролью '{role.name}'")
+                user.roles.append(role)
+                linked_count += 1
+            else:
+                print(f"Связь уже существует: Пользователь '{user.username}' уже имеет роль '{role.name}'. Пропускаем.")
+
+        # Коммитим изменения после создания всех связей
+        if linked_count > 0:
+            try:
+                db.session.commit()
+                print(f"Успешно создано {linked_count} новых связей пользователь-роль.")
+            except IntegrityError as e:
+                db.session.rollback()
+                print(
+                    f"Ошибка целостности при коммите связей пользователь-роль: {e}. "
+                    f"Возможно, были добавлены дубликаты несмотря на проверку 'if role not in user.roles'.")
+            except Exception as e:
+                db.session.rollback()
+                print(f"Неизвестная ошибка при коммите связей пользователь-роль: {e}")
+        else:
+            print("Новые связи пользователь-роль не требовалось создавать.")
+
     except Exception as e:
-        db.session.rollback()
-        print(f"Ошибка связывания пользователей и ролей: {e}")
+        # Общая ошибка при получении пользователей/ролей или при связывании
+        print(f"Ошибка при создании связей пользователь-роль: {e}")
+        db.session.rollback()  # Откатываем сессию на всякий случай
 
 
 def db_load_data(db, data_dir="initial_data"):
     try:
-        # load_initial_data(data_dir, db)
+        load_initial_data(data_dir, db)
         print("Database initialized and data loaded successfully.")
     except Exception as e:
         print(f"Error initializing database: {e}")
