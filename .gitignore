@@ -192,3 +192,4 @@ output.json
 #pg config file
 db_conf_pg.txt
 config.py
+docker-compose.yaml
