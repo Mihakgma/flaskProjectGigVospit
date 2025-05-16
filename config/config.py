@@ -1,6 +1,7 @@
 import os
 
-with open('config/db_conf_pg.txt', 'r') as file:
+filename = 'config/db_conf_pg.txt'
+with open(filename, 'r') as file:
     db_config_info = file.read().replace('\n', '')
 
 
@@ -17,6 +18,7 @@ class Config:
         print("Не могу установить соединение с базой данных.")
         # В зависимости от приложения, вы можете здесь завершить работу
         # или подставить значение по умолчанию для локальной разработки (например, SQLite)
+        print(f"Пытаюсь загрузить путь к БД из файла: <{filename}>")
         SQLALCHEMY_DATABASE_URI = db_config_info
         # или даже localhost, но тогда приложение упадет в Docker Compose без БД:
         # SQLALCHEMY_DATABASE_URI = "..."
