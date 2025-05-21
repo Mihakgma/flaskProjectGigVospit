@@ -12,6 +12,7 @@ ROUTES_INFO = [
     {'title': 'Добавить заявителя', 'route': 'applicants.add_applicant'},
     {'title': 'Искать заявителя', 'route': 'applicants.search_applicants'},
     {'title': 'Добавить организацию', 'route': 'organizations.add_organization'},
+    {'title': 'Управление организациями', 'route': 'organizations.manage_orgs'},
     {'title': 'Добавить контракт', 'route': 'contracts.add_contract'},
     {'title': 'Искать контракты', 'route': 'contracts.search_contracts'},
     {'title': 'Вход', 'route': 'auth.login'},

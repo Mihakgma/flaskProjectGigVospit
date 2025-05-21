@@ -163,7 +163,7 @@ class OrganizationAddForm(FlaskForm):
     inn = StringField('ИНН',
                       validators=[
                           DataRequired(message="Обязательно введите ИНН"),
-                          Length(min=10, max=12, message="ИНН должен содержать 10 или 12 цифр")
+                          Length(min=10, max=12, message="ИНН должен содержать от 10 до 12 цифр")  # Уточнено сообщение
                       ],
                       filters=(elmk_snils_fix,))
 
@@ -180,23 +180,61 @@ class OrganizationAddForm(FlaskForm):
                                filters=(phone_number_fix,))
 
     email = StringField('Email', validators=[
-        Optional(),  # Email необязателен
+        Optional(),
         Email(message="Некорректный адрес электронной почты"),
         Length(max=120, message="Максимальное количество символов: 120")
     ])
 
     is_active = BooleanField('Организация активна?', default=True)
 
-    info = TextAreaField('Дополнительная информация', validators=[
-        Optional()  # Дополнительная информация необязательна
-    ])
+    # Если поле 'info' из CrudInfoModel, убедитесь, что оно доступно
+    # или добавьте его сюда, если оно должно быть редактируемым через форму
+    # Например, если CrudInfoModel добавляет поле info:
+    info = TextAreaField('Дополнительная информация', validators=[Optional()])
 
-    submit = SubmitField('Сохранить')
+    submit = SubmitField(
+        'Сохранить')  # Кнопка submit не используется в AJAX форме модалки, но нужна для стандартной формы
 
+    # Добавляем параметр original_org_id для режима редактирования
+    def __init__(self,
+                 formdata=None,
+                 obj=None,
+                 prefix='',
+                 meta=None, *,
+                 original_org_id=None,
+                 **kwargs):
+        # Исправлено: аргументы передаются по имени
+        super().__init__(formdata=formdata,
+                         obj=obj,
+                         prefix=prefix,
+                         meta=meta,
+                         **kwargs)
+        self.original_org_id = original_org_id
+
+    # Переопределяем валидацию INN для учета режима редактирования
     def validate_inn(self, field):
-        organization = Organization.query.filter_by(inn=field.data).first()
-        if organization:
-            raise ValidationError("Организация с указанным ИНН уже зарегистрирована.")
+        if field.data:  # Проверяем уникальность только если ИНН введен
+            inn_data = str(field.data).strip()
+
+            # Этот базовый формат уже проверяется валидатором @validates в модели,
+            # но повторная проверка здесь дает более быструю обратную связь пользователю на уровне формы.
+            # Если вы доверяете валидатору модели, эту часть можно убрать,
+            # но тогда ошибка формата придет как 500 или другая ошибка из запроса API.
+            if not (10 <= len(inn_data) <= 12) or not inn_data.isdigit():
+                raise ValidationError("ИНН должен содержать от 10 до 12 цифр.")
+
+            # Проверка уникальности
+            query = Organization.query.filter_by(inn=inn_data)
+
+            # Если форма используется для редактирования (передан original_org_id),
+            # исключаем текущую организацию из проверки на уникальность
+            if self.original_org_id is not None:
+                query = query.filter(Organization.id != self.original_org_id)
+
+            organization = query.first()
+            if organization:
+                # Ошибка уникальности
+                raise ValidationError("Организация с указанным ИНН уже зарегистрирована.")
 
 
 def active_contracts_factory():
@@ -279,7 +317,7 @@ class ApplicantSearchForm(FlaskForm):
                                     validators=[Optional()],
                                     filters=(names_fix,))
     updated_by_user = SelectField('Кем изменено последний раз', coerce=int, choices=[],
-                                 validators=[Optional()])  # Поле для выбора пользователя
+                                  validators=[Optional()])  # Поле для выбора пользователя
     updated_at_start = DateField('Дата последнего изменения (от)', format='%Y-%m-%d', validators=[Optional()])
     updated_at_end = DateField('Дата последнего изменения (до)', format='%Y-%m-%d', validators=[Optional()])
     submit = SubmitField('Найти')

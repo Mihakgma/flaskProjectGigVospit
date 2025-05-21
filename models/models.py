@@ -210,6 +210,24 @@ class Organization(BaseModel, CrudInfoModel):
 
         return inn
 
+        # Метод для преобразования объекта в словарь (для AJAX ответов)
+        def to_dict(self):
+            return {
+                'id': self.id,
+                'name': self.name,
+                'inn': self.inn,
+                'address': self.address,
+                'phone_number': self.phone_number,
+                'email': self.email,
+                'is_active': self.is_active,
+                'info': getattr(self, 'info', None),
+                # Учитываем, что info может быть из CrudInfoModel или отсутствовать
+                # Возможно, добавить поля из CrudInfoModel если они нужны на фронтенде
+                'created_at': self.created_at.isoformat() if hasattr(self, 'created_at') and self.created_at else None,
+                'updated_at': self.updated_at.isoformat() if hasattr(self, 'updated_at') and self.updated_at else None,
+                'created_by_id': self.created_by_id if hasattr(self, 'created_by_id') else None,
+            }
+
 
 class Contract(BaseModel, CrudInfoModel):
     id = db.Column(Integer, primary_key=True)
