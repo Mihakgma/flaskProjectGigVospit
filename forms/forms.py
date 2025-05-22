@@ -6,7 +6,7 @@ from wtforms import (StringField,
                      DateField,
                      TextAreaField,
                      PasswordField,
-                     SelectMultipleField)
+                     SelectMultipleField, validators)
 from wtforms.validators import (DataRequired,
                                 Length,
                                 Email,
@@ -31,8 +31,8 @@ from models import (User,
                     AttestationType,
                     Contingent,
                     WorkField,
-                    ApplicantType)
-from models.models import Vizit, Contract
+                    ApplicantType,
+                    Contract)
 
 
 class AddApplicantForm(FlaskForm):
@@ -305,7 +305,12 @@ class ApplicantSearchForm(FlaskForm):
                             filters=(names_fix,))
     last_name_exact = BooleanField('Точное совпадение фамилии', default=False)  # Для полного совпадения
     snils_number = StringField('СНИЛС', validators=[Optional()])
-    medbook_number = StringField('Номер медицинской книжки', validators=[Optional()])
+    medbook_number = StringField('Номер медицинской книжки',
+                                 validators=[
+                                     validators.Optional(),
+                                     validators.Length(max=12),
+                                     validators.Regexp(r'^[0-9]*$', message="ВВОДИТЕ ТОЛЬКО ЦИФРЫ!!!")
+                                 ])
     birth_date_start = DateField('Дата рождения (от)', validators=[Optional()])
     birth_date_end = DateField('Дата рождения (до)', validators=[Optional()])
     last_visit_start = DateField('Дата последнего визита (от)', validators=[Optional()])

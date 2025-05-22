@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Обработчик нажатия на кнопку "Редактировать" в таблице
     document.querySelectorAll('.edit-btn').forEach(button => {
         button.addEventListener('click', function () {
+            console.log('Edit button clicked');
             clearValidationErrors(); // Очищаем ошибки перед открытием
             const orgId = this.getAttribute('data-id');
 
@@ -56,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Загружаем данные организации по ID через AJAX
             // ИСПРАВЛЕНО: Используем обратные кавычки для шаблонной строки
-            fetch(`organizations/api/organizations/${orgId}`)
+            fetch(`/api/organizations/${orgId}`)
                 .then(response => {
                     if (!response.ok) {
                         // В случае HTTP ошибки (404, 500 и т.д.)

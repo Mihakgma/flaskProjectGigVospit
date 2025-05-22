@@ -264,8 +264,14 @@ class Applicant(BaseModel, CrudInfoModel):
     first_name = db.Column(String(80), nullable=False)
     middle_name = db.Column(String(80), nullable=True)
     last_name = db.Column(String(80), nullable=False)
-    medbook_number = db.Column(String(12), unique=True, nullable=False)
-    snils_number = db.Column(String(11), unique=True, nullable=False)
+    medbook_number = db.Column(String(12),
+                               unique=True,
+                               nullable=False,
+                               index=True)
+    snils_number = db.Column(String(11),
+                             unique=True,
+                             nullable=False,
+                             index=True)
     passport_number = db.Column(String(10), nullable=True)
     birth_date = db.Column(DateTime(timezone=True),
                            default=get_current_nsk_time,

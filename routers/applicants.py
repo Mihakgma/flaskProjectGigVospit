@@ -249,7 +249,7 @@ def search_applicants():
             elif field_name in ['registration_address', 'residence_address']:
                 filters.append(getattr(Applicant, field_name).contains(value))
             elif field_name in ['snils_number', 'medbook_number']:
-                filters.append(getattr(Applicant, field_name) == value)
+                filters.append(getattr(Applicant, field_name).like(f"%{value}%"))
             elif field_name == 'birth_date_start':
                 filters.append(Applicant.birth_date >= value)
             elif field_name == 'birth_date_end':

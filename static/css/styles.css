@@ -38,3 +38,10 @@
     background-repeat: no-repeat;
     background-position: right;
 }
+
+.background-body-org {
+    background-image: url("../bremen_musicians.jpg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: right;
+}
