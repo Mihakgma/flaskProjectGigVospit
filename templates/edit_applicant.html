@@ -4,86 +4,82 @@
 {% block content %}
     <h1>Редактирование заявителя</h1>
 
+    <!-- Форма редактирования заявителя -->
     <form method="post" novalidate>
         {{ applicant_form.hidden_tag() }}
+        <input type="hidden" name="form_type" value="applicant">
 
-        {% for field in applicant_form if field.name != 'submit' and
-        field.name != 'csrf_token' and
-        field.name != 'row_updated_at' %}
-            <div>
-                {{ field.label }}
-                {{ field() }}
+        {% for field in applicant_form if field.name not in ['csrf_token', 'submit'] %}
+            <div class="form-group">
+                {{ field.label(class="form-control-label") }}
+                {{ field(class="form-control") }}
                 {% for error in field.errors %}
-                    <span style="color: red;">{{ error }}</span>
+                    <div class="invalid-feedback">{{ error }}</div>
                 {% endfor %}
             </div>
         {% endfor %}
-        {{ applicant_form.submit() }}
+
+        {{ applicant_form.submit(class="btn btn-primary") }}
     </form>
 
-    <h2>Визиты</h2>
-    <button id="toggleVizits">Показать/Скрыть визиты</button>
+    <!-- Секция визитов -->
+    <h2 class="mt-4">Визиты</h2>
+    <button id="toggleVizits" class="btn btn-secondary mb-3">Показать/Скрыть визиты</button>
 
     <div id="vizits" style="display: none;">
-        <ul>
-            {% for vizit in visits %}
-                <li>
-                    Дата визита: {{ vizit.visit_date.strftime('%d.%m.%Y') }} <br>
-                    Контингент: {{ vizit.contingent.name }} <br>
-                    Тип аттестации: {{ vizit.attestation_type.name }} <br>
-                    Сфера деятельности: {{ vizit.work_field.name }} <br>
-                    Тип заявителя: {{ vizit.applicant_type.name }} <br>
-                    Контракт (договор):
-                    {% if vizit.contract %}
-                        <p>
-                            <a href="{{ url_for('contracts.contract_details', contract_id=vizit.contract.id) }}">{{ vizit.contract.number }}</a>
-                        </p>
-                        <p>Срок действия от {{ vizit.contract.contract_date }} и
-                            до {{ vizit.contract.expiration_date }}</p>
-                    {% else %}
-                        <p>Визит не прикреплен к контракту (договору).</p>
-                    {% endif %}
-                </li>
-
-            {% endfor %}
-        </ul>
+        {% if visits %}
+            <div class="list-group">
+                {% for vizit in visits %}
+                    <div class="list-group-item">
+                        Дата визита: {{ vizit.visit_date.strftime('%d.%m.%Y') }} <br>
+                        Контингент: {{ vizit.contingent.name }} <br>
+                        Тип аттестации: {{ vizit.attestation_type.name }} <br>
+                        Сфера деятельности: {{ vizit.work_field.name }} <br>
+                        Тип заявителя: {{ vizit.applicant_type.name }} <br>
+                        Контракт (договор):
+                        {% if vizit.contract %}
+                            <p>
+                                <a href="{{ url_for('contracts.contract_details', contract_id=vizit.contract.id) }}">{{ vizit.contract.number }}</a>
+                            </p>
+                            <p>Срок действия от {{ vizit.contract.contract_date }} и
+                                до {{ vizit.contract.expiration_date }}</p>
+                        {% else %}
+                            <p>Визит не прикреплен к контракту (договору).</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>Нет данных о визитах</p>
+        {% endif %}
     </div>
 
-
-    <h2>Добавить визит</h2>
+    <!-- Форма добавления визита -->
+    <h2 class="mt-4">Добавить визит</h2>
     <form method="post" novalidate>
         {{ visit_form.hidden_tag() }}
+        <input type="hidden" name="form_type" value="visit">
+
         {% for field in visit_form if field.name not in ['csrf_token', 'submit_visit'] %}
-            <div>
-                {{ field.label }}
-                {{ field() }}
+            <div class="form-group">
+                {{ field.label(class="form-control-label") }}
+                {{ field(class="form-control") }}
                 {% for error in field.errors %}
-                    <span style="color: red;">{{ error }}</span>
+                    <div class="invalid-feedback">{{ error }}</div>
                 {% endfor %}
             </div>
         {% endfor %}
 
-        <div>
-            {{ visit_form.contract.label }}<br>
-            {{ visit_form.contract() }}
-            {% for error in visit_form.contract.errors %}
-                <span style="color: red;">{{ error }}</span>
-            {% endfor %}
-        </div>
-
-        {{ visit_form.submit_visit() }}
+        {{ visit_form.submit_visit(class="btn btn-primary") }}
     </form>
 
-    <a href="{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}">Назад к деталям заявителя</a>
+    <a href="{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}"
+       class="btn btn-link mt-3">Назад к деталям заявителя</a>
+
     <script>
         document.getElementById('toggleVizits').addEventListener('click', function () {
-            var vizitsDiv = document.getElementById('vizits');
-            if (vizitsDiv.style.display === 'none') {
-                vizitsDiv.style.display = 'block';
-            } else {
-                vizitsDiv.style.display = 'none';
-            }
+            const vizitsDiv = document.getElementById('vizits');
+            vizitsDiv.style.display = vizitsDiv.style.display === 'none' ? 'block' : 'none';
         });
     </script>
-
 {% endblock %}

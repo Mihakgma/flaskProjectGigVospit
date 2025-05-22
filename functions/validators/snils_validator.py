@@ -5,26 +5,26 @@ from models import Applicant
 
 
 def validate_snils(form: FlaskForm, field):
-    if type(field) is str:
-        number_in = field
-    elif not field.data:
+    if not field.data:
         raise ValidationError('ПОЖАЛУЙСТА ВВЕДИТЕ НОМЕР СНИЛС!!!')
-    else:
-        number_in = field.data
-    numbers = [i for i in number_in if i.isnumeric()]
+
+    numbers = [i for i in field.data if i.isnumeric()]
     if len(numbers) != 11:
-        raise ValidationError('Требуемый формат для номера СНИЛС: '
-                              'ХХХ-ХХХ-ХХХ-ХХ, ХХХ-ХХХ-ХХХ ХХ или '
-                              'ХХХХХХХХХХХ')
-    # For edit forms, exclude current record
-    applicant = getattr(form, '_obj', None)
-    query = Applicant.query.filter_by(snils_number=field.data)
-    if applicant:
-        query = query.filter(Applicant.id != applicant.id)
-    q_first = query.first()
-    if q_first:
-        raise ValidationError('СНИЛС с таким номером уже существует '
-                              f'ФИО <{q_first.last_name, q_first.first_name, q_first.middle_name}>')
+        raise ValidationError('Неверный формат СНИЛС. Требуется 11 цифр.')
+
+    # Проверка дубликатов
+    current_applicant = getattr(form, '_obj', None)
+    existing = Applicant.query.filter(
+        Applicant.snils_number == field.data
+    ).first()
+
+    # Если запись найдена И (это новая запись ИЛИ это другая существующая запись)
+    if not current_applicant:
+        pass
+    elif existing and existing.id == current_applicant.id:
+        pass
+    elif existing and (not current_applicant or existing.id != current_applicant.id):
+        raise ValidationError(f'СНИЛС уже используется: {existing.full_name}')
 
 
 if __name__ == '__main__':

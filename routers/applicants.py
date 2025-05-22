@@ -13,7 +13,7 @@ from sqlalchemy.orm import joinedload
 from functions import thread
 from functions.access_control import role_required
 from models.models import (Applicant,
-                           Vizit, User, Contract)
+                           Vizit, User, Contract, get_current_nsk_time)
 from database import db
 
 from datetime import timezone, datetime
@@ -96,50 +96,43 @@ def edit_applicant(applicant_id):
     applicant = Applicant.query.get_or_404(applicant_id)
     visits = Vizit.query.filter_by(applicant_id=applicant_id).all()
     applicant_form = ApplicantEditForm(obj=applicant)
+    applicant_form._obj = applicant
     vizit_form = VizitForm()
     applicant.updated_by_user_id = current_user.id
+    applicant.updated_at = get_current_nsk_time()
 
     if request.method == 'POST':
-        if applicant_form.submit.data and applicant_form.validate_on_submit():
+        # Обработка формы заявителя
+        if 'submit' in request.form and applicant_form.validate_on_submit():
             applicant_form.populate_obj(applicant)
             db.session.commit()
             flash('Данные заявителя обновлены', 'success')
             return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
 
-        elif vizit_form.submit_visit.data and vizit_form.validate_on_submit():
+        # Обработка формы визита
+        elif 'submit_visit' in request.form and vizit_form.validate_on_submit():
             try:
                 new_vizit = Vizit()
                 vizit_form.populate_obj(new_vizit)
                 new_vizit.applicant_id = applicant.id
-                new_vizit.visit_date = vizit_form.visit_date.data
-                new_vizit.info = vizit_form.info.data
-
-                # Если выбран контракт, привязываем его
-                if vizit_form.contract.data:
-                    new_vizit.contract_id = vizit_form.contract.data.id  # Привязываем контракт к визиту
-
                 db.session.add(new_vizit)
-                applicant.vizits.append(new_vizit)  # Если используете relationship
                 db.session.commit()
                 flash('Визит добавлен', 'success')
                 return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
             except Exception as e:
                 db.session.rollback()
-                print(f"Ошибка при добавлении визита: {e}")
-                flash(f"Ошибка при добавлении визита: {e}", 'danger')
+                flash(f"Ошибка при добавлении визита: {str(e)}", 'danger')
 
-        # Выводим ошибки валидации формы заявителя, если они есть
-        if not applicant_form.validate_on_submit():
+        # Обработка ошибок
+        if 'submit' in request.form and not applicant_form.validate_on_submit():
             for field, errors in applicant_form.errors.items():
                 for error in errors:
-                    flash(f"Ошибка в поле '{applicant_form[field].label.text}': {error}", 'danger')
+                    flash(f"Ошибка в поле '{getattr(applicant_form, field).label.text}': {error}", 'danger')
 
-        if not vizit_form.validate_on_submit():
+        if 'submit_visit' in request.form and not vizit_form.validate_on_submit():
             for field, errors in vizit_form.errors.items():
                 for error in errors:
-                    flash(f"Ошибка в поле '{vizit_form[field].label.text}': {error}", 'danger')
-
-        return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
+                    flash(f"Ошибка в поле '{getattr(vizit_form, field).label.text}': {error}", 'danger')
 
     return render_template('edit_applicant.html',
                            applicant=applicant,
