@@ -255,7 +255,7 @@ class AddContractForm(FlaskForm):
 
     def __init__(self, *args, **kwargs):
         super(AddContractForm, self).__init__(*args, **kwargs)
-        self.organization_id.choices = [(o.id, o.name) for o in Organization.query.all()]
+        self.organization_id.choices = [(o.id, o.show_info) for o in Organization.query.all()]
 
     def check_duplicates(self):
         # Проверка на дубликаты
@@ -284,8 +284,8 @@ class VizitForm(FlaskForm):
     contract = QuerySelectField(
         'Выберите контракт',
         query_factory=lambda: Contract.query.all(),  # Получаем все контракты
-        get_label='number',  # Это поле будет отображаться в форме
-        allow_blank=True,  # Позволяет не выбирать контракт, если не требуется
+        get_label='show_info',  # Это поле будет отображаться в форме
+        allow_blank=True,
         blank_text='-- Не выбрано --',
         validators=[Optional()]
     )

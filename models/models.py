@@ -12,6 +12,8 @@ from sqlalchemy.orm import validates
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declared_attr
 
+from functions import check_if_exists
+
 nsk_tz = pytz.timezone('Asia/Novosibirsk')
 
 
@@ -211,22 +213,32 @@ class Organization(BaseModel, CrudInfoModel):
         return inn
 
         # Метод для преобразования объекта в словарь (для AJAX ответов)
-        def to_dict(self):
-            return {
-                'id': self.id,
-                'name': self.name,
-                'inn': self.inn,
-                'address': self.address,
-                'phone_number': self.phone_number,
-                'email': self.email,
-                'is_active': self.is_active,
-                'info': getattr(self, 'info', None),
-                # Учитываем, что info может быть из CrudInfoModel или отсутствовать
-                # Возможно, добавить поля из CrudInfoModel если они нужны на фронтенде
-                'created_at': self.created_at.isoformat() if hasattr(self, 'created_at') and self.created_at else None,
-                'updated_at': self.updated_at.isoformat() if hasattr(self, 'updated_at') and self.updated_at else None,
-                'created_by_id': self.created_by_id if hasattr(self, 'created_by_id') else None,
-            }
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'inn': self.inn,
+            'address': self.address,
+            'phone_number': self.phone_number,
+            'email': self.email,
+            'is_active': self.is_active,
+            'info': getattr(self, 'info', None),
+            # Учитываем, что info может быть из CrudInfoModel или отсутствовать
+            # Возможно, добавить поля из CrudInfoModel если они нужны на фронтенде
+            'created_at': self.created_at.isoformat() if hasattr(self, 'created_at') and self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if hasattr(self, 'updated_at') and self.updated_at else None,
+            'created_by_id': self.created_by_id if hasattr(self, 'created_by_id') else None,
+        }
+
+    @property
+    def show_info(self):
+        """ Возвращает полное имя заявителя """
+        out_info = (f"Наименование: <{check_if_exists(self.name)}>, "
+                    f"ИНН: <{check_if_exists(self.inn)}>, "
+                    f"email: <{check_if_exists(self.email)}>")
+        return out_info
+
+
 
 
 class Contract(BaseModel, CrudInfoModel):
@@ -246,6 +258,14 @@ class Contract(BaseModel, CrudInfoModel):
                          'organization_id',
                          name='unique_contract_constraint'),
     )
+
+    @property
+    def show_info(self):
+        """ Возвращает полное имя заявителя """
+        out_info = (f"Номер: <{check_if_exists(self.number)}> "
+                    f"Наименование: <{check_if_exists(self.name)}> "
+                    f"(Организация: {self.organization.show_info})")
+        return out_info
 
 
 user_roles = Table('user_roles', db.metadata,
