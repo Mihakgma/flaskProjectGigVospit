@@ -132,7 +132,7 @@ class CrudInfoModel:
 
 
 class TableDb(db.Model):
-    __tablename__ = 'table_db' # Явное имя таблицы
+    __tablename__ = 'table_db'  # Явное имя таблицы
 
     id = db.Column(Integer, primary_key=True)
     # Используем рассчитанную максимальную длину и уникальность
@@ -143,10 +143,10 @@ class TableDb(db.Model):
 
 
 class EditLog(db.Model):
-    __tablename__ = 'edit_log' # Явное имя таблицы
+    __tablename__ = 'edit_log'  # Явное имя таблицы
     id = db.Column(Integer, primary_key=True)
     table_db_id = db.Column(Integer, db.ForeignKey('table_db.id'), nullable=False)
-    table_db = db.relationship('TableDb') # Отношение для удобного доступа к имени таблицы
+    table_db = db.relationship('TableDb')  # Отношение для удобного доступа к имени таблицы
     # ID обновленной записи в другой таблице (без внешнего ключа, как запрошено)
     updated_row_id = db.Column(Integer, nullable=False)
     # Время обновления
@@ -155,7 +155,7 @@ class EditLog(db.Model):
                                nullable=False)
     # Пользователь, который внес изменение в указанную таблицу
     updated_by_user_id = db.Column(Integer, db.ForeignKey('user.id'), nullable=False)
-    updated_by_user = db.relationship('User') # Отношение для удобного доступа к пользователю
+    updated_by_user = db.relationship('User')  # Отношение для удобного доступа к пользователю
     # Дополнительная информация/заметки пользователя
     info = db.Column(Text, default='')
 
@@ -213,6 +213,7 @@ class Organization(BaseModel, CrudInfoModel):
         return inn
 
         # Метод для преобразования объекта в словарь (для AJAX ответов)
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -232,13 +233,10 @@ class Organization(BaseModel, CrudInfoModel):
 
     @property
     def show_info(self):
-        """ Возвращает полное имя заявителя """
         out_info = (f"Наименование: <{check_if_exists(self.name)}>, "
                     f"ИНН: <{check_if_exists(self.inn)}>, "
                     f"email: <{check_if_exists(self.email)}>")
         return out_info
-
-
 
 
 class Contract(BaseModel, CrudInfoModel):
@@ -261,7 +259,6 @@ class Contract(BaseModel, CrudInfoModel):
 
     @property
     def show_info(self):
-        """ Возвращает полное имя заявителя """
         out_info = (f"Номер: <{check_if_exists(self.number)}> "
                     f"Наименование: <{check_if_exists(self.name)}> "
                     f"(Организация: {self.organization.show_info})")
@@ -310,6 +307,23 @@ class Applicant(BaseModel, CrudInfoModel):
         """ Возвращает полное имя заявителя """
         parts = [self.last_name, self.first_name, self.middle_name]
         return ' '.join([part for part in parts if part]).strip()
+
+    @property
+    def censored_search_info(self):
+        parts = [self.last_name, self.first_name, self.middle_name]
+        fio_cens = '. '.join([part[0] if part else " " for part in parts])
+        birth_date_str = '-'
+        if self.birth_date:
+            birth_date_str = self.birth_date.strftime('%d.%m.%Y')
+        num_vizits = len(self.vizits) if self.vizits is not None else 0
+        out_info = (f"{fio_cens}, "
+                    f"д.р.: {birth_date_str}, "
+                    f"м.к.: {self.medbook_number}, "
+                    f"СНИЛС: {self.snils_number}, "
+                    f"тел.: {check_if_exists(self.phone_number)}, "
+                    f"email: {check_if_exists(self.email)}, "
+                    f"визитов всего: {num_vizits}")
+        return out_info
 
 
 class Vizit(BaseModel, CrudInfoModel):

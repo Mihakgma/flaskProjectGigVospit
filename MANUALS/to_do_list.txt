@@ -20,11 +20,14 @@ BACKEND:
 1.19) add fields create_at, create_by_user_id for applicants, vizits     - (DONE)
 1.20) add fields create_at, create_by_user_id for another tables         - (DONE)
 1.21) add search and edit pages for organizations                        - (...)
-1.22) add search and edit pages for contracts                            - (!!!)
-1.23) on add and edit applicant add snils, med book fix validation       - (DONE)
+1.22) add search and edit pages for contracts                            - (...)
+1.23) on add and edit applicant add snils, med book fix validation       - (...)
 1.24) add department page (admin-moder access only)                      - (!!!)
 1.25) check if one login is per one IP-adress (PC)                       - (!!!)
 1.26) add a new work field page (admin-moder access only)                - (...)
+1.27) on search applicants page add role policy restriction (num rows)   - (DONE)
+1.28) add detailed info (show info property) for orgs and contracts      - (DONE)
+1.29) on search applicants censore (applicant model prop) search results - (DONE)
 
 DATA BASE:
 2.1) switch DB from SQLite3 to PostgreSQL                                - (DONE)

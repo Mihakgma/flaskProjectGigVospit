@@ -1,2 +1,2 @@
-def check_if_exists(attr):
-    return attr if attr is not None else "Н/Д"
+def check_if_exists(value):
+    return value if value is not None or value else "Н/Д"

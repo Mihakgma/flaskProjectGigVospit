@@ -97,7 +97,7 @@ def search_organizations():
         ).paginate(page=page, per_page=30, error_out=False)
 
     return jsonify({
-        'items': [{'id': org.id, 'text': org.name} for org in organizations.items],
+        'items': [{'id': org.id, 'text': org.show_info} for org in organizations.items],
         'total_count': organizations.total
     })
 

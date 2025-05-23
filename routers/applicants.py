@@ -145,6 +145,11 @@ def edit_applicant(applicant_id):
 @login_required
 @role_required('anyone')
 def search_applicants():
+    roles_all_records_access = [
+        'admin',
+        'moder'
+    ]
+    up_limit_rows = 100
     form = ApplicantSearchForm(request.form)  # Используем request.form для POST
     applicants = []
     users = User.query.all()
@@ -263,9 +268,14 @@ def search_applicants():
         if filters:
             query = query.filter(and_(*filters))
             # print(query)
-
-        applicants = query.all()
-
+        # all records access is restricted by role policy!!!
+        roles = current_user.roles
+        user_roles = {role.code for role in roles}
+        if any(role_name in user_roles for role_name in roles_all_records_access):
+            applicants = query.all()
+        else:
+            applicants = query.all()[:up_limit_rows]
+            flash(f"Ролевая политика для вашего доступа ограничивает выдачу записей из БД до <{up_limit_rows}> шт.")
         if applicants:  # Убедимся, что список не пуст
             applicant_ids_for_export = [app.id for app in applicants]
         else:
@@ -322,8 +332,8 @@ def export_found_data():
             'Адрес проживания': app.residence_address,
             'Телефон': app.phone_number,
             'Email': app.email,
-            'Дата последнего редактирования': app.row_updated_at.strftime(
-                '%d.%m.%Y %H:%M:%S') if app.row_updated_at else None,
+            'Дата последнего редактирования': app.updated_at.strftime(
+                '%d.%m.%Y %H:%M:%S') if app.updated_at else None,
             'Кем редактировано (логин)': app.updated_by_user.username if app.updated_by_user else None,
             'Доп. информация': app.info
         }

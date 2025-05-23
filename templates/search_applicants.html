@@ -117,7 +117,7 @@
         <ul>
             {% for applicant in applicants %}
                 <li>
-                    <a href="{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}">{{ applicant.full_name }}</a>
+                    <a href="{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}">{{ applicant.censored_search_info }}</a>
                 </li>
             {% endfor %}
         </ul>
