@@ -245,7 +245,7 @@ def active_contracts_factory():
     return Contract.query.order_by(Contract.number).all()
 
 
-class AddContractForm(FlaskForm):
+class ContractForm(FlaskForm):
     number = StringField('Номер договора', validators=[InputRequired()])
     contract_date = DateField('Дата подписания', format='%Y-%m-%d', validators=[InputRequired()])
     name = StringField('Название договора')
@@ -257,8 +257,12 @@ class AddContractForm(FlaskForm):
     submit = SubmitField('Сохранить')
 
     def __init__(self, *args, **kwargs):
-        super(AddContractForm, self).__init__(*args, **kwargs)
-        self.organization_id.choices = [(o.id, o.show_info) for o in Organization.query.all()]
+        super(ContractForm, self).__init__(*args, **kwargs)
+        if Organization:  # Проверяем, что Organization была импортирована
+            self.organization_id.choices = [(org.id, org.name) for org in
+                                            Organization.query.order_by(Organization.name).all()]
+        else:
+            self.organization_id.choices = []  # Если импорт не удался, оставить пустым
 
     def check_duplicates(self):
         # Проверка на дубликаты

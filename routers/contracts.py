@@ -14,7 +14,7 @@ from functions.access_control import role_required
 from models.models import Contract, Organization, Vizit
 from database import db
 
-from forms.forms import AddContractForm
+from forms.forms import ContractForm
 
 contracts_bp = Blueprint('contracts', __name__)
 
@@ -23,7 +23,7 @@ contracts_bp = Blueprint('contracts', __name__)
 @login_required
 @role_required('admin', 'moder', 'oper', )
 def add_contract():
-    form = AddContractForm()
+    form = ContractForm()
 
     if request.method == 'POST':
         if form.validate_on_submit():
