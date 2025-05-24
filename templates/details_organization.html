@@ -1,0 +1,64 @@
+<!-- templates/details_organization.html -->
+
+{% extends 'base.html' %} {# Убедитесь, что у вас есть базовый шаблон base.html #}
+
+{% block title %}Детали организации: {{ organization.name }}{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h1 class="card-title mb-0">Детали организации: **{{ organization.name }}**</h1>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0"> {# dl - Definition List, dt - Definition Term, dd - Definition Description #}
+                    <dt class="col-sm-4 text-muted">ID:</dt>
+                    <dd class="col-sm-8">{{ organization.id }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Название:</dt>
+                    <dd class="col-sm-8">{{ organization.name }}</dd>
+
+                    <dt class="col-sm-4 text-muted">ИНН:</dt>
+                    <dd class="col-sm-8">{{ organization.inn }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Адрес:</dt>
+                    <dd class="col-sm-8">{{ organization.address if organization.address else 'Не указан' }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Телефон:</dt>
+                    <dd class="col-sm-8">{{ organization.phone_number if organization.phone_number else 'Не указан' }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Email:</dt>
+                    <dd class="col-sm-8">{{ organization.email if organization.email else 'Не указан' }}</dd>
+
+                    <dt class="col-sm-4 text-muted">Активна:</dt>
+                    <dd class="col-sm-8">
+                        {% if organization.is_active %}
+                            <span class="badge bg-success">Да</span>
+                        {% else %}
+                            <span class="badge bg-danger">Нет</span>
+                        {% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4 text-muted">Дополнительная информация:</dt>
+                    <dd class="col-sm-8">{{ organization.info if organization.info else 'Нет' }}</dd>
+
+                    {# Если у вашей модели Organization есть поля created_at и updated_at #}
+                    {% if organization.created_at %}
+                        <dt class="col-sm-4 text-muted">Дата создания:</dt>
+                        <dd class="col-sm-8">{{ organization.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</dd>
+                    {% endif %}
+
+                    {% if organization.updated_at %}
+                        <dt class="col-sm-4 text-muted">Последнее обновление:</dt>
+                        <dd class="col-sm-8">{{ organization.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</dd>
+                    {% endif %}
+                </dl>
+                <hr>
+                <a href="{{ url_for('organizations.manage_orgs') }}" class="btn btn-secondary mt-3">Назад к списку
+                    организаций</a>
+                <a href="{{ url_for('organizations.edit_organization', organization_id=organization.id) }}"
+                   class="btn btn-warning mt-3">Редактировать</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

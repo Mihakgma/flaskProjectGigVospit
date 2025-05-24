@@ -49,26 +49,31 @@
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover">
-                                <thead>
+                            <table class="table table-bordered table-hover table-striped">
+                                <thead class="table-dark">
                                 <tr>
+                                    <th>ID</th>
                                     <th>Название</th>
                                     <th>ИНН</th>
-                                    <th>Email</th>
                                     <th>Адрес</th>
                                     <th>Телефон</th>
+                                    <th>Email</th>
                                     <th>Активна</th>
+                                    <th>Доп. инфо</th>
                                     <th>Действия</th>
+                                    <th>Просмотр</th>
+                                    {# <-- НОВЫЙ ЗАГОЛОВОК СТОЛБЦА #}
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {% for org in organizations.items %}
+                                {% for org in organizations %}
                                     <tr>
+                                        <td>{{ org.id }}</td>
                                         <td>{{ org.name }}</td>
                                         <td>{{ org.inn }}</td>
-                                        <td>{{ org.email or '-' }}</td>
-                                        <td>{{ org.address or '-' }}</td>
-                                        <td>{{ org.phone_number or '-' }}</td>
+                                        <td>{{ org.address if org.address else '-' }}</td>
+                                        <td>{{ org.phone_number if org.phone_number else '-' }}</td>
+                                        <td>{{ org.email if org.email else '-' }}</td>
                                         <td>
                                             {% if org.is_active %}
                                                 <span class="badge bg-success">Да</span>
@@ -76,12 +81,25 @@
                                                 <span class="badge bg-danger">Нет</span>
                                             {% endif %}
                                         </td>
+                                        <td>{{ org.info if org.info else '-' }}</td>
                                         <td>
-                                            <a href="{{ url_for('organizations.edit_organization', organization_id=org.id) }}" class="btn btn-primary btn-sm">Редактировать</a>
-
-                                            {# Кнопка удаления (опционально) #}
-                                            {# <button type="button" class="btn btn-sm btn-danger delete-btn" data-id="{{ org.id }}">Удалить</button> #}
+                                            <a href="{{ url_for('organizations.edit_organization', organization_id=org.id) }}"
+                                               class="btn btn-sm btn-warning">Редактировать</a>
+                                            {# Пример для кнопки удаления, если она у вас есть: #}
+                                            {# <form action="{{ url_for('organizations.delete_organization', organization_id=org.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Вы уверены, что хотите удалить эту организацию?');">Удалить</button>
+                </form> #}
                                         </td>
+                                        <td>
+                                            {# <-- НОВАЯ ССЫЛКА В СТОЛБЦЕ ПРОСМОТРА #}
+                                            <a href="{{ url_for('organizations.details_organization', organization_id=org.id) }}"
+                                               class="btn btn-sm btn-info">Посмотреть</a>
+                                        </td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="10" class="text-center">Организации не найдены.</td>
+                                        {# ОБЯЗАТЕЛЬНО ОБНОВИТЕ colspan на общее количество столбцов (было 9, теперь 10) #}
                                     </tr>
                                 {% endfor %}
                                 </tbody>
@@ -135,78 +153,78 @@
 
 
             {# Модальное окно для редактирования #}
-{#            <div class="modal fade" id="editOrgModal" tabindex="-1" aria-labelledby="editOrgModalLabel"#}
-{#                 aria-hidden="true">#}
-{#                <div class="modal-dialog modal-lg">#}
-{#                    <div class="modal-content">#}
-{#                        <div class="modal-header">#}
-{#                            <h5 class="modal-title" id="editOrgModalLabel">Редактировать организацию</h5>#}
-{#                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>#}
-{#                        </div>#}
-{#                        <div class="modal-body">#}
-                            {# Форма редактирования - используем переданный объект формы #}
-{#                            <form id="editOrgForm">#}
-                                {# Скрытое поле для ID организации #}
-{#                                <input type="hidden" id="org_id_to_edit" name="id">#}
-{##}
-{#                                <div class="mb-3">#}
-{#                                    {{ edit_form.name.label(class="form-label") }}#}
-{#                                    {{ edit_form.name(class="form-control") }}#}
-{#                                    <div class="invalid-feedback" id="name_error"></div>#}
-                                    {# Место для ошибок валидации #}
-{#                                </div>#}
-{#                                <div class="mb-3">#}
-{#                                    {{ edit_form.inn.label(class="form-label") }}#}
-{#                                    {{ edit_form.inn(class="form-control") }}#}
-{#                                    <div class="invalid-feedback" id="inn_error"></div>#}
-                                    {# Место для ошибок валидации #}
-{#                                </div>#}
-{#                                <div class="mb-3">#}
-{#                                    {{ edit_form.address.label(class="form-label") }}#}
-{#                                    {{ edit_form.address(class="form-control") }}#}
-{#                                    <div class="invalid-feedback" id="address_error"></div>#}
-{#                                </div>#}
-{#                                <div class="mb-3">#}
-{#                                    {{ edit_form.phone_number.label(class="form-label") }}#}
-{#                                    {{ edit_form.phone_number(class="form-control") }}#}
-{#                                    <div class="invalid-feedback" id="phone_number_error"></div>#}
-{#                                </div>#}
-{#                                <div class="mb-3">#}
-{#                                    {{ edit_form.email.label(class="form-label") }}#}
-{#                                    {{ edit_form.email(class="form-control") }}#}
-{#                                    <div class="invalid-feedback" id="email_error"></div>#}
-{#                                </div>#}
-{#                                <div class="mb-3 form-check">#}
-{#                                    {{ edit_form.is_active(class="form-check-input") }}#}
-{#                                    {{ edit_form.is_active.label(class="form-check-label") }}#}
-{#                                    <div class="invalid-feedback" id="is_active_error"></div>#}
-{#                                </div>#}
-{#                                <div class="mb-3">#}
-{#                                    {{ edit_form.info.label(class="form-label") }}#}
-{#                                    {{ edit_form.info(class="form-control") }}#}
-{#                                    <div class="invalid-feedback" id="info_error"></div>#}
-{#                                </div>#}
-                                {# Submit button из формы WTForms не нужен здесь, используем свою кнопку Save #}
-                                {# {{ edit_form.submit() }} #}
-{#                            </form>#}
-{#                            <div id="edit-message" class="mt-3" style="display: none;"></div>#}
-                            {# Место для сообщений об успехе/ошибке #}
-{#                        </div>#}
-{#                        <div class="modal-footer">#}
-{#                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>#}
-{#                            <button type="button" class="btn btn-primary" id="saveOrgBtn">Сохранить изменения</button>#}
-{#                        </div>#}
-{#                    </div>#}
-{#                </div>#}
-{#            </div>#}
+            {#            <div class="modal fade" id="editOrgModal" tabindex="-1" aria-labelledby="editOrgModalLabel"#}
+            {#                 aria-hidden="true">#}
+            {#                <div class="modal-dialog modal-lg">#}
+            {#                    <div class="modal-content">#}
+            {#                        <div class="modal-header">#}
+            {#                            <h5 class="modal-title" id="editOrgModalLabel">Редактировать организацию</h5>#}
+            {#                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>#}
+            {#                        </div>#}
+            {#                        <div class="modal-body">#}
+            {# Форма редактирования - используем переданный объект формы #}
+            {#                            <form id="editOrgForm">#}
+            {# Скрытое поле для ID организации #}
+            {#                                <input type="hidden" id="org_id_to_edit" name="id">#}
+            {##}
+            {#                                <div class="mb-3">#}
+            {#                                    {{ edit_form.name.label(class="form-label") }}#}
+            {#                                    {{ edit_form.name(class="form-control") }}#}
+            {#                                    <div class="invalid-feedback" id="name_error"></div>#}
+            {# Место для ошибок валидации #}
+            {#                                </div>#}
+            {#                                <div class="mb-3">#}
+            {#                                    {{ edit_form.inn.label(class="form-label") }}#}
+            {#                                    {{ edit_form.inn(class="form-control") }}#}
+            {#                                    <div class="invalid-feedback" id="inn_error"></div>#}
+            {# Место для ошибок валидации #}
+            {#                                </div>#}
+            {#                                <div class="mb-3">#}
+            {#                                    {{ edit_form.address.label(class="form-label") }}#}
+            {#                                    {{ edit_form.address(class="form-control") }}#}
+            {#                                    <div class="invalid-feedback" id="address_error"></div>#}
+            {#                                </div>#}
+            {#                                <div class="mb-3">#}
+            {#                                    {{ edit_form.phone_number.label(class="form-label") }}#}
+            {#                                    {{ edit_form.phone_number(class="form-control") }}#}
+            {#                                    <div class="invalid-feedback" id="phone_number_error"></div>#}
+            {#                                </div>#}
+            {#                                <div class="mb-3">#}
+            {#                                    {{ edit_form.email.label(class="form-label") }}#}
+            {#                                    {{ edit_form.email(class="form-control") }}#}
+            {#                                    <div class="invalid-feedback" id="email_error"></div>#}
+            {#                                </div>#}
+            {#                                <div class="mb-3 form-check">#}
+            {#                                    {{ edit_form.is_active(class="form-check-input") }}#}
+            {#                                    {{ edit_form.is_active.label(class="form-check-label") }}#}
+            {#                                    <div class="invalid-feedback" id="is_active_error"></div>#}
+            {#                                </div>#}
+            {#                                <div class="mb-3">#}
+            {#                                    {{ edit_form.info.label(class="form-label") }}#}
+            {#                                    {{ edit_form.info(class="form-control") }}#}
+            {#                                    <div class="invalid-feedback" id="info_error"></div>#}
+            {#                                </div>#}
+            {# Submit button из формы WTForms не нужен здесь, используем свою кнопку Save #}
+            {# {{ edit_form.submit() }} #}
+            {#                            </form>#}
+            {#                            <div id="edit-message" class="mt-3" style="display: none;"></div>#}
+            {# Место для сообщений об успехе/ошибке #}
+            {#                        </div>#}
+            {#                        <div class="modal-footer">#}
+            {#                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>#}
+            {#                            <button type="button" class="btn btn-primary" id="saveOrgBtn">Сохранить изменения</button>#}
+            {#                        </div>#}
+            {#                    </div>#}
+            {#                </div>#}
+            {#            </div>#}
         </div>
 
 
     {% endblock %}
 
     {# Добавляем скрипты в конец body или в специальный блок #}
-{#    {% block scripts %}#}
-{#        {{ super() }}#}
-{#        <script src="{{ url_for('static', filename='js/edit_org.js') }}"></script>#}
-{#    {% endblock %}#}
+    {#    {% block scripts %}#}
+    {#        {{ super() }}#}
+    {#        <script src="{{ url_for('static', filename='js/edit_org.js') }}"></script>#}
+    {#    {% endblock %}#}
 </div>

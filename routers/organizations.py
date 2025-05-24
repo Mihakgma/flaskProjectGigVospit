@@ -211,7 +211,7 @@ def manage_orgs():
 
 @orgs_bp.route('/<int:organization_id>/edit', methods=['GET', 'POST'])
 @login_required
-@role_required('admin', 'moder', 'oper')
+@role_required('admin', 'moder')
 def edit_organization(organization_id):
     organization = Organization.query.get(organization_id)
     if not organization:
@@ -263,6 +263,8 @@ def edit_organization(organization_id):
             # Проверка, были ли внесены изменения в объект в сессии SQLAlchemy
             # (Если вы используете свой собственный check for changes, вставьте его здесь)
             if db.session.is_modified(organization):
+                organization.updated_at = get_current_nsk_time()
+                organization.updated_by_user_id = current_user.id
                 db.session.commit()  # Сохраняем изменения в базе данных
                 print("db.session.commit() УСПЕШНО ВЫПОЛНЕН.")
                 flash('Данные организации успешно обновлены!', 'success')
@@ -287,3 +289,14 @@ def edit_organization(organization_id):
 
     print("--- Завершение обработки запроса ---")
     return render_template('edit_organization.html', form=form, organization=organization)
+
+
+@orgs_bp.route('/<int:organization_id>/details')
+@login_required  # Добавьте, если нужно, чтобы только авторизованные пользователи могли просматривать
+@role_required('anyone')
+def details_organization(organization_id):
+    organization = Organization.query.get(organization_id)
+    if not organization:
+        abort(404, description="Организация не найдена.")
+
+    return render_template('details_organization.html', organization=organization)
