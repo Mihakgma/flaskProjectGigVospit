@@ -115,10 +115,12 @@ def edit_applicant(applicant_id):
                 new_vizit = Vizit()
                 vizit_form.populate_obj(new_vizit)
                 new_vizit.applicant_id = applicant.id
+                new_vizit.created_by_user_id = current_user.id
+                new_vizit.updated_by_user_id = current_user.id
                 db.session.add(new_vizit)
                 db.session.commit()
                 flash('Визит добавлен', 'success')
-                return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
+                return redirect(url_for('applicants.applicant_details', applicant_id=applicant.id))
             except Exception as e:
                 db.session.rollback()
                 flash(f"Ошибка при добавлении визита: {str(e)}", 'danger')

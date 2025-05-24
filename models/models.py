@@ -85,21 +85,6 @@ class User(BaseModel, UserMixin):
 
 
 class CrudInfoModel:
-    is_editing_now = db.Column(Boolean, default=False, nullable=False)
-    editing_started_at = db.Column(DateTime(timezone=True),
-                                   default=get_current_nsk_time,  # Используем правильную ссылку
-                                   nullable=False)
-
-    @declared_attr
-    def editing_by_user_id(cls):  # cls - это класс, который наследует миксин (например, Organization)
-        return db.Column(Integer,
-                         db.ForeignKey('user.id'),  # Используйте db.ForeignKey
-                         nullable=True)
-
-    @declared_attr
-    def editing_by_user(cls):
-        return db.relationship('User',
-                               foreign_keys=[cls.editing_by_user_id])
 
     @declared_attr
     def created_by_user_id(cls):
@@ -127,8 +112,6 @@ class CrudInfoModel:
         # нужно явно указывать foreign_keys и использовать cls.имя_колонки
         return db.relationship('User',
                                foreign_keys=[cls.updated_by_user_id])
-
-    is_committed_ok = db.Column(Boolean, default=True, nullable=False)
 
 
 class TableDb(db.Model):

@@ -6,12 +6,12 @@ from flask import (Blueprint,
                    redirect,
                    url_for,
                    flash, jsonify)
-from flask_login import login_required
+from flask_login import login_required, current_user
 from sqlalchemy.orm import load_only, joinedload
 from wtforms.validators import ValidationError
 
 from functions.access_control import role_required
-from models.models import Contract, Organization, Vizit, Applicant
+from models.models import Contract, Organization, Vizit, Applicant, get_current_nsk_time
 from database import db
 
 from forms.forms import ContractForm, ApplicantSearchForm
@@ -328,6 +328,8 @@ def link_visit_to_contract(contract_id, applicant_id):
 def unlink_visit(visit_id):
     visit = Vizit.query.get_or_404(visit_id)
     contract_id = visit.contract_id  # Сохраняем ID контракта для редиректа
+    visit.updated_at = get_current_nsk_time()
+    visit.updated_by_user_id = current_user.id
 
     if contract_id:
         visit.contract_id = None  # Открепляем визит

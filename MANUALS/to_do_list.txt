@@ -29,6 +29,8 @@ BACKEND:
 1.28) add detailed info (show info property) for orgs and contracts      - (DONE)
 1.29) on search applicants censore (applicant model prop) search results - (DONE)
 1.30) on contracts edit page add feature for new many similar vizits     - (!!!)
+1.31) table blocked pages contents auto-clear during application restart - (?)
+1.31) page for manage table blocked pages (admin, moder access only)     - (?)
 
 LINKS: 1.9 + 1.22 + 1.30
 
@@ -37,6 +39,7 @@ DATA BASE:
 2.2) add DB views                                                        - (?)
 2.3) DB schema in Miro                                                   - (DONE)
 2.4) DB tables autofilling upon first app run                            - (DONE)
+2.5) add table with blocked pages (blocked_at, blocked_by_id, url, ...)  - (?)
 
 FRONTEND:
 3.1) add frontend framework                                              - (?)
