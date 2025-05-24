@@ -19,7 +19,9 @@ from functions import validate_birth_date
 from wtforms.widgets import CheckboxInput, ListWidget
 
 from functions.data_fix import (names_fix,
-                                elmk_snils_fix, phone_number_fix)
+                                elmk_snils_fix,
+                                phone_number_fix,
+                                address_names_fix)
 from functions.validators.med_book_validator import validate_med_book
 from functions.validators.snils_validator import validate_snils
 
@@ -152,7 +154,7 @@ class UserForm(FlaskForm):  # Переименовали для общего и�
             raise ValidationError('Этот email уже используется. Пожалуйста, укажите другой.')
 
 
-class OrganizationAddForm(FlaskForm):
+class OrganizationForm(FlaskForm):
     name = StringField('Название организации',
                        validators=[
                            DataRequired(message="Обязательно введите название"),
@@ -171,7 +173,7 @@ class OrganizationAddForm(FlaskForm):
                           validators=[
                               Optional(),
                               Length(max=200, message="Максимальное количество символов: 200")],
-                          filters=(names_fix,))
+                          filters=(address_names_fix,))
 
     phone_number = StringField('Номер телефона', validators=[
         Optional(),
@@ -213,6 +215,7 @@ class OrganizationAddForm(FlaskForm):
 
     # Переопределяем валидацию INN для учета режима редактирования
     def validate_inn(self, field):
+
         if field.data:  # Проверяем уникальность только если ИНН введен
             inn_data = str(field.data).strip()
 

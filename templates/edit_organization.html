@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container background-body-org">
+        <div class="container mt-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Редактирование организации: {{ organization.name }} (ID: {{ organization.id }})</h3>
+                </div>
+                <div class="card-body">
+                    <!-- Отображение сообщений Flash (успех/ошибка) -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <form method="POST"
+                          action="{{ url_for('organizations.edit_organization', organization_id=organization.id) }}">
+{#                <form method="POST" action="" novalidate>#}
+                        <!-- Защита от CSRF-атак -->
+                        {{ form.csrf_token }}
+
+                        <!-- Поле: Название организации -->
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control", placeholder="Название организации") }}
+                            {% if form.name.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.name.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Поле: ИНН -->
+                        <div class="mb-3">
+                            {{ form.inn.label(class="form-label") }}
+                            {{ form.inn(class="form-control", placeholder="ИНН организации") }}
+                            {% if form.inn.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.inn.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Поле: Адрес -->
+                        <div class="mb-3">
+                            {{ form.address.label(class="form-label") }}
+                            {{ form.address(class="form-control", placeholder="Адрес") }}
+                            {% if form.address.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.address.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Поле: Номер телефона -->
+                        <div class="mb-3">
+                            {{ form.phone_number.label(class="form-label") }}
+                            {{ form.phone_number(class="form-control", placeholder="Номер телефона") }}
+                            {% if form.phone_number.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.phone_number.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Поле: Email -->
+                        <div class="mb-3">
+                            {{ form.email.label(class="form-label") }}
+                            {{ form.email(class="form-control", placeholder="Email") }}
+                            {% if form.email.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.email.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Поле: Организация активна? (Чекбокс) -->
+                        <div class="mb-3 form-check">
+                            {{ form.is_active(class="form-check-input") }}
+                            {{ form.is_active.label(class="form-check-label") }}
+                            {% if form.is_active.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.is_active.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Поле: Дополнительная информация (TextArea) -->
+                        <div class="mb-3">
+                            {{ form.info.label(class="form-label") }}
+                            {{ form.info(class="form-control", rows="5", placeholder="Дополнительная информация") }}
+                            {% if form.info.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.info.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Кнопки -->
+                        <button type="submit" class="btn btn-success">{{ form.submit.label }}</button>
+                        <a href="{{ url_for('organizations.manage_orgs') }}" class="btn btn-secondary">Отмена</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

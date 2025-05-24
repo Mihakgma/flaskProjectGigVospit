@@ -16,7 +16,7 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 
 
-# from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect
 
 
 def create_app():
@@ -41,8 +41,8 @@ def create_app():
     app.register_blueprint(contracts_bp, url_prefix='/contracts')
     app.register_blueprint(orgs_bp, url_prefix='/organizations')
     app.register_blueprint(routes_bp, url_prefix='/')
-    # csrf = CSRFProtect()
-    # csrf.init_app(app)  # Инициализация CSRFProtect
+    csrf = CSRFProtect()
+    csrf.init_app(app)  # Инициализация CSRFProtect
     # app.config['WTF_CSRF_TIME_LIMIT'] = None
     return app
 

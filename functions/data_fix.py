@@ -4,12 +4,12 @@ import pandas as pd
 
 
 def phone_number_fix(phone):
-    if phone:
+    if phone is not None:
         phone = re.sub(r'[^\d+]', '', str(phone))
         if phone.startswith("+7"):
             phone = phone.replace("+7", "8")
         return phone
-    return None
+    return ""
 
 
 def date_fix(date_str):
@@ -29,3 +29,9 @@ def elmk_snils_fix(value):
         value = re.sub(r'\D', '', str(value))
         return value.replace("-", "")
     return None
+
+
+def address_names_fix(name):
+    if name:
+        return name.strip().upper()
+    return ""

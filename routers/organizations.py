@@ -6,20 +6,21 @@ from flask import (Blueprint,
                    url_for,
                    flash,
                    jsonify,
-                   request)
-from flask_login import login_required
+                   request, abort)
+from flask_login import login_required, current_user
 from sqlalchemy import text, and_
 from sqlalchemy.orm import load_only
 from sqlalchemy.orm.exc import FlushError
 from sqlalchemy.sql.functions import func
 
 from functions.access_control import role_required
-from models.models import Organization, Contract
+from functions.data_fix import elmk_snils_fix
+from models.models import Organization, Contract, get_current_nsk_time
 from database import db
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-from forms.forms import OrganizationAddForm
+from forms.forms import OrganizationForm
 
 orgs_bp = Blueprint('organizations', __name__)
 
@@ -28,7 +29,7 @@ orgs_bp = Blueprint('organizations', __name__)
 @login_required
 @role_required('admin', 'moder', 'oper', )
 def add_organization():
-    form = OrganizationAddForm()
+    form = OrganizationForm()
 
     if form.validate_on_submit():
         try:
@@ -180,7 +181,7 @@ def manage_orgs():
     if search_name:
         filters.append(Organization.name.ilike(f"%{search_name}%"))
     if search_inn:
-        filters.append(Organization.inn.ilike(f"%{search_inn}%"))
+        filters.append(Organization.inn.ilike(f"%{elmk_snils_fix(search_inn)}%"))
     if search_email:
         filters.append(Organization.email.ilike(f"%{search_email}%"))
 
@@ -196,7 +197,7 @@ def manage_orgs():
 
     # Создаем пустую форму редактирования. original_org_id=None по умолчанию,
     # что подходит для формы, не связанной с конкретным объектом.
-    edit_form = OrganizationAddForm()
+    # edit_form = OrganizationForm()
 
     return render_template(
         'manage_orgs.html',
@@ -204,49 +205,85 @@ def manage_orgs():
         search_name=search_name,  # Возвращаем введенные значения в форму поиска
         search_inn=search_inn,
         search_email=search_email,
-        edit_form=edit_form  # Передаем форму редактирования в шаблон
+        # edit_form=edit_form  # Передаем форму редактирования в шаблон
     )
 
 
-# --- AJAX Маршрут для сохранения изменений организации ---
-@orgs_bp.route('/api/organizations/<int:org_id>', methods=['POST'])
+@orgs_bp.route('/<int:organization_id>/edit', methods=['GET', 'POST'])
 @login_required
 @role_required('admin', 'moder', 'oper')
-def update_organization_data(org_id):
-    organization = Organization.query.get_or_404(org_id)
-    # При создании формы для обработки POST-запроса при редактировании,
-    # передаем original_org_id, чтобы validate_inn формы знал ID текущего объекта
-    form = OrganizationAddForm(request.form, original_org_id=org_id)  # request.form содержит данные из POST
+def edit_organization(organization_id):
+    organization = Organization.query.get(organization_id)
+    if not organization:
+        abort(404, description="Организация не найдена.")
+        print(f"--- Запрос на редактирование организации ID: {organization_id} ---")
+    print(f"Метод запроса: {request.method}")
+    print(
+        f"Организация из БД (до обработки формы): ID={organization.id}, Имя='{organization.name}', ИНН='{organization.inn}'")
 
-    if form.validate():
-        # Если форма валидна (включая проверку уникальности INN с учетом org_id),
-        # обновляем поля объекта organization данными из формы
-        form.populate_obj(organization)  # Это удобно заполняет поля объекта из формы
+    if request.method == 'POST':
+        # *******************************************************************
+        # &gt;&gt;&gt;&gt;&gt; ИСПРАВЛЕНИЕ: Явно передаем formdata=request.form на POST &lt;&lt;&lt;&lt;&lt;
+        # *******************************************************************
+        form = OrganizationForm(formdata=request.form, original_org_id=organization.id)
+        # Также добавим отладочный вывод сырых данных из request.form
+        print(f"Raw request.form content (SERVER): {request.form}")
+    else:
+        # Для GET-запроса, продолжаем использовать obj=organization для предзаполнения
+        form = OrganizationForm(obj=organization, original_org_id=organization.id)
+
+    if form.validate_on_submit():
+        print("Форма успешно прошла валидацию!")
+        print("Данные из формы (form.data) ПОСЛЕ ВАЛИДАЦИИ:")
+        # Выведем каждое поле, чтобы убедиться, что form.data теперь содержит НОВЫЕ значения
+        print(f" Name: '{form.name.data}' (Тип: {type(form.name.data)})")
+        print(f" INN: '{form.inn.data}' (Тип: {type(form.inn.data)})")
+        print(f" Address: '{form.address.data}' (Тип: {type(form.address.data)})")
+        print(f" Phone Number: '{form.phone_number.data}' (Тип: {type(form.phone_number.data)})")
+        print(f" Email: '{form.email.data}' (Тип: {type(form.email.data)})")
+        print(f" Is Active: {form.is_active.data} (Тип: {type(form.is_active.data)})")
+        print(f" Info: '{form.info.data}' (Тип: {type(form.info.data)})")
+
+        # Здесь находится ваш код, который выдает "Данные не были изменены!"
+        # Это обычно проверка, не модифицирован ли объект.
+        # Если вы используете SQLAlchemy's is_modified, то этот код должен быть
+        # ПОСЛЕ того, как вы обновите 'organization' из формы.
+        # Пример ниже включает такую проверку.
 
         try:
-            db.session.commit()
-            return jsonify({"success": True, "message": "Данные организации успешно обновлены."})
-        # Явно ловим ошибки, которые могут возникнуть на уровне SQLAlchemy после валидации формы
-        except (IntegrityError, FlushError, SQLAlchemyError) as e:
-            db.session.rollback()
-            # Логирование ошибки e для отладки на сервере
-            print(f"Database error during organization update (ID: {org_id}): {e}")
+            # ***************************************************************
+            # &gt;&gt;&gt;&gt;&gt; ИСПРАВЛЕНИЕ: Обновляем поля СУЩЕСТВУЮЩЕГО объекта 'organization' &lt;&lt;&lt;&lt;&lt;
+            # ***************************************************************
+            form.populate_obj(organization)  # &lt;-- Самый чистый и правильный способ!
 
-            # Попытка определить тип ошибки для более информативного ответа
-            error_message = "Произошла ошибка при сохранении данных."
-            # Можно добавить более детальную обработку ошибок, если необходимо
-            # Например, проверить текст ошибки для конкретных нарушений (например, уникальности)
-            # if isinstance(e, IntegrityError) and 'unique constraint' in str(e).lower():
-            #    error_message = "Дубликат значения в уникальном поле (например, ИНН)."
+            print(f"Организация в памяти (ПОСЛЕ populate_obj, ДО commit):")
+            print(f" Имя='{organization.name}', ИНН='{organization.inn}'")
+            print(f" Is Active='{organization.is_active}'")  # Проверяем и is_active
 
-            return jsonify({"success": False, "message": error_message}), 500
+            # Проверка, были ли внесены изменения в объект в сессии SQLAlchemy
+            # (Если вы используете свой собственный check for changes, вставьте его здесь)
+            if db.session.is_modified(organization):
+                db.session.commit()  # Сохраняем изменения в базе данных
+                print("db.session.commit() УСПЕШНО ВЫПОЛНЕН.")
+                flash('Данные организации успешно обновлены!', 'success')
+            else:
+                db.session.rollback()  # Откатываем, если ничего не изменилось
+                print("Данные не были изменены, commit не требуется.")
+                flash('Данные не были изменены!', 'info')  # &lt;&lt;&lt; Это ваше сообщение!
+
+            return redirect(url_for('organizations.manage_orgs'))
         except Exception as e:
-            # Ловим любые другие неожиданные ошибки
             db.session.rollback()
-            print(f"Unexpected error during organization update (ID: {org_id}): {e}")
-            return jsonify({"success": False, "message": f"Произошла непредвиденная ошибка: {e}"}), 500
+            print(f"ОШИБКА ПРИ СОХРАНЕНИИ ДАННЫХ: {e}")
+            flash(f'Произошла ошибка при сохранении данных: {e}', 'error')
 
-    else:
-        # Если форма не прошла валидацию, возвращаем ошибки
-        # validate_inn формы уже обработает ошибки формата и уникальности
-        return jsonify({"success": False, "errors": form.errors}), 400
+    else:  # Если validate_on_submit() вернул False (для GET-запроса или невалидного POST)
+        if request.method == 'POST':
+            print("Форма НЕ ПРОШЛА валидацию. Ошибки:")
+            print(form.errors)
+            for field, errors in form.errors.items():
+                for error in errors:
+                    flash(f"Ошибка в поле '{form[field].label.text}': {error}", 'error')
+
+    print("--- Завершение обработки запроса ---")
+    return render_template('edit_organization.html', form=form, organization=organization)

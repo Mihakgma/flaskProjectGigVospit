@@ -11,6 +11,7 @@ class Config:
     # можно подставить значение по умолчанию или выбросить ошибку.
     # Для Docker Compose переменная ДОЛЖНА быть установлена.
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SECRET_KEY = os.environ.get('SECRET_KEY')
 
     # Проверка на случай, если переменная окружения не установлена (опционально, но рекомендуется)
     if not SQLALCHEMY_DATABASE_URI:

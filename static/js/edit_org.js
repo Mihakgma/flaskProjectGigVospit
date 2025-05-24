@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Обработчик нажатия на кнопку "Редактировать" в таблице
     document.querySelectorAll('.edit-btn').forEach(button => {
-        button.addEventListener('click', function () {
+        btn.addEventListener('click', async function() {
             console.log('Edit button clicked');
             clearValidationErrors(); // Очищаем ошибки перед открытием
             const orgId = this.getAttribute('data-id');
