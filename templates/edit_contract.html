@@ -1,0 +1,401 @@
+<!-- templates/edit_contract.html -->
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flashes list-unstyled">
+                    {% for category, message in messages %}
+                        <li class="alert alert-{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <h1>Редактирование договора №{{ contract.number }}</h1>
+
+        {# Основная форма редактирования контракта #}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Основная информация о договоре</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ contract_form.csrf_token }}
+
+                    <div class="mb-3">
+                        {{ contract_form.organization_id.label(class="form-label") }}
+                        {{ contract_form.organization_id(class="form-select") }}
+                        {% if contract_form.organization_id.errors %}
+                            <div class="text-danger">
+                                {% for error in contract_form.organization_id.errors %}{{ error }}<br>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ contract_form.number.label(class="form-label") }}
+                        {{ contract_form.number(class="form-control") }}
+                        {% if contract_form.number.errors %}
+                            <div class="text-danger">
+                                {% for error in contract_form.number.errors %}{{ error }}<br>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ contract_form.contract_date.label(class="form-label") }}
+                        {{ contract_form.contract_date(class="form-control datepicker") }}
+                        {% if contract_form.contract_date.errors %}
+                            <div class="text-danger">
+                                {% for error in contract_form.contract_date.errors %}{{ error }}<br>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ contract_form.expiration_date.label(class="form-label") }}
+                        {{ contract_form.expiration_date(class="form-control datepicker") }}
+                        {% if contract_form.expiration_date.errors %}
+                            <div class="text-danger">
+                                {% for error in contract_form.expiration_date.errors %}{{ error }}<br>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        {{ contract_form.is_extended(class="form-check-input") }}
+                        {{ contract_form.is_extended.label(class="form-check-label") }}
+                        {% if contract_form.is_extended.errors %}
+                            <div class="text-danger">
+                                {% for error in contract_form.is_extended.errors %}{{ error }}<br>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ contract_form.name.label(class="form-label") }}
+                        {{ contract_form.name(class="form-control") }}
+                        {% if contract_form.name.errors %}
+                            <div class="text-danger">
+                                {% for error in contract_form.name.errors %}{{ error }}<br>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ contract_form.info.label(class="form-label") }}
+                        {{ contract_form.info(class="form-control", rows="5") }}
+                        {% if contract_form.info.errors %}
+                            <div class="text-danger">
+                                {% for error in contract_form.info.errors %}{{ error }}<br>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    {{ contract_form.submit(class="btn btn-success") }}
+                    <a href="{{ url_for('contracts.contract_details', contract_id=contract.id) }}"
+                       class="btn btn-secondary">Отмена</a>
+                </form>
+            </div>
+        </div>
+
+        <hr>
+
+        {# Секция для отображения уже прикрепленных визитов #}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0">Прикрепленные визиты ({{ current_linked_visits|length }})</h4>
+            </div>
+            <div class="card-body">
+                {% if current_linked_visits %}
+                    <ul class="list-group">
+                        {% for visit in current_linked_visits %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Визит ID: {{ visit.id }} ({{ visit.visit_date.strftime('%d.%m.%Y') }}) -
+                                Заявитель: {{ visit.applicant.full_name if visit.applicant else 'Неизвестен' }}
+                                {# Кнопка для открепления визита #}
+                                <form action="{{ url_for('contracts.unlink_visit', visit_id=visit.id) }}" method="POST"
+                                      class="d-inline">
+                                    {{ contract_form.csrf_token }} {# Важно: токен CSRF для POST-запросов #}
+                                    <button type="submit" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('Открепить этот визит от договора?');">Открепить
+                                    </button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>К этому договору пока не прикреплено ни одного визита.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr>
+
+        {# Секция для поиска заявителей и прикрепления новых визитов #}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">Добавить визит для заявителя
+                    <button type="button" class="btn btn-light btn-sm float-end" data-bs-toggle="collapse"
+                            data-bs-target="#applicantSearchCollapse"
+                            aria-expanded="{% if applicants_found or applicant_search_form.errors %}true{% else %}false{% endif %}"
+                            aria-controls="applicantSearchCollapse">
+                        +
+                    </button>
+                </h4>
+            </div>
+            <div class="card-body collapse {% if applicants_found or applicant_search_form.errors %}show{% endif %}"
+                 id="applicantSearchCollapse">
+                <form method="POST" id="applicant_search_form">
+                    {{ applicant_search_form.csrf_token }}
+                    {# Скрытое поле для идентификации этой формы при POST-запросе #}
+                    {{ applicant_search_form.form_name(type="hidden") }}
+
+                    <div class="mb-3">
+                        {{ applicant_search_form.last_name.label(class="form-label") }}
+                        {{ applicant_search_form.last_name(class="form-control") }}
+                        <div class="form-check mt-1">
+                            {{ applicant_search_form.last_name_exact(class="form-check-input") }}
+                            {{ applicant_search_form.last_name_exact.label(class="form-check-label") }}
+                        </div>
+                        {% if applicant_search_form.last_name.errors %}
+                            <div class="text-danger">
+                                {% for error in applicant_search_form.last_name.errors %}{{ error }}<br>{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <hr>
+
+                    {# Поля СНИЛС #}
+                    {# Поле СНИЛС (единое поле вместо разбитого) #}
+                    <div class="mb-3">
+                        <label class="form-label">СНИЛС</label>
+                        <input type="text"
+                               name="snils_number"
+                               class="form-control"
+                               pattern="[0-9]*"
+                               placeholder="XXX-XXX-XXX XX"
+                               value="{{ applicant_search_form.snils_number.data or '' }}">
+                        {% if applicant_search_form.snils_number.errors %}
+                            <div class="text-danger">
+                                {% for error in applicant_search_form.snils_number.errors %}
+                                    {{ error }}<br>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <hr>
+
+                    {# Поля Медкнижки #}
+                    {# Поле медицинской книжки #}
+                    <div class="mb-3">
+                        <label class="form-label">Номер медицинской книжки</label>
+                        <input type="text"
+                               name="medbook_number"
+                               class="form-control"
+                               pattern="[0-9]*"
+                               maxlength="12"
+                               placeholder="XXXXXXXXXXXX"
+                               value="{{ applicant_search_form.medbook_number.data or '' }}">
+                        {% if applicant_search_form.medbook_number.errors %}
+                            <div class="text-danger">
+                                {% for error in applicant_search_form.medbook_number.errors %}
+                                    {{ error }}<br>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        {{ applicant_search_form.birth_date_start.label(class="form-label") }}
+                        {{ applicant_search_form.birth_date_start(class="form-control datepicker") }}
+                        {% if applicant_search_form.birth_date_start.errors %}
+                            <div class="text-danger">
+                                {% for error in applicant_search_form.birth_date_start.errors %}{{ error }}
+                                    <br>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ applicant_search_form.birth_date_end.label(class="form-label") }}
+                        {{ applicant_search_form.birth_date_end(class="form-control datepicker") }}
+                        {% if applicant_search_form.birth_date_end.errors %}
+                            <div class="text-danger">
+                                {% for error in applicant_search_form.birth_date_end.errors %}{{ error }}
+                                    <br>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        {{ applicant_search_form.last_visit_start.label(class="form-label") }}
+                        {{ applicant_search_form.last_visit_start(class="form-control datepicker") }}
+                        {% if applicant_search_form.last_visit_start.errors %}
+                            <div class="text-danger">
+                                {% for error in applicant_search_form.last_visit_start.errors %}{{ error }}
+                                    <br>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ applicant_search_form.last_visit_end.label(class="form-label") }}
+                        {{ applicant_search_form.last_visit_end(class="form-control datepicker") }}
+                        {% if applicant_search_form.last_visit_end.errors %}
+                            <div class="text-danger">
+                                {% for error in applicant_search_form.last_visit_end.errors %}{{ error }}
+                                    <br>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        {{ applicant_search_form.registration_address.label(class="form-label") }}
+                        {{ applicant_search_form.registration_address(class="form-control") }}
+                        {% if applicant_search_form.registration_address.errors %}
+                            <div class="text-danger">
+                                {% for error in applicant_search_form.registration_address.errors %}{{ error }}
+                                    <br>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ applicant_search_form.residence_address.label(class="form-label") }}
+                        {{ applicant_search_form.residence_address(class="form-control") }}
+                        {% if applicant_search_form.residence_address.errors %}
+                            <div class="text-danger">
+                                {% for error in applicant_search_form.residence_address.errors %}{{ error }}
+                                    <br>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        {{ applicant_search_form.updated_by_user.label(class="form-label") }}
+                        {{ applicant_search_form.updated_by_user(class="form-control") }}
+                        {% if applicant_search_form.updated_by_user.errors %}
+                            <div class="text-danger">
+                                {% for error in applicant_search_form.updated_by_user.errors %}{{ error }}
+                                    <br>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    <div class="mb-3">
+                        {{ applicant_search_form.updated_at_start.label(class="form-label") }}
+                        {{ applicant_search_form.updated_at_start(class="form-control datepicker") }}
+                        {% if applicant_search_form.updated_at_start.errors %}
+                            <div class="text-danger">
+                                {% for error in applicant_search_form.updated_at_start.errors %}{{ error }}
+                                    <br>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        {{ applicant_search_form.updated_at_end.label(class="form-label") }}
+                        {{ applicant_search_form.updated_at_end(class="form-control datepicker") }}
+                        {% if applicant_search_form.updated_at_end.errors %}
+                            <div class="text-danger">
+                                {% for error in applicant_search_form.updated_at_end.errors %}{{ error }}
+                                    <br>{% endfor %}</div>
+                        {% endif %}
+                    </div>
+                    <hr>
+                    {{ applicant_search_form.submit(class="btn btn-primary") }}
+                    {# Кнопка очистки, которая использует JS для сброса и отправки #}
+                    <button type="button" class="btn btn-outline-secondary" onclick="resetApplicantSearchForm()">
+                        Очистить поиск
+                    </button>
+                </form>
+
+                {# Результаты поиска заявителей #}
+                {% if applicants_found %}
+                    <h5 class="mt-4">Найденные заявители:</h5>
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                        <tr>
+                            <th>ФИО</th>
+                            <th>Дата рождения</th>
+                            <th>СНИЛС</th>
+                            <th>Медкнижка</th>
+                            <th>Действия</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for applicant in applicants_found %}
+                            <tr>
+                                <td>{{ applicant.full_name }}</td>
+                                {# Предполагается, что у Applicant есть свойство full_name #}
+                                <td>{{ applicant.birth_date.strftime('%d.%m.%Y') if applicant.birth_date else '-' }}</td>
+                                <td>{{ applicant.snils_number if applicant.snils_number else '-' }}</td>
+                                <td>{{ applicant.medbook_number if applicant.medbook_number else '-' }}</td>
+                                <td>
+                                    {# Форма для прикрепления визита. Использует POST-запрос на /link_visit #}
+                                    <form action="{{ url_for('contracts.link_visit_to_contract', contract_id=contract.id, applicant_id=applicant.id) }}"
+                                          method="POST" class="d-inline">
+                                        {{ applicant_search_form.csrf_token }} {# Важно: токен CSRF для POST-запросов #}
+                                        <button type="submit" class="btn btn-sm btn-success">Создать визит и
+                                            прикрепить
+                                        </button>
+                                    </form>
+                                    {# Опционально: ссылка на детали заявителя #}
+                                    {# Предполагаем, что у вас есть роут 'applicants.details_applicant' #}
+                                    {% if 'applicants' in request.url_rule.endpoint %}
+                                        {# Проверка на существование блюпринта #}
+                                        <a href="{{ url_for('applicants.details_applicant', applicant_id=applicant.id) }}"
+                                           class="btn btn-sm btn-info ms-2">Подробнее</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p class="text-muted mt-3">Заявители не найдены или поиск не был выполнен.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Навигация в подвале #}
+        <p class="mt-4">
+            <a href="{{ url_for('contracts.search_contracts') }}" class="btn btn-secondary">К поиску контрактов</a>
+            <a href="{{ url_for('contracts.contract_details', contract_id=contract.id) }}" class="btn btn-info">Вернуться
+                к деталям контракта</a>
+        </p>
+
+    </div>
+
+    {# JavaScript для Datepickers и функции сброса формы #}
+    {# Убедитесь, что эти скрипты и стили загружаются, возможно, они уже есть в вашем base.html #}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.ru.min.js"></script>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+    <script>
+        $(document).ready(function () {
+            $('.datepicker').datepicker({
+                format: 'dd.mm.yyyy',
+                language: 'ru',
+                autoclose: true,
+                todayHighlight: true
+            });
+
+            // Функция для сброса формы поиска заявителей
+            function resetApplicantSearchForm() {
+                // Очищаем все поля формы
+                $('#applicant_search_form')[0].reset();
+                // Очищаем вручную созданные поля ввода для СНИЛС и Медкнижки
+                $('input[name^="snils_part"]').val('');
+                $('input[name^="medbook_part"]').val('');
+                // Сбрасываем чекбокс точного совпадения фамилии
+                $('input[name="last_name_exact"]').prop('checked', false);
+
+                // Отправляем форму, чтобы сервер обновил ее состояние и очистил результаты поиска
+                // Добавляем скрытое поле, чтобы роут знал, что это запрос на очистку
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'clear_search_button',
+                    value: 'true'
+                }).appendTo('#applicant_search_form');
+                $('#applicant_search_form').submit();
+            }
+
+            // Передаем функцию в глобальную область видимости, чтобы она была доступна из onclick
+            window.resetApplicantSearchForm = resetApplicantSearchForm;
+        });
+    </script>
+{% endblock %}

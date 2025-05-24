@@ -1,28 +1,37 @@
+<!-- templates/contract_details.html -->
+
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Детали договора (контракта) №{{ contract.number }}</h1>
-    <p>Дата заключения: {{ contract.contract_date.strftime('%d.%m.%Y') }}</p>
-    <p>Срок окончания: {{ contract.expiration_date.strftime('%d.%m.%Y') }}</p>
-    <p>Продлён: {% if contract.is_extended %}Да{% else %}Нет{% endif %}</p>
-    <p>Организация: {{ contract.organization.name }}</p>
-    <p>Описание: {{ contract.name }}</p>
-    <p>Дополнительная информация: {{ contract.info }}</p>
+    <div class="container mt-4">
+        <h1>Детали договора (контракта) №{{ contract.number }}</h1>
+        <p>Дата заключения: {{ contract.contract_date.strftime('%d.%m.%Y') }}</p>
+        <p>Срок
+            окончания: {{ contract.expiration_date.strftime('%d.%m.%Y') if contract.expiration_date else 'Не указан' }}</p>
+        <p>Продлён: {% if contract.is_extended %}Да{% else %}Нет{% endif %}</p>
+        <p>Организация: {{ contract.organization.name }}</p>
+        <p>Описание: {{ contract.name if contract.name else 'Не указано' }}</p>
+        <p>Дополнительная информация: {{ contract.info if contract.info else 'Нет' }}</p>
 
-<hr>
-    <h2>Статистика по визитам:</h2>
-    <p><strong>Количество прикрепленных визитов:</strong> {{ num_related_vizits }}</p>
-    <p><strong>Количество уникальных заявителей с прикрепленными визитами:</strong> {{ num_unique_applicants }}</p>
+        <hr>
+        <h2>Статистика по визитам:</h2>
+        <p><strong>Количество прикрепленных визитов:</strong> {{ num_related_vizits }}</p>
+        <p><strong>Количество уникальных заявителей с прикрепленными визитами:</strong> {{ num_unique_applicants }}</p>
 
-    {% if num_related_vizits > 0 %}
-        <p>
-        ЗДЕСЬ БУДЕТ ПЕРЕХОД К СПИСКУ ВИЗИТОВ, КОТОРЫЕ ПРИКРЕПЛЕНЫ К ТЕКУЩЕМУ КОНТРАКТУ...
-{#            <a href="{{ url_for('contracts.list_vizits_for_contract', contract_id=contract.id) }}" class="btn btn-info">#}
-{#                Посмотреть все визиты по этому контракту#}
-{#            </a>#}
+        {% if num_related_vizits > 0 %}
+            <p>
+                {# ЗДЕСЬ БУДЕТ ПЕРЕХОД К СПИСКУ ВИЗИТОВ, КОТОРЫЕ ПРИКРЕПЛЕНЫ К ТЕКУЩЕМУ КОНТРАКТУ... #}
+                <a href="{{ url_for('contracts.edit_contract', contract_id=contract.id) }}" class="btn btn-info">
+                    Управление визитами по этому контракту
+                </a>
+            </p>
+        {% endif %}
+
+        <p class="mt-4">
+            <a href="{{ url_for('contracts.search_contracts') }}" class="btn btn-secondary">К поиску контрактов</a>
+            {# Убрать комментарий со строки ниже #}
+            <a href="{{ url_for('contracts.edit_contract', contract_id=contract.id) }}" class="btn btn-warning">Редактировать
+                договор</a>
         </p>
-    {% endif %}
-
-{#    <p><a href="{{ url_for('your_contracts_blueprint.edit_contract', contract_id=contract.id) }}" class="btn btn-warning">Редактировать контракт</a></p>#}
-    <p><a href="{{ url_for('contracts.search_contracts') }}" class="btn btn-secondary">К поиску контрактов</a></p>
+    </div>
 {% endblock %}

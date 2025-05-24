@@ -307,6 +307,7 @@ class VizitForm(FlaskForm):
 
 
 class ApplicantSearchForm(FlaskForm):
+    form_name = StringField(default='applicant_search_form', validators=[DataRequired()])
     last_name = StringField('Фамилия',
                             validators=[Optional()],
                             filters=(names_fix,))
