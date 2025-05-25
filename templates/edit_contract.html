@@ -21,7 +21,7 @@
                 <h4 class="mb-0">Основная информация о договоре</h4>
             </div>
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" id="contract_edit_form">
                     {{ contract_form.csrf_token }}
 
                     <div class="mb-3">
@@ -115,10 +115,9 @@
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 Визит ID: {{ visit.id }} ({{ visit.visit_date.strftime('%d.%m.%Y') }}) -
                                 Заявитель: {{ visit.applicant.full_name if visit.applicant else 'Неизвестен' }}
-                                {# Кнопка для открепления визита #}
                                 <form action="{{ url_for('contracts.unlink_visit', visit_id=visit.id) }}" method="POST"
                                       class="d-inline">
-                                    {{ contract_form.csrf_token }} {# Важно: токен CSRF для POST-запросов #}
+                                    {{ contract_form.csrf_token }} {# Используем csrf_token от contract_form #}
                                     <button type="submit" class="btn btn-sm btn-danger"
                                             onclick="return confirm('Открепить этот визит от договора?');">Открепить
                                     </button>
@@ -140,18 +139,16 @@
                 <h4 class="mb-0">Добавить визит для заявителя
                     <button type="button" class="btn btn-light btn-sm float-end" data-bs-toggle="collapse"
                             data-bs-target="#applicantSearchCollapse"
-                            aria-expanded="{% if applicants_found or applicant_search_form.errors %}true{% else %}false{% endif %}"
+                            aria-expanded="{{ 'true' if show_applicant_search_collapse else 'false' }}"
                             aria-controls="applicantSearchCollapse">
                         +
                     </button>
                 </h4>
             </div>
-            <div class="card-body collapse {% if applicants_found or applicant_search_form.errors %}show{% endif %}"
+            <div class="card-body collapse {{ 'show' if show_applicant_search_collapse else '' }}"
                  id="applicantSearchCollapse">
                 <form method="POST" id="applicant_search_form">
                     {{ applicant_search_form.csrf_token }}
-                    {# Скрытое поле для идентификации этой формы при POST-запросе #}
-                    {{ applicant_search_form.form_name(type="hidden") }}
 
                     <div class="mb-3">
                         {{ applicant_search_form.last_name.label(class="form-label") }}
@@ -168,46 +165,30 @@
                     </div>
                     <hr>
 
-                    {# Поля СНИЛС #}
-                    {# Поле СНИЛС (единое поле вместо разбитого) #}
+                    {# ИСПРАВЛЕНО: Единое поле для СНИЛС #}
                     <div class="mb-3">
-                        <label class="form-label">СНИЛС</label>
-                        <input type="text"
-                               name="snils_number"
-                               class="form-control"
-                               pattern="[0-9]*"
-                               placeholder="XXX-XXX-XXX XX"
-                               value="{{ applicant_search_form.snils_number.data or '' }}">
+                        {{ applicant_search_form.snils_number.label(class="form-label") }}
+                        {{ applicant_search_form.snils_number(class="form-control") }}
                         {% if applicant_search_form.snils_number.errors %}
                             <div class="text-danger">
-                                {% for error in applicant_search_form.snils_number.errors %}
-                                    {{ error }}<br>
-                                {% endfor %}
+                                {% for error in applicant_search_form.snils_number.errors %}{{ error }}<br>{% endfor %}
                             </div>
                         {% endif %}
                     </div>
                     <hr>
 
-                    {# Поля Медкнижки #}
-                    {# Поле медицинской книжки #}
+                    {# ИСПРАВЛЕНО: Единое поле для Номера медкнижки #}
                     <div class="mb-3">
-                        <label class="form-label">Номер медицинской книжки</label>
-                        <input type="text"
-                               name="medbook_number"
-                               class="form-control"
-                               pattern="[0-9]*"
-                               maxlength="12"
-                               placeholder="XXXXXXXXXXXX"
-                               value="{{ applicant_search_form.medbook_number.data or '' }}">
+                        {{ applicant_search_form.medbook_number.label(class="form-label") }}
+                        {{ applicant_search_form.medbook_number(class="form-control") }}
                         {% if applicant_search_form.medbook_number.errors %}
                             <div class="text-danger">
-                                {% for error in applicant_search_form.medbook_number.errors %}
-                                    {{ error }}<br>
-                                {% endfor %}
-                            </div>
+                                {% for error in applicant_search_form.medbook_number.errors %}{{ error }}
+                                    <br>{% endfor %}</div>
                         {% endif %}
                     </div>
                     <hr>
+
                     <div class="mb-3">
                         {{ applicant_search_form.birth_date_start.label(class="form-label") }}
                         {{ applicant_search_form.birth_date_start(class="form-control datepicker") }}
@@ -294,7 +275,8 @@
                         {% endif %}
                     </div>
                     <hr>
-                    {{ applicant_search_form.submit(class="btn btn-primary") }}
+                    {# ИСПРАВЛЕНО: Правильная кнопка для поиска заявителей #}
+                    {{ applicant_search_form.search_submit(class="btn btn-primary") }}
                     {# Кнопка очистки, которая использует JS для сброса и отправки #}
                     <button type="button" class="btn btn-outline-secondary" onclick="resetApplicantSearchForm()">
                         Очистить поиск
@@ -318,23 +300,18 @@
                         {% for applicant in applicants_found %}
                             <tr>
                                 <td>{{ applicant.full_name }}</td>
-                                {# Предполагается, что у Applicant есть свойство full_name #}
                                 <td>{{ applicant.birth_date.strftime('%d.%m.%Y') if applicant.birth_date else '-' }}</td>
                                 <td>{{ applicant.snils_number if applicant.snils_number else '-' }}</td>
                                 <td>{{ applicant.medbook_number if applicant.medbook_number else '-' }}</td>
                                 <td>
-                                    {# Форма для прикрепления визита. Использует POST-запрос на /link_visit #}
                                     <form action="{{ url_for('contracts.link_visit_to_contract', contract_id=contract.id, applicant_id=applicant.id) }}"
                                           method="POST" class="d-inline">
-                                        {{ applicant_search_form.csrf_token }} {# Важно: токен CSRF для POST-запросов #}
+                                        {{ applicant_search_form.csrf_token }}
                                         <button type="submit" class="btn btn-sm btn-success">Создать визит и
                                             прикрепить
                                         </button>
                                     </form>
-                                    {# Опционально: ссылка на детали заявителя #}
-                                    {# Предполагаем, что у вас есть роут 'applicants.details_applicant' #}
                                     {% if 'applicants' in request.url_rule.endpoint %}
-                                        {# Проверка на существование блюпринта #}
                                         <a href="{{ url_for('applicants.details_applicant', applicant_id=applicant.id) }}"
                                            class="btn btn-sm btn-info ms-2">Подробнее</a>
                                     {% endif %}
@@ -359,12 +336,11 @@
     </div>
 
     {# JavaScript для Datepickers и функции сброса формы #}
-    {# Убедитесь, что эти скрипты и стили загружаются, возможно, они уже есть в вашем base.html #}
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.ru.min.js"></script>
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+{#    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>#}
+{#    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.ru.min.js"></script>#}
+{#    <link rel="stylesheet"#}
+{#          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">#}
     <script>
         $(document).ready(function () {
             $('.datepicker').datepicker({
@@ -374,28 +350,20 @@
                 todayHighlight: true
             });
 
-            // Функция для сброса формы поиска заявителей
-            function resetApplicantSearchForm() {
-                // Очищаем все поля формы
+            window.resetApplicantSearchForm = function () {
                 $('#applicant_search_form')[0].reset();
-                // Очищаем вручную созданные поля ввода для СНИЛС и Медкнижки
-                $('input[name^="snils_part"]').val('');
-                $('input[name^="medbook_part"]').val('');
-                // Сбрасываем чекбокс точного совпадения фамилии
-                $('input[name="last_name_exact"]').prop('checked', false);
+                // Эти строки теперь не нужны, так как нет отдельных полей для частей СНИЛС/Медкнижки
+                // $('input[name^="snils_part"]').val('');
+                // $('input[name^="medbook_part"]').val('');
+                $('input[name="last_name_exact"]').prop('checked', false); // Сбрасываем чекбокс
 
-                // Отправляем форму, чтобы сервер обновил ее состояние и очистил результаты поиска
-                // Добавляем скрытое поле, чтобы роут знал, что это запрос на очистку
                 $('<input>').attr({
                     type: 'hidden',
                     name: 'clear_search_button',
                     value: 'true'
                 }).appendTo('#applicant_search_form');
                 $('#applicant_search_form').submit();
-            }
-
-            // Передаем функцию в глобальную область видимости, чтобы она была доступна из onclick
-            window.resetApplicantSearchForm = resetApplicantSearchForm;
+            };
         });
     </script>
 {% endblock %}

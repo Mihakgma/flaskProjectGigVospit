@@ -5,7 +5,7 @@ from flask import (Blueprint,
                    request,
                    redirect,
                    url_for,
-                   flash, jsonify)
+                   flash, jsonify, current_app)
 from flask_login import login_required, current_user
 from sqlalchemy.orm import load_only, joinedload
 from wtforms.validators import ValidationError
@@ -165,121 +165,140 @@ def search_contracts():
 @login_required
 @role_required('admin', 'moder')  # Ограничьте доступ по ролям, кто может редактировать контракты
 def edit_contract(contract_id):
-    contract = Contract.query.get_or_404(contract_id)  # Получаем контракт или 404
+    contract = Contract.query.get_or_404(contract_id)
 
-    contract_form = ContractForm()  # Основная форма для данных контракта
-    applicant_search_form = ApplicantSearchForm()  # Форма для поиска заявителей
+    contract_form = ContractForm()
+    applicant_search_form = ApplicantSearchForm()
 
-    applicants_found = []  # Список для хранения найденных заявителей
+    applicants_found = []
+    show_applicant_search_collapse = False  # Флаг для управления состоянием сворачивания секции поиска
 
-    # Определяем, какая форма была отправлена (если это POST-запрос)
     if request.method == 'POST':
-        # Проверяем, была ли отправлена форма редактирования контракта
-        if contract_form.submit.data and contract_form.validate():
-            print("Отправлена форма редактирования контракта.")
-            try:
-                # Обновляем поля объекта contract данными из формы
-                contract_form.populate_obj(contract)
+        # Важно: В POST запросе WTForms по умолчанию пытается заполнить формы из request.form.
+        # Если валидация не пройдёт, формы сохранят введённые, но невалидные данные.
 
-                # Если организация изменилась, обновим связь
-                if contract.organization_id != contract_form.organization_id.data:
-                    contract.organization = Organization.query.get(contract_form.organization_id.data)
+        # --- Обработка отправки формы редактирования контракта ---
+        # Проверяем, была ли нажата кнопка 'submit' из ContractForm
+        if 'submit' in request.form:
+            current_app.logger.debug("Обнаружена отправка формы редактирования контракта.")
+            if contract_form.validate_on_submit():
+                try:
+                    contract_form.populate_obj(contract)
+                    db.session.commit()
+                    flash('Договор успешно обновлен!', 'success')
+                    return redirect(url_for('contracts.contract_details', contract_id=contract.id))
+                except Exception as e:
+                    db.session.rollback()
+                    flash(f'Ошибка при обновлении договора: {e}', 'error')
+                    current_app.logger.error(f"Ошибка обновления договора: {e}")
+            else:
+                # Если форма контракта не прошла валидацию, её ошибки уже будут в contract_form.errors
+                # и она сохранит введенные пользователем значения. Flash-сообщения покажут ошибки.
+                for field, errors in contract_form.errors.items():
+                    for error in errors:
+                        flash(f"Ошибка в поле '{contract_form[field].label.text}': {error}", 'error')
+                current_app.logger.debug(f"Ошибки валидации ContractForm: {contract_form.errors}")
 
-                db.session.commit()
-                flash('Договор успешно обновлен!', 'success')
-                return redirect(url_for('contracts.contract_details', contract_id=contract.id))
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Ошибка при обновлении договора: {e}', 'error')
-                print(f"Ошибка обновления договора: {e}")
-        # Проверяем, была ли отправлена форма поиска заявителей
-        elif applicant_search_form.search_submit.data and applicant_search_form.validate():
-            print("Отправлена форма поиска заявителей.")
+        # --- Обработка отправки формы поиска заявителей ---
+        # Проверяем, была ли нажата кнопка 'search_submit' из ApplicantSearchForm
+        elif 'search_submit' in request.form:
+            current_app.logger.debug("Обнаружена отправка формы поиска заявителей.")
+            show_applicant_search_collapse = True  # Оставляем секцию поиска открытой
 
-            # Логика поиска заявителей
-            applicants_query = Applicant.query
+            if applicant_search_form.validate_on_submit():
+                applicants_query = Applicant.query
 
-            if applicant_search_form.last_name.data:
-                if applicant_search_form.last_name_exact.data:
+                if applicant_search_form.last_name.data:
+                    if applicant_search_form.last_name_exact.data:
+                        applicants_query = applicants_query.filter(
+                            Applicant.last_name == applicant_search_form.last_name.data)
+                    else:
+                        applicants_query = applicants_query.filter(
+                            Applicant.last_name.ilike(f'%{applicant_search_form.last_name.data}%'))
+
+                if applicant_search_form.snils_number.data:
                     applicants_query = applicants_query.filter(
-                        Applicant.last_name == applicant_search_form.last_name.data)
-                else:
+                        Applicant.snils_number == applicant_search_form.snils_number.data)
+                if applicant_search_form.medbook_number.data:
                     applicants_query = applicants_query.filter(
-                        Applicant.last_name.ilike(f'%{applicant_search_form.last_name.data}%'))
+                        Applicant.medbook_number == applicant_search_form.medbook_number.data)
 
-            # Используем собранные full_snils_number и full_medbook_number
-            if applicant_search_form.full_snils_number:
-                applicants_query = applicants_query.filter(
-                    Applicant.snils_number == applicant_search_form.full_snils_number)
-            if applicant_search_form.full_medbook_number:
-                applicants_query = applicants_query.filter(
-                    Applicant.medbook_number == applicant_search_form.full_medbook_number)
+                if applicant_search_form.birth_date_start.data:
+                    applicants_query = applicants_query.filter(
+                        Applicant.birth_date >= applicant_search_form.birth_date_start.data)
+                if applicant_search_form.birth_date_end.data:
+                    applicants_query = applicants_query.filter(
+                        Applicant.birth_date <= applicant_search_form.birth_date_end.data)
 
-            if applicant_search_form.birth_date_start.data:
-                applicants_query = applicants_query.filter(
-                    Applicant.birth_date >= applicant_search_form.birth_date_start.data)
-            if applicant_search_form.birth_date_end.data:
-                applicants_query = applicants_query.filter(
-                    Applicant.birth_date <= applicant_search_form.birth_date_end.data)
+                if applicant_search_form.last_visit_start.data or applicant_search_form.last_visit_end.data:
+                    vizits_subquery = Vizit.query.filter(Vizit.applicant_id.isnot(None))
+                    if applicant_search_form.last_visit_start.data:
+                        vizits_subquery = vizits_subquery.filter(
+                            Vizit.visit_date >= applicant_search_form.last_visit_start.data)
+                    if applicant_search_form.last_visit_end.data:
+                        vizits_subquery = vizits_subquery.filter(
+                            Vizit.visit_date <= applicant_search_form.last_visit_end.data)
 
-            if applicant_search_form.last_visit_start.data:
-                # Поиск визитов по дате и затем фильтрация заявителей
-                visited_applicant_ids = [v.applicant_id for v in Vizit.query.filter(
-                    Vizit.visit_date >= applicant_search_form.last_visit_start.data).distinct(Vizit.applicant_id).all()]
-                applicants_query = applicants_query.filter(Applicant.id.in_(visited_applicant_ids))
-            if applicant_search_form.last_visit_end.data:
-                visited_applicant_ids = [v.applicant_id for v in Vizit.query.filter(
-                    Vizit.visit_date <= applicant_search_form.last_visit_end.data).distinct(Vizit.applicant_id).all()]
-                applicants_query = applicants_query.filter(Applicant.id.in_(visited_applicant_ids))
+                    visited_applicant_ids = [v.applicant_id for v in vizits_subquery.distinct(Vizit.applicant_id).all()]
+                    applicants_query = applicants_query.filter(Applicant.id.in_(visited_applicant_ids))
 
-            if applicant_search_form.registration_address.data:
-                applicants_query = applicants_query.filter(
-                    Applicant.registration_address.ilike(f"%{applicant_search_form.registration_address.data}%"))
-            if applicant_search_form.residence_address.data:
-                applicants_query = applicants_query.filter(
-                    Applicant.residence_address.ilike(f"%{applicant_search_form.residence_address.data}%"))
+                if applicant_search_form.registration_address.data:
+                    applicants_query = applicants_query.filter(
+                        Applicant.registration_address.ilike(f"%{applicant_search_form.registration_address.data}%"))
+                if applicant_search_form.residence_address.data:
+                    applicants_query = applicants_query.filter(
+                        Applicant.residence_address.ilike(f"%{applicant_search_form.residence_address.data}%"))
 
-            # updated_by_user - если это ID пользователя, то нужен User.query.filter_by(id=...)
-            # Если это имя пользователя, то Applicant.updated_by.ilike(...)
-            # Для простоты пока оставим как есть, если это просто строка
-            if applicant_search_form.updated_by_user.data:
-                # Предположим, что это строка, которую нужно найти в поле (если такое поле есть в Applicant)
-                # Или если это поле связано с User-моделью, то нужно фильтровать по ней
-                pass  # Тут нужно добавить логику фильтрации по обновляющему пользователю
+                if applicant_search_form.updated_by_user.data:
+                    pass
 
-            if applicant_search_form.updated_at_start.data:
-                applicants_query = applicants_query.filter(
-                    Applicant.updated_at >= applicant_search_form.updated_at_start.data)
-            if applicant_search_form.updated_at_end.data:
-                applicants_query = applicants_query.filter(
-                    Applicant.updated_at <= applicant_search_form.updated_at_end.data)
+                if applicant_search_form.updated_at_start.data:
+                    applicants_query = applicants_query.filter(
+                        Applicant.updated_at >= applicant_search_form.updated_at_start.data)
+                if applicant_search_form.updated_at_end.data:
+                    applicants_query = applicants_query.filter(
+                        Applicant.updated_at <= applicant_search_form.updated_at_end.data)
 
-            applicants_found = applicants_query.limit(50).all()  # Ограничиваем количество результатов
-            if not applicants_found:
-                flash('Заявители по заданным критериям не найдены.', 'info')
+                applicants_found = applicants_query.limit(50).all()
+                if not applicants_found:
+                    flash('Заявители по заданным критериям не найдены.', 'info')
+            else:
+                # Если форма поиска заявителей не прошла валидацию
+                for field, errors in applicant_search_form.errors.items():
+                    for error in errors:
+                        flash(f"Ошибка в поле '{applicant_search_form[field].label.text}': {error}", 'error')
+                current_app.logger.debug(f"Ошибки валидации ApplicantSearchForm: {applicant_search_form.errors}")
 
-        # Если кнопка "Очистить" была нажата (через JS-функцию resetApplicantSearchForm, которая перезагружает форму)
-        elif 'clear_search_button' in request.form:  # Это проверка, если вы добавили скрытое поле с таким именем
-            applicant_search_form = ApplicantSearchForm()  # Пересоздаем форму, чтобы очистить данные
+        # --- Обработка нажатия кнопки "Очистить поиск" (через JS-функцию) ---
+        elif 'clear_search_button' in request.form:  # Эта кнопка отправляется через JS
+            current_app.logger.debug("Обнаружена кнопка 'Очистить поиск'.")
+            applicant_search_form = ApplicantSearchForm()  # Пересоздаем форму, чтобы очистить все поля
             flash('Поля поиска очищены.', 'info')
+            show_applicant_search_collapse = True  # Оставляем секцию поиска открытой
+
         else:
-            # Если POST-запрос, но ни одна форма не была валидной или распознана
-            print("POST-запрос получен, но форма не валидна или не распознана.")
-            print("Ошибки ContractForm:", contract_form.errors)
-            print("Ошибки ApplicantSearchForm:", applicant_search_form.errors)
-            for field, errors in contract_form.errors.items():
-                for error in errors:
-                    flash(f"Ошибка в поле '{contract_form[field].label.text}': {error}", 'error')
-            for field, errors in applicant_search_form.errors.items():
-                for error in errors:
-                    flash(f"Ошибка в поле '{applicant_search_form[field].label.text}': {error}", 'error')
+            # Этот блок выполняется, если POST-запрос был отправлен, но ни одна из
+            # ожидаемых кнопок submit (из ContractForm или ApplicantSearchForm) не была нажата.
+            # Это может быть POST от формы открепления визита, или другой формы.
+            current_app.logger.warning(
+                f"Неопознанный POST-запрос на странице edit_contract. request.form: {request.form}")
+            # В этом случае, contract_form должна быть заполнена данными из БД,
+            # чтобы избежать "сброса" полей контракта.
+            contract_form = ContractForm(obj=contract)
 
-    # Для GET-запроса или если POST-запрос был для поиска, но не для обновления контракта
-    if request.method == 'GET' or (request.method == 'POST' and not contract_form.submit.data):
-        # Предзаполняем форму контракта данными из объекта contract
-        contract_form = ContractForm(obj=contract)
+    # --- Инициализация или предзаполнение contract_form для GET-запроса или после POST,
+    # если не её кнопка была нажата (чтобы не сбросить данные контракта) ---
+    if request.method == 'GET' or ('submit' not in request.form and not contract_form.errors):
+        # Если это GET или POST, который не был связан с ContractForm,
+        # и у contract_form нет ошибок, то предзаполняем ее из объекта contract.
+        # Если у contract_form уже есть ошибки (например, после неудачного submit),
+        # то мы не будем ее перезаписывать, чтобы показать ошибки пользователю.
+        if request.method == 'GET' or not contract_form.data.get(
+                'number'):  # Пример дополнительной проверки, что форма не была отправлена
+            contract_form = ContractForm(obj=contract)
+        # Если contract_form.data.get('number') пуст, это может означать, что форма была отправлена
+        # без данных, и мы хотим отобразить ошибки.
 
-        # Получаем визиты, уже прикрепленные к текущему контракту, для отображения
     current_linked_visits = Vizit.query.filter_by(contract_id=contract.id).options(joinedload(Vizit.applicant)).all()
 
     return render_template('edit_contract.html',
@@ -287,7 +306,8 @@ def edit_contract(contract_id):
                            contract_form=contract_form,
                            applicant_search_form=applicant_search_form,
                            applicants_found=applicants_found,
-                           current_linked_visits=current_linked_visits)
+                           current_linked_visits=current_linked_visits,
+                           show_applicant_search_collapse=show_applicant_search_collapse)
 
 
 # НОВЫЙ РОУТ: Прикрепление нового визита к контракту для выбранного заявителя
@@ -297,16 +317,14 @@ def edit_contract(contract_id):
 def link_visit_to_contract(contract_id, applicant_id):
     contract = Contract.query.get_or_404(contract_id)
     applicant = Applicant.query.get_or_404(applicant_id)
-
-    # Здесь вы можете создать новый визит, привязав его к контракту и заявителю
-    # Для простоты, создадим минимальный визит с текущей датой.
-    # В реальном приложении вы, возможно, захотите форму для ввода даты визита, типа и т.д.
     new_visit = Vizit(
-        applicant_id=applicant.id,
-        contract_id=contract.id,
-        visit_date=datetime.utcnow().date(),  # Дата визита
-        status='Планируется',  # Пример статуса
-        # Добавьте другие поля для модели Vizit, если они обязательны
+    applicant_id=applicant.id,
+    contract_id=contract.id,
+    visit_date=datetime.utcnow().date(), # Дата визита - текущая UTC дата
+    # Больше НЕТ строки status='Планируется', так как она была удалена из модели
+    # Добавьте другие поля для модели Vizit, если они обязательны и вы не передаете им значения по умолчанию
+    # Например, если у вас есть поле `user_id` которое должно быть `nullable=False`:
+    # user_id=current_user.id # Если нужно привязать визит к текущему пользователю
     )
     db.session.add(new_visit)
     try:
@@ -315,7 +333,7 @@ def link_visit_to_contract(contract_id, applicant_id):
     except Exception as e:
         db.session.rollback()
         flash(f'Ошибка при создании визита: {e}', 'error')
-        print(f"Ошибка при создании визита: {e}")
+        current_app.logger.error(f"Ошибка при создании визита: {e}")
 
     # Перенаправляем обратно на страницу редактирования контракта
     return redirect(url_for('contracts.edit_contract', contract_id=contract.id))

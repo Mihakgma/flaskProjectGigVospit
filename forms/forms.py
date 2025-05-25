@@ -12,7 +12,7 @@ from wtforms.validators import (DataRequired,
                                 Email,
                                 ValidationError,
                                 Optional,
-                                InputRequired)
+                                InputRequired, Regexp)
 from wtforms_sqlalchemy.fields import (QuerySelectField)
 
 from functions import validate_birth_date
@@ -312,7 +312,10 @@ class ApplicantSearchForm(FlaskForm):
                             validators=[Optional()],
                             filters=(names_fix,))
     last_name_exact = BooleanField('Точное совпадение фамилии', default=False)  # Для полного совпадения
-    snils_number = StringField('СНИЛС', validators=[Optional()])
+    snils_number = StringField('СНИЛС',
+                               validators=[Optional(),
+                                           Length(min=11, max=11, message="СНИЛС должен содержать 11 цифр."),
+                                           Regexp(r'^\d+$', message="СНИЛС должен содержать только цифры")])
     medbook_number = StringField('Номер медицинской книжки',
                                  validators=[
                                      validators.Optional(),
@@ -333,7 +336,7 @@ class ApplicantSearchForm(FlaskForm):
                                   validators=[Optional()])  # Поле для выбора пользователя
     updated_at_start = DateField('Дата последнего изменения (от)', format='%Y-%m-%d', validators=[Optional()])
     updated_at_end = DateField('Дата последнего изменения (до)', format='%Y-%m-%d', validators=[Optional()])
-    submit = SubmitField('Найти')
+    search_submit = SubmitField('Найти заявителей')
 
 
 class ApplicantEditForm(FlaskForm):
