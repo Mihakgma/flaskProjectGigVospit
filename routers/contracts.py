@@ -310,35 +310,6 @@ def edit_contract(contract_id):
                            show_applicant_search_collapse=show_applicant_search_collapse)
 
 
-# НОВЫЙ РОУТ: Прикрепление нового визита к контракту для выбранного заявителя
-@contracts_bp.route('/<int:contract_id>/link_visit/<int:applicant_id>', methods=['POST'])
-@login_required
-@role_required('admin', 'moder', 'oper')  # Кто может прикреплять визиты
-def link_visit_to_contract(contract_id, applicant_id):
-    contract = Contract.query.get_or_404(contract_id)
-    applicant = Applicant.query.get_or_404(applicant_id)
-    new_visit = Vizit(
-    applicant_id=applicant.id,
-    contract_id=contract.id,
-    visit_date=datetime.utcnow().date(), # Дата визита - текущая UTC дата
-    # Больше НЕТ строки status='Планируется', так как она была удалена из модели
-    # Добавьте другие поля для модели Vizit, если они обязательны и вы не передаете им значения по умолчанию
-    # Например, если у вас есть поле `user_id` которое должно быть `nullable=False`:
-    # user_id=current_user.id # Если нужно привязать визит к текущему пользователю
-    )
-    db.session.add(new_visit)
-    try:
-        db.session.commit()
-        flash(f'Новый визит для заявителя "{applicant.full_name}" успешно создан и прикреплен к договору!', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Ошибка при создании визита: {e}', 'error')
-        current_app.logger.error(f"Ошибка при создании визита: {e}")
-
-    # Перенаправляем обратно на страницу редактирования контракта
-    return redirect(url_for('contracts.edit_contract', contract_id=contract.id))
-
-
 # ОПЦИОНАЛЬНО: Роут для открепления визита от контракта
 @contracts_bp.route('/unlink_visit/<int:visit_id>', methods=['POST'])
 @login_required

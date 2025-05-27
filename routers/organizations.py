@@ -10,7 +10,7 @@ from flask import (Blueprint,
 from flask_login import login_required, current_user
 from sqlalchemy import text, and_
 from sqlalchemy.orm import load_only
-from sqlalchemy.orm.exc import FlushError
+# from sqlalchemy.orm.exc import FlushError
 from sqlalchemy.sql.functions import func
 
 from functions.access_control import role_required
@@ -30,43 +30,81 @@ orgs_bp = Blueprint('organizations', __name__)
 @role_required('admin', 'moder', 'oper', )
 def add_organization():
     form = OrganizationForm()
+    if request.method == 'POST':
+        # Проверка на AJAX запрос. Важно проверять и наличие данных JSON.
+        is_ajax = request.headers.get(
+            'X-Requested-With') == 'XMLHttpRequest' and request.content_type == 'application/json'
+        if is_ajax:
+            try:
+                data = request.get_json()
+            except Exception:
+                return jsonify({'error': 'Неверный формат запроса'}), 400  # Ошибочный JSON
 
-    if form.validate_on_submit():
-        try:
-            org = Organization(
-                name=form.name.data,
-                inn=form.inn.data,
-                address=form.address.data,
-                phone_number=form.phone_number.data,
-                email=form.email.data,
-                is_active=form.is_active.data,
-                info=form.info.data
-            )
-            db.session.add(org)
-            db.session.commit()
-            flash('Организация успешно добавлена!', 'success')
-            return redirect(url_for('routes.organization_details',
-                                    organization_id=org.id))
-
-        except IntegrityError as e:
-            db.session.rollback()
-            if 'UNIQUE constraint failed' in str(e):
-                if 'inn' in str(e):
-                    flash('Организация с таким ИНН уже существует.', 'danger')
-                else:  # Для других потенциальных уникальных полей
-                    flash('Произошла ошибка, связанная с уникальностью данных. Проверьте введённую информацию.',
-                          'danger')
+            errors = {}
+            # Валидация ИНН (обязательно!)
+            inn = data.get('inn')
+            if not inn:
+                errors['inn'] = 'ИНН обязателен'
+            elif not inn.isdigit() or not 10 <= len(inn) <= 12:
+                errors['inn'] = 'ИНН должен содержать от 10 до 12 цифр'
             else:
-                print(f"Ошибка при добавлении организации: {e}")
-                flash('Произошла ошибка при добавлении организации. Попробуйте позже.', 'danger')
+                existing_org = Organization.query.filter_by(inn=inn).first()
+                if existing_org:
+                    errors['inn'] = 'Организация с таким ИНН уже существует'
 
-        except Exception as e:
-            db.session.rollback()
-            print(f"Ошибка при добавлении организации: {e}")
-            flash('Произошла ошибка при добавлении организации. Попробуйте позже.', 'danger')
-    return render_template('add_organization.html',
-                           form=form,
-                           title="Добавить организацию")
+            # Валидация других полей (расширьте по необходимости)
+            if not data.get('name'):
+                errors['name'] = 'Название обязательно'
+            # ...
+
+            if errors:
+                return jsonify({'errors': errors}), 400
+
+            try:
+                new_org = Organization(
+                    inn=inn,
+                    name=data['name'],
+                    address=data['address'],  # добавьте обработку адреса
+                    phone_number=data['phone_number'],  # добавьте обработку телефона
+                    email=data['email'],
+                    is_active=data.get('is_active', True),
+                    info=data.get('info', ''),
+                    created_by=current_user.id,
+                    updated_by=current_user.id,
+                )
+                db.session.add(new_org)
+                db.session.commit()
+                return jsonify({'message': 'Организация добавлена'}), 201
+            except IntegrityError as e:
+                db.session.rollback()
+                errors['db'] = f'Ошибка базы данных: {e}'
+                return jsonify({'errors': errors}), 500
+            except Exception as e:
+                db.session.rollback()
+                return jsonify({'error': f'Неизвестная ошибка: {e}'}), 500
+
+        else:  # Стандартный POST запрос (не AJAX)
+            if form.validate_on_submit():
+                new_org = Organization(
+                    inn=form.inn.data,
+                    name=form.name.data,
+                    address=form.address.data,
+                    phone_number=form.phone_number.data,
+                    email=form.email.data,
+                    is_active=form.is_active.data,
+                    info=form.info.data,
+                    created_by=current_user.id,
+                    updated_by=current_user.id,
+                )
+                db.session.add(new_org)
+                db.session.commit()
+                flash('Организация добавлена', 'success')
+                return redirect(url_for('organizations.list'))
+            else:
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        flash(f"Ошибка в поле '{getattr(form[field], 'label', field).text}': {error}", 'danger')
+    return render_template('add_organization.html', form=form)
 
 
 @orgs_bp.route('/details/<int:organization_id>')
@@ -162,7 +200,6 @@ def search_orgs():
     return jsonify({'items': results, 'total_count': organizations.total})
 
 
-# --- Маршрут для страницы поиска и отображения результатов ---
 @orgs_bp.route('/manage', methods=['GET'])
 @login_required
 @role_required('admin', 'moder', 'oper')
@@ -290,13 +327,12 @@ def edit_organization(organization_id):
     print("--- Завершение обработки запроса ---")
     return render_template('edit_organization.html', form=form, organization=organization)
 
-
-@orgs_bp.route('/<int:organization_id>/details')
-@login_required  # Добавьте, если нужно, чтобы только авторизованные пользователи могли просматривать
-@role_required('anyone')
-def details_organization(organization_id):
-    organization = Organization.query.get(organization_id)
-    if not organization:
-        abort(404, description="Организация не найдена.")
-
-    return render_template('details_organization.html', organization=organization)
+# @orgs_bp.route('/<int:organization_id>/details')
+# @login_required  # Добавьте, если нужно, чтобы только авторизованные пользователи могли просматривать
+# @role_required('anyone')
+# def details_organization(organization_id):
+#     organization = Organization.query.get(organization_id)
+#     if not organization:
+#         abort(404, description="Организация не найдена.")
+#
+#     return render_template('details_organization.html', organization=organization)

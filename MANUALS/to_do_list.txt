@@ -6,8 +6,8 @@ BACKEND:
 1.5) add organization page                                               - (DONE)
 1.6) add contract page                                                   - (DONE)
 1.7) link prev. created contract to a new visit in applicant edit page   - (DONE)
-1.8) link created visits to contract on a new contract page              - (...)
-1.9) link created visits to contract on edit contract page               - (...)
+1.8) link created visits to contract on a new contract page              - (?)
+1.9) link created visits to contract on edit contract page               - (?)
 1.10) contracts search page                                              - (DONE)
 1.11) edited by user filter to applicant search page                     - (DONE)
 1.12) edited when date filter to applicant search page                   - (DONE)
@@ -28,7 +28,7 @@ BACKEND:
 1.27) on search applicants page add role policy restriction (num rows)   - (DONE)
 1.28) add detailed info (show info property) for orgs and contracts      - (DONE)
 1.29) on search applicants censore (applicant model prop) search results - (DONE)
-1.30) on contracts edit page add feature for new many similar vizits     - (!!!)
+1.30) on contracts edit page add feature for new many similar vizits     - (XXX)
 1.31) table blocked pages contents auto-clear during application restart - (?)
 1.31) page for manage table blocked pages (admin, moder access only)     - (?)
 
@@ -65,3 +65,4 @@ Details:
 - (...)  - partially done or task's status cannot be classified
 - (?)    - need of task execution is "under question"
 - (!!!)  - task is supposed an important one and need to be done
+- (XXX) - no need to do task!
