@@ -69,8 +69,8 @@ class User(BaseModel, UserMixin):
     department = db.relationship('Department', backref='users', lazy='joined')
     status = db.relationship('Status', backref='users', lazy='joined')
     is_logged_in = db.Column(Boolean, default=False, nullable=True)
-    logged_in_time = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
-    last_commit_time = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
+    logged_in_at = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
+    last_commit_at = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
     valid_ip = db.Column(String(15), nullable=True)
 
     def get_id(self):  # Необходимо для Flask-Login

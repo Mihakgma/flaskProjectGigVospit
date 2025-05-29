@@ -40,6 +40,8 @@ DATA BASE:
 2.3) DB schema in Miro                                                   - (DONE)
 2.4) DB tables autofilling upon first app run                            - (DONE)
 2.5) add table with blocked pages (blocked_at, blocked_by_id, url, ...)  - (?)
+2.6) add DB copy auto-save every 24 hours period feature in SQLIte file  - (?)
+2.7) DB save file life-span (period) ~ 7-30 days                         - (?)
 
 FRONTEND:
 3.1) add frontend framework                                              - (?)
@@ -53,6 +55,8 @@ MULTITHREADING / ASYNC:
 TOOLS:
 5.1) added tool for dependency management to project                     - (DONE)
 5.2) add docker and share working app via www or lan                     - (!!!)
+5.3) added tool for DB migrations (alembic) to project                   - (DONE)
+5.4) use alembic                                                         - (...)
 
 OTHER:
 6.1) create unit-tests                                                   - (...)
