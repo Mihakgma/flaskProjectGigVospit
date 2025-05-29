@@ -15,7 +15,6 @@ from routers import (auth_bp,
 from flask_login import LoginManager
 from flask_migrate import Migrate
 
-
 from flask_wtf.csrf import CSRFProtect
 
 
@@ -34,7 +33,8 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
-        return User.query.get(int(user_id))
+        user = User.query.get(int(user_id))
+        return user
 
     app.register_blueprint(users_bp, url_prefix='/users')
     app.register_blueprint(applicants_bp, url_prefix='/applicants')

@@ -1,16 +1,9 @@
 from sqlalchemy_utils import database_exists, create_database
-
+from models import User
 # from config import Config
 from functions.default_db_data.default_data_autofill import db_load_data
-# from sqlalchemy import create_engine
 
-# engine = create_engine(
-#     Config.DATABASE_URL,
-#     echo=True,  # Логирование SQL-запросов (для отладки)
-#     pool_pre_ping=True,  # Проверяет наличие соединения перед использованием
-#     pool_size=20,  # Максимальное количество постоянных соединений
-#     max_overflow=10  # Допустимое превышение максимального количества соединений
-# )
+from utils.crud_classes import UserCrudControl
 
 
 def init_app(app, db):
@@ -21,3 +14,8 @@ def init_app(app, db):
             create_database(db_url)
         db.create_all()
         db_load_data(db=db, data_dir="json/default_db_data")
+        # update users fields data with default values
+        users = User.query.all()
+        UserCrudControl.app_restart(db_obj=db,
+                                    users=users,
+                                    need_commit=True)

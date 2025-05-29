@@ -18,9 +18,10 @@ from functions.data_fix import elmk_snils_fix
 from models.models import Organization, Contract, get_current_nsk_time
 from database import db
 
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import IntegrityError
 
 from forms.forms import OrganizationForm
+from utils.crud_classes import UserCrudControl
 
 orgs_bp = Blueprint('organizations', __name__)
 
@@ -57,7 +58,9 @@ def add_organization():
 
                 # ***** ВАЖНО: РАСКОММЕНТИРУЙТЕ ЭТУ СТРОКУ! *****
                 db.session.add(new_org)
-
+                user_crud_control = UserCrudControl(user=current_user,
+                                                    db_object=db)
+                user_crud_control.commit_other_table()
                 db.session.commit()  # Теперь commit будет пытаться сохранить new_org
 
                 flash('Организация успешно добавлена!', 'success')
@@ -281,9 +284,14 @@ def edit_organization(organization_id):
             if db.session.is_modified(organization):
                 organization.updated_at = get_current_nsk_time()
                 organization.updated_by_user_id = current_user.id
+                user_crud_control = UserCrudControl(user=current_user,
+                                                    db_object=db)
+                user_crud_control.commit_other_table()
                 db.session.commit()  # Сохраняем изменения в базе данных
                 print("db.session.commit() УСПЕШНО ВЫПОЛНЕН.")
                 flash('Данные организации успешно обновлены!', 'success')
+                return redirect(url_for('organizations.organization_details',
+                                        organization_id=organization.id))
             else:
                 db.session.rollback()  # Откатываем, если ничего не изменилось
                 print("Данные не были изменены, commit не требуется.")
