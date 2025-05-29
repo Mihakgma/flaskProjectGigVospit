@@ -1,4 +1,5 @@
-from flask import flash
+from flask import flash, redirect, url_for
+from flask_login import logout_user
 
 from database import db
 from functions import get_ip_address
@@ -16,7 +17,7 @@ class UserCrudControl:
     т.е. не внутри методов класса!
     :return:
     """
-    ACTIVITY_TIMEOUT_SECONDS = 300  # 5 минут
+    ACTIVITY_TIMEOUT_SECONDS = 60  # 5 минут
 
     def __init__(self,
                  user: User,
@@ -28,9 +29,6 @@ class UserCrudControl:
 
     def get_user(self):
         return self.__user
-
-    def set_user(self, user):
-        self.__user = user
 
     def get_db_object(self):
         return self.__db_object
@@ -95,7 +93,9 @@ class UserCrudControl:
             db_obj.session.add(user)
             if need_commit:
                 db_obj.session.commit()
-                flash('Users лог-данные успешно обновлены!', 'success')
+            flash('Users лог-данные успешно обновлены!', 'success')
+            logout_user()
+            return redirect(url_for('auth.login'))
         except IntegrityError as ie:
             db_obj.session.rollback()  # Откатываем изменения
             flash(f'Error: <{ie}>', 'danger')
@@ -129,6 +129,7 @@ class UserCrudControl:
             try:
                 user.is_logged_in = False
                 user.valid_ip = ""
+                user.last_activity_at = get_current_nsk_time()
                 db_obj.session.add(user)
                 if need_commit:
                     db_obj.session.commit()
@@ -142,7 +143,7 @@ class UserCrudControl:
 
     @staticmethod
     def check_all_users_last_activity(current_user):
-
+        timeout = UserCrudControl.ACTIVITY_TIMEOUT_SECONDS
         current_user.last_activity_at = get_current_nsk_time()
         try:
             db.session.commit()
@@ -153,12 +154,12 @@ class UserCrudControl:
             db.session.rollback()
             print(f'Произошла неожиданная ошибка: {e} при обновлении времени последней активности для пользователя:'
                   f' <{current_user.username}>', 'danger')
-        users = User.query.all() - current_user
+        users = User.query.filter(User.id != current_user.id).all()
         for user in users:
             if user.is_logged_in:
                 last_activity_at = user.last_activity_at
-                is_time_out = ((get_current_nsk_time() - last_activity_at).seconds >
-                               UserCrudControl.ACTIVITY_TIMEOUT_SECONDS)
+                is_time_out = ((get_current_nsk_time() - last_activity_at).seconds > timeout)
                 if is_time_out:
+                    flash(f"Logging out: <{user.username}> timeout: <{timeout}> secs is over", "danger")
                     user_ctrl_obj = UserCrudControl(user=user)
                     user_ctrl_obj.logout()

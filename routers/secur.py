@@ -12,7 +12,8 @@ from werkzeug.security import check_password_hash
 from forms.forms import (LoginForm)
 
 from flask_login import (login_user,
-                         logout_user, current_user)
+                         logout_user,
+                         current_user)
 
 from utils.crud_classes import UserCrudControl
 
