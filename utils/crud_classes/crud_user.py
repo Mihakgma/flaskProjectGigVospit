@@ -16,6 +16,7 @@ class UserCrudControl:
     т.е. не внутри методов класса!
     :return:
     """
+    ACTIVITY_TIMEOUT_SECONDS = 300  # 5 минут
 
     def __init__(self,
                  user: User,
@@ -27,6 +28,9 @@ class UserCrudControl:
 
     def get_user(self):
         return self.__user
+
+    def set_user(self, user):
+        self.__user = user
 
     def get_db_object(self):
         return self.__db_object
@@ -55,12 +59,15 @@ class UserCrudControl:
             if "admin" in user_roles:
                 user.valid_ip = client_ip_address
             elif client_ip_address in ip_addresses and user.id != user_ip_address.id:
-                flash(f'Cannot log in as {user.username}. You are already logged in as <{user_ip_address.username}>', 'danger')
+                flash(f'Cannot log in as {user.username}. You are already logged in as <{user_ip_address.username}>',
+                      'danger')
                 return False
             elif not user.valid_ip or user.valid_ip == "":
                 user.valid_ip = client_ip_address
             elif user.valid_ip != client_ip_address:
-                flash(f'Username <{user.username}> has already been logged at: <{client_ip_address}>')
+                flash(
+                    f'Username <{user.username}> has already been logged in through IP-address: <{client_ip_address}>',
+                    'danger')
                 return False
             db_obj.session.add(user)
             if need_commit:
@@ -132,3 +139,26 @@ class UserCrudControl:
                 db_obj.session.rollback()
                 print(f'Произошла неожиданная ошибка: {e} при обнулении дефолтными значениями для пользователя:'
                       f' <{user.username}>', 'danger')
+
+    @staticmethod
+    def check_all_users_last_activity(current_user):
+
+        current_user.last_activity_at = get_current_nsk_time()
+        try:
+            db.session.commit()
+        except IntegrityError as ie:
+            db.session.rollback()  # Откатываем изменения
+            print(f'Error: <{ie}>', 'danger')
+        except Exception as e:  # Ловим любые другие неожиданные ошибки
+            db.session.rollback()
+            print(f'Произошла неожиданная ошибка: {e} при обновлении времени последней активности для пользователя:'
+                  f' <{current_user.username}>', 'danger')
+        users = User.query.all() - current_user
+        for user in users:
+            if user.is_logged_in:
+                last_activity_at = user.last_activity_at
+                is_time_out = ((get_current_nsk_time() - last_activity_at).seconds >
+                               UserCrudControl.ACTIVITY_TIMEOUT_SECONDS)
+                if is_time_out:
+                    user_ctrl_obj = UserCrudControl(user=user)
+                    user_ctrl_obj.logout()
