@@ -1,34 +1,74 @@
-{#add_organization.html#}
 {% extends "base.html" %}
 
 {% block content %}
     <h1>Добавить организацию</h1>
 
-    <!-- Блок для отображения сообщений -->
+    <!-- Блок для отображения Flash-сообщений -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-            <ul class="alert alert-warning">
+            <ul class="list-unstyled"> {# Убираем стандартные маркеры списка #}
                 {% for category, message in messages %}
-                    <li class="{{ category }}">{{ message }}</li>
+                    <li class="alert alert-{{ category }}">{{ message }}</li>
                 {% endfor %}
             </ul>
         {% endif %}
     {% endwith %}
 
     <form method="post">
-        {{ form.hidden_tag() }}
-        {{ form.name.label }} {{ form.name() }}<br>
-        {{ form.inn.label }} {{ form.inn() }}
-        <div id="inn_warning" class="text-danger" style="display: none;"></div>
-        {{ form.address.label }} {{ form.address() }}<br>
-        {{ form.phone_number.label }} {{ form.phone_number() }}<br>
-        {{ form.email.label }} {{ form.email() }}<br>
-        {{ form.is_active.label }} {{ form.is_active() }}<br>
-        {{ form.info.label }} {{ form.info() }}<br>
-        {{ form.submit() }}
+        {{ form.hidden_tag() }} {# Это необходимо для Flask-WTF #}
+
+        <div class="mb-3">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.inn.label(class="form-label") }}
+            <div class="input-group"> {# Для размещения поля ввода и кнопки рядом #}
+                {{ form.inn(class="form-control", id="inn_input") }} {# Добавляем ID для JavaScript #}
+                <button type="button" class="btn btn-secondary" id="check_inn_button">Проверить ИНН</button>
+            </div>
+            <div id="inn_status_message" class="form-text mt-1"></div>
+            {# Для вывода результата проверки ИНН #}
+            {% if form.inn.errors %}
+                <div class="text-danger mt-1">
+                    {% for error in form.inn.errors %}
+                        {{ error }}<br>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mb-3">
+            {{ form.address.label(class="form-label") }}
+            {{ form.address(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.phone_number.label(class="form-label") }}
+            {{ form.phone_number(class="form-control") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.email.label(class="form-label") }}
+            {{ form.email(class="form-control") }}
+        </div>
+
+        <div class="mb-3 form-check">
+            {{ form.is_active(class="form-check-input") }}
+            {{ form.is_active.label(class="form-check-label") }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.info.label(class="form-label") }}
+            {{ form.info(class="form-control") }}
+        </div>
+
+        {{ form.submit(class="btn btn-primary") }}
     </form>
 
-    <script src="{{ url_for('static', filename='js/check_org_inn.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/submit_org.js') }}"></script>
+{#    <script src="{{ url_for('static', filename='js/check_org_inn.js') }}"></script>#}
+
+    <script src="{{ url_for('static', filename='js/inn_checker.js') }}"></script>
 
 {% endblock %}

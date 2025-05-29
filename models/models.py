@@ -71,6 +71,7 @@ class User(BaseModel, UserMixin):
     is_logged_in = db.Column(Boolean, default=False, nullable=True)
     logged_in_time = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
     last_commit_time = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
+    valid_ip = db.Column(String(15), nullable=True)
 
     def get_id(self):  # Необходимо для Flask-Login
         return str(self.id)

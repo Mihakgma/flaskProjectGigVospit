@@ -19,7 +19,7 @@
 
                     <form method="POST"
                           action="{{ url_for('organizations.edit_organization', organization_id=organization.id) }}">
-{#                <form method="POST" action="" novalidate>#}
+                        {#                <form method="POST" action="" novalidate>#}
                         <!-- Защита от CSRF-атак -->
                         {{ form.csrf_token }}
 
@@ -36,14 +36,19 @@
                             {% endif %}
                         </div>
 
-                        <!-- Поле: ИНН -->
                         <div class="mb-3">
                             {{ form.inn.label(class="form-label") }}
-                            {{ form.inn(class="form-control", placeholder="ИНН организации") }}
+                            <div class="input-group"> {# Для размещения поля ввода и кнопки рядом #}
+                                {{ form.inn(class="form-control", id="inn_input") }} {# Добавляем ID для JavaScript #}
+                                <button type="button" class="btn btn-secondary" id="check_inn_button">Проверить ИНН
+                                </button>
+                            </div>
+                            <div id="inn_status_message" class="form-text mt-1"></div>
+                            {# Для вывода результата проверки ИНН #}
                             {% if form.inn.errors %}
-                                <div class="text-danger">
+                                <div class="text-danger mt-1">
                                     {% for error in form.inn.errors %}
-                                        {{ error }}
+                                        {{ error }}<br>
                                     {% endfor %}
                                 </div>
                             {% endif %}
@@ -122,4 +127,5 @@
             </div>
         </div>
     </div>
+    <script src="{{ url_for('static', filename='js/inn_checker.js') }}"></script>
 {% endblock %}

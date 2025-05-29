@@ -29,62 +29,18 @@ orgs_bp = Blueprint('organizations', __name__)
 @login_required
 @role_required('admin', 'moder', 'oper', )
 def add_organization():
-    form = OrganizationForm()
+    form = OrganizationForm()  # Создаем форму для GET-запроса или для первоначального отображения
+
     if request.method == 'POST':
-        # Проверка на AJAX запрос. Важно проверять и наличие данных JSON.
-        is_ajax = request.headers.get(
-            'X-Requested-With') == 'XMLHttpRequest' and request.content_type == 'application/json'
-        if is_ajax:
+        # **********************************************************************************
+        # ВАЖНО: На POST-запросе создаем форму, явно передавая request.form.
+        # Это гарантирует, что форма получит данные, даже если __init__ не идеален,
+        # хотя после исправления __init__ это становится менее критичным, но не помешает.
+        # **********************************************************************************
+        form = OrganizationForm(formdata=request.form)
+
+        if form.validate_on_submit():
             try:
-                data = request.get_json()
-            except Exception:
-                return jsonify({'error': 'Неверный формат запроса'}), 400  # Ошибочный JSON
-
-            errors = {}
-            # Валидация ИНН (обязательно!)
-            inn = data.get('inn')
-            if not inn:
-                errors['inn'] = 'ИНН обязателен'
-            elif not inn.isdigit() or not 10 <= len(inn) <= 12:
-                errors['inn'] = 'ИНН должен содержать от 10 до 12 цифр'
-            else:
-                existing_org = Organization.query.filter_by(inn=inn).first()
-                if existing_org:
-                    errors['inn'] = 'Организация с таким ИНН уже существует'
-
-            # Валидация других полей (расширьте по необходимости)
-            if not data.get('name'):
-                errors['name'] = 'Название обязательно'
-            # ...
-
-            if errors:
-                return jsonify({'errors': errors}), 400
-
-            try:
-                new_org = Organization(
-                    inn=inn,
-                    name=data['name'],
-                    address=data['address'],  # добавьте обработку адреса
-                    phone_number=data['phone_number'],  # добавьте обработку телефона
-                    email=data['email'],
-                    is_active=data.get('is_active', True),
-                    info=data.get('info', ''),
-                    created_by=current_user.id,
-                    updated_by=current_user.id,
-                )
-                db.session.add(new_org)
-                db.session.commit()
-                return jsonify({'message': 'Организация добавлена'}), 201
-            except IntegrityError as e:
-                db.session.rollback()
-                errors['db'] = f'Ошибка базы данных: {e}'
-                return jsonify({'errors': errors}), 500
-            except Exception as e:
-                db.session.rollback()
-                return jsonify({'error': f'Неизвестная ошибка: {e}'}), 500
-
-        else:  # Стандартный POST запрос (не AJAX)
-            if form.validate_on_submit():
                 new_org = Organization(
                     inn=form.inn.data,
                     name=form.name.data,
@@ -93,17 +49,40 @@ def add_organization():
                     email=form.email.data,
                     is_active=form.is_active.data,
                     info=form.info.data,
-                    created_by=current_user.id,
-                    updated_by=current_user.id,
+                    created_by_user_id=current_user.id,  # Убедитесь, что имена полей в модели совпадают
+                    updated_by_user_id=current_user.id,  # Убедитесь, что имена полей в модели совпадают
+                    created_at=get_current_nsk_time(),
+                    updated_at=get_current_nsk_time(),
                 )
+
+                # ***** ВАЖНО: РАСКОММЕНТИРУЙТЕ ЭТУ СТРОКУ! *****
                 db.session.add(new_org)
-                db.session.commit()
-                flash('Организация добавлена', 'success')
-                return redirect(url_for('organizations.list'))
-            else:
-                for field, errors in form.errors.items():
-                    for error in errors:
-                        flash(f"Ошибка в поле '{getattr(form[field], 'label', field).text}': {error}", 'danger')
+
+                db.session.commit()  # Теперь commit будет пытаться сохранить new_org
+
+                flash('Организация успешно добавлена!', 'success')
+                return redirect(url_for('organizations.organization_details',
+                                        organization_id=new_org.id))
+
+            except IntegrityError as ie:  # Ловим ошибку уникальности (например, для ИНН)
+                db.session.rollback()  # Откатываем изменения
+                flash(f'Ошибка: Организация с таким ИНН или другим уникальным полем уже существует. Error: <{ie}>',
+                      'danger')
+            except Exception as e:  # Ловим любые другие неожиданные ошибки
+                db.session.rollback()
+                flash(f'Произошла неожиданная ошибка при добавлении организации: {e}', 'danger')
+                # В реальном приложении здесь можно логировать ошибку для дальнейшего анализа
+        else:
+            # Если form.validate_on_submit() вернул False, то форма.errors уже заполнен.
+            # Отображаем эти ошибки как flash-сообщения.
+            for field_name, errors in form.errors.items():
+                field = getattr(form, field_name, None)
+                label_text = field.label.text if field and hasattr(field, 'label') else field_name
+                for error in errors:
+                    flash(f"Ошибка в поле '{label_text}': {error}", 'danger')
+
+    # Рендерим шаблон. Если это GET-запрос, форма будет пустой.
+    # Если это POST-запрос с ошибками, форма будет заполнена данными, которые ввел пользователь.
     return render_template('add_organization.html', form=form)
 
 
@@ -326,6 +305,23 @@ def edit_organization(organization_id):
 
     print("--- Завершение обработки запроса ---")
     return render_template('edit_organization.html', form=form, organization=organization)
+
+
+@orgs_bp.route('/check_inn_exists', methods=['GET'])
+def check_inn_exists():
+    inn = request.args.get('inn')
+    if not inn:
+        return jsonify({'error': 'ИНН не указан'}), 400
+
+    # Проверка на то, что INN состоит только из цифр и имеет правильную длину
+    if not inn.isdigit() or not (10 <= len(inn) <= 12):
+        return jsonify({'exists': False, 'message': 'ИНН должен содержать от 10 до 12 цифр.'}), 200
+
+    organization = Organization.query.filter_by(inn=inn).first()
+    if organization:
+        return jsonify({'exists': True, 'message': 'Организация с таким ИНН уже зарегистрирована.'}), 200
+    else:
+        return jsonify({'exists': False, 'message': 'ИНН свободен.'}), 200
 
 # @orgs_bp.route('/<int:organization_id>/details')
 # @login_required  # Добавьте, если нужно, чтобы только авторизованные пользователи могли просматривать
