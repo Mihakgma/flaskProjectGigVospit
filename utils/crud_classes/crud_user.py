@@ -1,5 +1,4 @@
 from flask import flash, redirect, url_for
-from flask_login import logout_user
 
 from database import db
 from functions import get_ip_address
@@ -94,7 +93,6 @@ class UserCrudControl:
             if need_commit:
                 db_obj.session.commit()
             flash('Users лог-данные успешно обновлены!', 'success')
-            logout_user()
             return redirect(url_for('auth.login'))
         except IntegrityError as ie:
             db_obj.session.rollback()  # Откатываем изменения
@@ -144,22 +142,37 @@ class UserCrudControl:
     @staticmethod
     def check_all_users_last_activity(current_user):
         timeout = UserCrudControl.ACTIVITY_TIMEOUT_SECONDS
+
+        # 1. Обновляем время последней активности ТЕКУЩЕГО пользователя.
+        # ДОБАВЛЕНО: Убедимся, что объект current_user отслеживается сессией для коммита.
+        db.session.add(current_user)
         current_user.last_activity_at = get_current_nsk_time()
         try:
             db.session.commit()
         except IntegrityError as ie:
-            db.session.rollback()  # Откатываем изменения
-            print(f'Error: <{ie}>', 'danger')
-        except Exception as e:  # Ловим любые другие неожиданные ошибки
             db.session.rollback()
-            print(f'Произошла неожиданная ошибка: {e} при обновлении времени последней активности для пользователя:'
-                  f' <{current_user.username}>', 'danger')
-        users = User.query.filter(User.id != current_user.id).all()
-        for user in users:
-            if user.is_logged_in:
-                last_activity_at = user.last_activity_at
-                is_time_out = ((get_current_nsk_time() - last_activity_at).seconds > timeout)
+            print(f'Error committing current user activity (IntegrityError): &lt;{ie}&gt;')
+        except Exception as e:
+            db.session.rollback()
+            print(f'Unexpected error updating activity for &lt;{current_user.username}&gt;: {e}')
+
+        # 2. Получаем ВСЕХ ДРУГИХ пользователей, кроме current_user.
+        other_users = User.query.filter(User.id != current_user.id).all()
+        # flash(f'{[u for u in other_users]}')
+
+        # 3. Проверяем таймаут для ДРУГИХ пользователей.
+        for user_to_check in other_users:
+            if user_to_check.is_logged_in:
+                last_activity_at = user_to_check.last_activity_at
+
+                # Так как вы утверждаете, что last_activity_at никогда не None, убираем проверку на None.
+                # Если все же возникнет TypeError, верните ее.
+                is_time_out = (get_current_nsk_time() - last_activity_at).seconds > timeout
+
                 if is_time_out:
-                    flash(f"Logging out: <{user.username}> timeout: <{timeout}> secs is over", "danger")
-                    user_ctrl_obj = UserCrudControl(user=user)
-                    user_ctrl_obj.logout()
+                    flash(
+                        f"Пользователь {user_to_check.username} вышел из системы по таймауту ({timeout} сек).",
+                        "warning")
+                    user_ctrl_obj = UserCrudControl(user=user_to_check)
+                    # flash(f'<[{[(k,v) for (k,v) in user_ctrl_obj.__dict__.items()]}]>', 'danger')
+                    user_ctrl_obj.logout()  # Метод logout() сам позаботится о коммите.
