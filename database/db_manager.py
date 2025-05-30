@@ -16,6 +16,4 @@ def init_app(app, db):
         db_load_data(db=db, data_dir="json/default_db_data")
         # update users fields data with default values
         users = User.query.all()
-        UserCrudControl.app_restart(db_obj=db,
-                                    users=users,
-                                    need_commit=True)
+        UserCrudControl.sessions_restart(db_obj=db, users=users, need_commit=True)

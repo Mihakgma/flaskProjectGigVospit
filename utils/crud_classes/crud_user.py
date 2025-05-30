@@ -16,7 +16,12 @@ class UserCrudControl:
     т.е. не внутри методов класса!
     :return:
     """
-    ACTIVITY_TIMEOUT_SECONDS = 60  # 5 минут
+    __ACTIVITY_TIMEOUT_SECONDS = 900  # 15 min = 900 secs
+    __USERS_LAST_ACTIVITY = {}
+    __ACTIVITY_COUNTER = 0
+    __ACTIVITY_COUNTER_MAX_THRESHOLD = 10000  # 10000 optimal
+    __ACTIVITY_PERIOD_COUNTER = 50  # 50 and >
+    __USERS_OBJECTS = []
 
     def __init__(self,
                  user: User,
@@ -34,6 +39,56 @@ class UserCrudControl:
 
     def get_need_commit(self):
         return self.__need_commit
+
+    @staticmethod
+    def get_activity_counter():
+        return UserCrudControl.__ACTIVITY_COUNTER
+
+    @staticmethod
+    def increment_counter():
+        UserCrudControl.__ACTIVITY_COUNTER += 1
+
+    @staticmethod
+    def clear_counter():
+        UserCrudControl.__ACTIVITY_COUNTER = 0
+
+    @staticmethod
+    def get_timeout():
+        return UserCrudControl.__ACTIVITY_TIMEOUT_SECONDS
+
+    @staticmethod
+    def update_users_last_activity(user_id: int):
+        UserCrudControl.increment_counter()
+        UserCrudControl.__USERS_LAST_ACTIVITY[user_id] = get_current_nsk_time()
+
+    @staticmethod
+    def reset_users_last_activity():
+        UserCrudControl.clear_counter()
+        UserCrudControl.__USERS_LAST_ACTIVITY = {}
+
+    @staticmethod
+    def clear_users_last_activity(user_id: int):
+        UserCrudControl.__USERS_LAST_ACTIVITY[user_id] = ""
+
+    @staticmethod
+    def get_activity_period_counter():
+        return UserCrudControl.__ACTIVITY_PERIOD_COUNTER
+
+    @staticmethod
+    def update_users():
+        UserCrudControl.__USERS_OBJECTS = User.query.all()
+
+    @staticmethod
+    def get_users():
+        return UserCrudControl.__USERS_OBJECTS
+
+    @staticmethod
+    def get_users_last_activity():
+        return UserCrudControl.__USERS_LAST_ACTIVITY
+
+    @staticmethod
+    def get_activity_counter_max_threshold():
+        return UserCrudControl.__ACTIVITY_COUNTER_MAX_THRESHOLD
 
     def login(self):
         """
@@ -66,16 +121,17 @@ class UserCrudControl:
                     f'Username <{user.username}> has already been logged in through IP-address: <{client_ip_address}>',
                     'danger')
                 return False
+            user.last_activity_at = get_current_nsk_time()
             db_obj.session.add(user)
             if need_commit:
                 db_obj.session.commit()
                 flash('Users лог-данные успешно обновлены!', 'success')
             return True
         except IntegrityError as ie:
-            db_obj.session.rollback()  # Откатываем изменения
+            db_obj.session.rollback()
             flash(f'Error: <{ie}>', 'danger')
             return False
-        except Exception as e:  # Ловим любые другие неожиданные ошибки
+        except Exception as e:
             db_obj.session.rollback()
             flash(f'Произошла неожиданная ошибка: {e} при попытке залогиниться пользователю:'
                   f' <{user.username}>',
@@ -89,15 +145,17 @@ class UserCrudControl:
         try:
             user.is_logged_in = False
             user.valid_ip = ""
+            user.last_activity_at = get_current_nsk_time()
             db_obj.session.add(user)
+            UserCrudControl.clear_users_last_activity(user_id=user.id)
             if need_commit:
                 db_obj.session.commit()
             flash('Users лог-данные успешно обновлены!', 'success')
             return redirect(url_for('auth.login'))
         except IntegrityError as ie:
-            db_obj.session.rollback()  # Откатываем изменения
+            db_obj.session.rollback()
             flash(f'Error: <{ie}>', 'danger')
-        except Exception as e:  # Ловим любые другие неожиданные ошибки
+        except Exception as e:
             db_obj.session.rollback()
             flash(f'Произошла неожиданная ошибка: {e} при попытке выйти из приложения пользователю:'
                   f' <{user.username}>',
@@ -114,15 +172,16 @@ class UserCrudControl:
         db_obj.session.add(user)
 
     @staticmethod
-    def app_restart(db_obj,
-                    users: list,
-                    need_commit: bool):
+    def sessions_restart(db_obj,
+                         users: list,
+                         need_commit: bool):
         """
         Применяется при рестарте приложения:
         обнуляем всем юзерам IP-адреса, юзеры зареганы - фолс
         :return:
         """
-
+        UserCrudControl.reset_users_last_activity()
+        UserCrudControl.update_users()
         for user in users:
             try:
                 user.is_logged_in = False
@@ -141,38 +200,42 @@ class UserCrudControl:
 
     @staticmethod
     def check_all_users_last_activity(current_user):
-        timeout = UserCrudControl.ACTIVITY_TIMEOUT_SECONDS
 
-        # 1. Обновляем время последней активности ТЕКУЩЕГО пользователя.
-        # ДОБАВЛЕНО: Убедимся, что объект current_user отслеживается сессией для коммита.
-        db.session.add(current_user)
-        current_user.last_activity_at = get_current_nsk_time()
-        try:
-            db.session.commit()
-        except IntegrityError as ie:
-            db.session.rollback()
-            print(f'Error committing current user activity (IntegrityError): &lt;{ie}&gt;')
-        except Exception as e:
-            db.session.rollback()
-            print(f'Unexpected error updating activity for &lt;{current_user.username}&gt;: {e}')
+        counter = UserCrudControl.get_activity_counter()
+        period = UserCrudControl.get_activity_period_counter()
+        max_counter = UserCrudControl.get_activity_counter_max_threshold()
 
-        # 2. Получаем ВСЕХ ДРУГИХ пользователей, кроме current_user.
-        other_users = User.query.filter(User.id != current_user.id).all()
-        # flash(f'{[u for u in other_users]}')
+        if counter and (counter % period == 0) and counter < max_counter:
+            # debugging flash
+            # flash(f'COUNTER = <{counter}>, period = <{period}>', 'danger')
+            timeout = UserCrudControl.get_timeout()
+            UserCrudControl.update_users()
+            users = UserCrudControl.get_users()
+            users_last_activity = UserCrudControl.get_users_last_activity()
+            # debugging flash
+            # flash(f'<{[(k,v) for (k,v) in users_last_activity.items()]}>', 'danger')
 
-        # 3. Проверяем таймаут для ДРУГИХ пользователей.
-        for user_to_check in other_users:
-            if user_to_check.is_logged_in:
-                last_activity_at = user_to_check.last_activity_at
+            for user_to_check in users:
+                if (user_to_check.is_logged_in
+                        and user_to_check.id != current_user.id
+                        and users_last_activity[user_to_check.id] != ""):
+                    last_activity_at = users_last_activity[user_to_check.id]
+                    is_time_out = (get_current_nsk_time() - last_activity_at).seconds > timeout
 
-                # Так как вы утверждаете, что last_activity_at никогда не None, убираем проверку на None.
-                # Если все же возникнет TypeError, верните ее.
-                is_time_out = (get_current_nsk_time() - last_activity_at).seconds > timeout
-
-                if is_time_out:
-                    flash(
-                        f"Пользователь {user_to_check.username} вышел из системы по таймауту ({timeout} сек).",
-                        "warning")
-                    user_ctrl_obj = UserCrudControl(user=user_to_check)
-                    # flash(f'<[{[(k,v) for (k,v) in user_ctrl_obj.__dict__.items()]}]>', 'danger')
-                    user_ctrl_obj.logout()  # Метод logout() сам позаботится о коммите.
+                    if is_time_out:
+                        flash(
+                            f"Пользователь {user_to_check.username} вышел из системы по таймауту ({timeout} сек).",
+                            "warning")
+                        user_ctrl_obj = UserCrudControl(user=user_to_check)
+                        # debugging flash
+                        # flash(f'<[{[(k,v) for (k,v) in user_ctrl_obj.__dict__.items()]}]>', 'danger')
+                        user_ctrl_obj.logout()  # Метод logout() сам позаботится о коммите.
+        elif counter >= max_counter:
+            # flash & restart all sessions!
+            flash(f'Достигнут предел обращений к программе в рамках одного запуска: <{max_counter}>',
+                  'warning')
+            UserCrudControl.update_users()
+            users = UserCrudControl.get_users()
+            UserCrudControl.sessions_restart(db_obj=db, users=users, need_commit=True)
+        else:
+            UserCrudControl.update_users_last_activity(user_id=current_user.id)
