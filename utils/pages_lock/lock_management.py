@@ -38,11 +38,25 @@ class PageLocker:
     @staticmethod
     def get_summary():
         locked_pages = PageLocker.get_locked_pages()
-        lock_info_objs = [obj for obj in locked_pages]
+        lock_info_objs: [LockInfo] = [obj for obj in locked_pages]
+        user_ids_count = {}
+        for obj in lock_info_objs:
+            current_user_id = obj.user_id
+            if current_user_id not in user_ids_count:
+                user_ids_count[current_user_id] = 1
+            else:
+                user_ids_count[obj.user_id] = +1
+        most_frequent = sorted(user_ids_count.items(), key=lambda x: x[1], reverse=True)
+        most_frequent_user_id = most_frequent[0]
+        less_frequent = sorted(user_ids_count.items(), key=lambda x: x[1], reverse=False)
         pages_locked_total = PageLocker.get_pages_locked_total()
         pages_unlocked_total = PageLocker.get_pages_unlocked_total()
 
         out = (f"Всего ЗАблокировано страниц НА ТЕКУЩИЙ МОМЕНТ: <{len(locked_pages)}>, "
+               f"Наибольшее число страниц, заблокированных на текущий момент пользователем (id): "
+               f"<{most_frequent_user_id}>: <{most_frequent[1]}>, "
+               f"Наименьшее число страниц, заблокированных на текущий момент пользователем (id): "
+               f"<{less_frequent[0]}>: <{less_frequent[1]}>, "
                f"Всего ЗАблокировано страниц ПОСЛЕ РЕСТАРТА ПРИЛОЖЕНИЯ: <{pages_locked_total}>, "
                f"Всего РАЗблокировано страниц ПОСЛЕ РЕСТАРТА ПРИЛОЖЕНИЯ: <{pages_unlocked_total}>, ")
         return out
@@ -52,11 +66,15 @@ class PageLocker:
         PageLocker.__LOCKED_PAGES = {}
 
     @staticmethod
-    def lock_page(lock_info: LockInfo):
-        check_if_lock_info(lock_info)
+    def lock_page(page_to_lock: LockInfo):
+        check_if_lock_info(page_to_lock)
         locked_pages = PageLocker.get_locked_pages()
-        if lock_info not in locked_pages:
-            locked_pages[lock_info] = get_current_nsk_time()
+        # ПЕРЕДЕЛАТЬ !!! НЕПРАВИЛЬНО!!!
+        if page_to_lock not in locked_pages:
+            locked_pages[page_to_lock] = get_current_nsk_time()
+        for locked_page in locked_pages:
+            pass
+
 
     @staticmethod
     def unlock_page(lock_info: LockInfo):
