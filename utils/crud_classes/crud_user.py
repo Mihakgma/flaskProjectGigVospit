@@ -16,11 +16,11 @@ class UserCrudControl:
     т.е. не внутри методов класса!
     :return:
     """
-    __ACTIVITY_TIMEOUT_SECONDS = 60  # 15 min = 900 secs, test = 60-120-180 secs
+    __ACTIVITY_TIMEOUT_SECONDS = 900  # 15 min = 900 secs, test = 60-120-180 secs
     __USERS_LAST_ACTIVITY = {}
     __ACTIVITY_COUNTER = 0
-    __ACTIVITY_COUNTER_MAX_THRESHOLD = 10  # 10000 optimal
-    __ACTIVITY_PERIOD_COUNTER = 5  # 50 and >
+    __ACTIVITY_COUNTER_MAX_THRESHOLD = 10000  # 10000 optimal
+    __ACTIVITY_PERIOD_COUNTER = 50  # 50 and >
     __USERS_OBJECTS = []
 
     def __init__(self,
@@ -203,18 +203,18 @@ class UserCrudControl:
         counter = UserCrudControl.get_activity_counter()
         period = UserCrudControl.get_activity_period_counter()
         max_counter = UserCrudControl.get_activity_counter_max_threshold()
-        # debugging flash
-        flash(f'COUNTER = <{counter}>,'
-              f' period = <{period}>, '
-              f'max_counter = <{max_counter}>', 'warning')
+        # debugging output
+        # flash(f'COUNTER = <{counter}>,'
+        #       f' period = <{period}>, '
+        #       f'max_counter = <{max_counter}>', 'warning')
         if counter and (counter % period == 0) and counter < max_counter:
             UserCrudControl.update_users_last_activity(user_id=current_user.id)
             timeout = UserCrudControl.get_timeout()
             UserCrudControl.update_users()
             users = UserCrudControl.get_users()
             users_last_activity = UserCrudControl.get_users_last_activity()
-            # debugging flash
-            flash(f'<{[(k,v) for (k,v) in users_last_activity.items()]}>', 'warning')
+            # debugging output
+            # flash(f'<{[(k,v) for (k,v) in users_last_activity.items()]}>', 'warning')
 
             for user_to_check in users:
                 if (user_to_check.is_logged_in

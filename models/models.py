@@ -310,6 +310,22 @@ class Applicant(BaseModel, CrudInfoModel):
                     f"визитов всего: {num_vizits}")
         return out_info
 
+    @validates('medbook_number')
+    def validate_medbook_number(self, key, medbook_number):
+        if medbook_number is not None:
+            medbook_number = str(medbook_number).strip()
+            if not len(medbook_number) == 12 or not medbook_number.isdigit():
+                raise IntegrityError("Номер мед. книжки должен содержать 12 цифр.")
+        return medbook_number
+
+    @validates('snils_number')
+    def validate_snils_number(self, key, snils_number):
+        if snils_number is not None:
+            snils_number = str(snils_number).strip()
+            if not len(snils_number) == 11 or not snils_number.isdigit():
+                raise IntegrityError("Номер СНИЛС должен содержать 11 цифр.")
+        return snils_number
+
 
 class Vizit(BaseModel, CrudInfoModel):
     id = db.Column(Integer, primary_key=True)

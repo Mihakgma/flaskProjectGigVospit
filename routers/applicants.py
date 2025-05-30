@@ -23,6 +23,8 @@ from forms.forms import (AddApplicantForm,
 from sqlalchemy import and_, event
 from sqlalchemy.sql.expression import func
 
+from utils.crud_classes import UserCrudControl
+
 applicants_bp = Blueprint('applicants', __name__)
 
 
@@ -37,8 +39,13 @@ def add_applicant():
         if applicant_form.validate_on_submit():  # Валидация формы заявителя
             try:
                 new_applicant = Applicant()
+                new_applicant.created_by_user_id = current_user.id
+                new_applicant.updated_by_user_id = current_user.id
                 applicant_form.populate_obj(new_applicant)
                 db.session.add(new_applicant)
+                user_crud_control = UserCrudControl(user=current_user,
+                                                    db_object=db)
+                user_crud_control.commit_other_table()
                 db.session.flush()
 
                 if vizit_form.validate_on_submit():  # Валидация формы визита
@@ -47,6 +54,8 @@ def add_applicant():
                     new_vizit.applicant_id = new_applicant.id
                     new_vizit.visit_date = vizit_form.visit_date.data
                     new_vizit.info = vizit_form.info.data
+                    new_vizit.created_by_user_id = current_user.id
+                    new_vizit.updated_by_user_id = current_user.id
                     db.session.add(new_vizit)
                     new_applicant.vizits.append(new_vizit)
 
@@ -104,6 +113,9 @@ def edit_applicant(applicant_id):
     if request.method == 'POST':
         # Обработка формы заявителя
         if 'submit' in request.form and applicant_form.validate_on_submit():
+            user_crud_control = UserCrudControl(user=current_user,
+                                                db_object=db)
+            user_crud_control.commit_other_table()
             applicant_form.populate_obj(applicant)
             db.session.commit()
             flash('Данные заявителя обновлены', 'success')
@@ -118,6 +130,9 @@ def edit_applicant(applicant_id):
                 new_vizit.created_by_user_id = current_user.id
                 new_vizit.updated_by_user_id = current_user.id
                 db.session.add(new_vizit)
+                user_crud_control = UserCrudControl(user=current_user,
+                                                    db_object=db)
+                user_crud_control.commit_other_table()
                 db.session.commit()
                 flash('Визит добавлен', 'success')
                 return redirect(url_for('applicants.applicant_details', applicant_id=applicant.id))

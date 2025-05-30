@@ -15,6 +15,7 @@ from models.models import Contract, Organization, Vizit, Applicant, get_current_
 from database import db
 
 from forms.forms import ContractForm, ApplicantSearchForm
+from utils.crud_classes import UserCrudControl
 
 contracts_bp = Blueprint('contracts', __name__)
 
@@ -39,6 +40,9 @@ def add_contract():
                     info=form.info.data
                 )
                 db.session.add(new_contract)
+                user_crud_control = UserCrudControl(user=current_user,
+                                                    db_object=db)
+                user_crud_control.commit_other_table()
                 db.session.commit()
                 flash('Новый контракт успешно добавлен!', 'success')
                 return redirect(url_for('contract_details', contract_id=new_contract.id))
@@ -184,6 +188,9 @@ def edit_contract(contract_id):
             if contract_form.validate_on_submit():
                 try:
                     contract_form.populate_obj(contract)
+                    user_crud_control = UserCrudControl(user=current_user,
+                                                        db_object=db)
+                    user_crud_control.commit_other_table()
                     db.session.commit()
                     flash('Договор успешно обновлен!', 'success')
                     return redirect(url_for('contracts.contract_details', contract_id=contract.id))
@@ -323,6 +330,9 @@ def unlink_visit(visit_id):
     if contract_id:
         visit.contract_id = None  # Открепляем визит
         try:
+            user_crud_control = UserCrudControl(user=current_user,
+                                                db_object=db)
+            user_crud_control.commit_other_table()
             db.session.commit()
             flash('Визит успешно откреплен от договора.', 'info')
         except Exception as e:
