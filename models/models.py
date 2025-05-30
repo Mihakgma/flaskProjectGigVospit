@@ -17,7 +17,7 @@ from functions import check_if_exists
 nsk_tz = pytz.timezone('Asia/Novosibirsk')
 
 
-def get_current_nsk_time():
+def get_current_nsk_time() -> datetime:
     """Возвращает текущее время в новосибирской временной зоне."""
     return datetime.now(nsk_tz)
 
