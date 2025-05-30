@@ -16,11 +16,11 @@ class UserCrudControl:
     т.е. не внутри методов класса!
     :return:
     """
-    __ACTIVITY_TIMEOUT_SECONDS = 900  # 15 min = 900 secs
+    __ACTIVITY_TIMEOUT_SECONDS = 60  # 15 min = 900 secs, test = 60-120-180 secs
     __USERS_LAST_ACTIVITY = {}
     __ACTIVITY_COUNTER = 0
-    __ACTIVITY_COUNTER_MAX_THRESHOLD = 10000  # 10000 optimal
-    __ACTIVITY_PERIOD_COUNTER = 50  # 50 and >
+    __ACTIVITY_COUNTER_MAX_THRESHOLD = 10  # 10000 optimal
+    __ACTIVITY_PERIOD_COUNTER = 5  # 50 and >
     __USERS_OBJECTS = []
 
     def __init__(self,
@@ -181,7 +181,6 @@ class UserCrudControl:
         :return:
         """
         UserCrudControl.reset_users_last_activity()
-        UserCrudControl.update_users()
         for user in users:
             try:
                 user.is_logged_in = False
@@ -204,16 +203,18 @@ class UserCrudControl:
         counter = UserCrudControl.get_activity_counter()
         period = UserCrudControl.get_activity_period_counter()
         max_counter = UserCrudControl.get_activity_counter_max_threshold()
-
+        # debugging flash
+        flash(f'COUNTER = <{counter}>,'
+              f' period = <{period}>, '
+              f'max_counter = <{max_counter}>', 'warning')
         if counter and (counter % period == 0) and counter < max_counter:
-            # debugging flash
-            # flash(f'COUNTER = <{counter}>, period = <{period}>', 'danger')
+            UserCrudControl.update_users_last_activity(user_id=current_user.id)
             timeout = UserCrudControl.get_timeout()
             UserCrudControl.update_users()
             users = UserCrudControl.get_users()
             users_last_activity = UserCrudControl.get_users_last_activity()
             # debugging flash
-            # flash(f'<{[(k,v) for (k,v) in users_last_activity.items()]}>', 'danger')
+            flash(f'<{[(k,v) for (k,v) in users_last_activity.items()]}>', 'warning')
 
             for user_to_check in users:
                 if (user_to_check.is_logged_in
@@ -221,7 +222,6 @@ class UserCrudControl:
                         and users_last_activity[user_to_check.id] != ""):
                     last_activity_at = users_last_activity[user_to_check.id]
                     is_time_out = (get_current_nsk_time() - last_activity_at).seconds > timeout
-
                     if is_time_out:
                         flash(
                             f"Пользователь {user_to_check.username} вышел из системы по таймауту ({timeout} сек).",
@@ -230,9 +230,27 @@ class UserCrudControl:
                         # debugging flash
                         # flash(f'<[{[(k,v) for (k,v) in user_ctrl_obj.__dict__.items()]}]>', 'danger')
                         user_ctrl_obj.logout()  # Метод logout() сам позаботится о коммите.
+                elif (not user_to_check.is_logged_in
+                      and user_to_check.id != current_user.id
+                      and user_to_check.id in users_last_activity
+                      and users_last_activity[user_to_check.id] is not None):
+                    last_activity_at = users_last_activity[user_to_check.id]
+                    if last_activity_at == "":
+                        pass
+                    else:
+                        is_time_out = (get_current_nsk_time() - last_activity_at).seconds > timeout
+                        if is_time_out:
+                            flash(
+                                f"Пользователь {user_to_check.username} вышел из системы по таймауту ({timeout} сек).",
+                                "warning")
+                            user_ctrl_obj = UserCrudControl(user=user_to_check)
+                            # debugging flash
+                            # flash(f'<[{[(k,v) for (k,v) in user_ctrl_obj.__dict__.items()]}]>', 'danger')
+                            user_ctrl_obj.logout()  # Метод logout() сам позаботится о коммите.
         elif counter >= max_counter:
             # flash & restart all sessions!
-            flash(f'Достигнут предел обращений к программе в рамках одного запуска: <{max_counter}>',
+            flash(f'Достигнут предел обращений к программе в рамках одного запуска: <{max_counter}>'
+                  f'Для продолжения работы потребуется повторная авторизация!',
                   'warning')
             UserCrudControl.update_users()
             users = UserCrudControl.get_users()
