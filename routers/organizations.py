@@ -22,6 +22,8 @@ from sqlalchemy.exc import IntegrityError
 
 from forms.forms import OrganizationForm
 from utils.crud_classes import UserCrudControl
+from utils.pages_lock.lock_info import LockInfo
+from utils.pages_lock.lock_management import PageLocker
 
 orgs_bp = Blueprint('organizations', __name__)
 
@@ -232,87 +234,95 @@ def manage_orgs():
 @login_required
 @role_required('admin', 'moder')
 def edit_organization(organization_id):
-    organization = Organization.query.get(organization_id)
-    if not organization:
-        abort(404, description="Организация не найдена.")
-        print(f"--- Запрос на редактирование организации ID: {organization_id} ---")
-    print(f"Метод запроса: {request.method}")
-    print(
-        f"Организация из БД (до обработки формы): ID={organization.id}, Имя='{organization.name}', ИНН='{organization.inn}'")
+    lock_info = LockInfo("orgs_bp",
+                         "edit_organization",
+                         organization_id,
+                         current_user.id)
+    if PageLocker.lock_page(lock_data=lock_info):
+        organization = Organization.query.get(organization_id)
+        if not organization:
+            abort(404, description="Организация не найдена.")
+            print(f"--- Запрос на редактирование организации ID: {organization_id} ---")
+        print(f"Метод запроса: {request.method}")
+        print(
+            f"Организация из БД (до обработки формы): ID={organization.id}, Имя='{organization.name}', ИНН='{organization.inn}'")
 
-    if request.method == 'POST':
-        # *******************************************************************
-        # &gt;&gt;&gt;&gt;&gt; ИСПРАВЛЕНИЕ: Явно передаем formdata=request.form на POST &lt;&lt;&lt;&lt;&lt;
-        # *******************************************************************
-        form = OrganizationForm(formdata=request.form, original_org_id=organization.id)
-        # Также добавим отладочный вывод сырых данных из request.form
-        print(f"Raw request.form content (SERVER): {request.form}")
-    else:
-        # Для GET-запроса, продолжаем использовать obj=organization для предзаполнения
-        form = OrganizationForm(obj=organization, original_org_id=organization.id)
-
-    if form.validate_on_submit():
-        print("Форма успешно прошла валидацию!")
-        print("Данные из формы (form.data) ПОСЛЕ ВАЛИДАЦИИ:")
-        # Выведем каждое поле, чтобы убедиться, что form.data теперь содержит НОВЫЕ значения
-        print(f" Name: '{form.name.data}' (Тип: {type(form.name.data)})")
-        print(f" INN: '{form.inn.data}' (Тип: {type(form.inn.data)})")
-        print(f" Address: '{form.address.data}' (Тип: {type(form.address.data)})")
-        print(f" Phone Number: '{form.phone_number.data}' (Тип: {type(form.phone_number.data)})")
-        print(f" Email: '{form.email.data}' (Тип: {type(form.email.data)})")
-        print(f" Is Active: {form.is_active.data} (Тип: {type(form.is_active.data)})")
-        print(f" Info: '{form.info.data}' (Тип: {type(form.info.data)})")
-
-        # Здесь находится ваш код, который выдает "Данные не были изменены!"
-        # Это обычно проверка, не модифицирован ли объект.
-        # Если вы используете SQLAlchemy's is_modified, то этот код должен быть
-        # ПОСЛЕ того, как вы обновите 'organization' из формы.
-        # Пример ниже включает такую проверку.
-
-        try:
-            # ***************************************************************
-            # &gt;&gt;&gt;&gt;&gt; ИСПРАВЛЕНИЕ: Обновляем поля СУЩЕСТВУЮЩЕГО объекта 'organization' &lt;&lt;&lt;&lt;&lt;
-            # ***************************************************************
-            form.populate_obj(organization)  # &lt;-- Самый чистый и правильный способ!
-
-            print(f"Организация в памяти (ПОСЛЕ populate_obj, ДО commit):")
-            print(f" Имя='{organization.name}', ИНН='{organization.inn}'")
-            print(f" Is Active='{organization.is_active}'")  # Проверяем и is_active
-
-            # Проверка, были ли внесены изменения в объект в сессии SQLAlchemy
-            # (Если вы используете свой собственный check for changes, вставьте его здесь)
-            if db.session.is_modified(organization):
-                organization.updated_at = get_current_nsk_time()
-                organization.updated_by_user_id = current_user.id
-                user_crud_control = UserCrudControl(user=current_user,
-                                                    db_object=db)
-                user_crud_control.commit_other_table()
-                db.session.commit()  # Сохраняем изменения в базе данных
-                print("db.session.commit() УСПЕШНО ВЫПОЛНЕН.")
-                flash('Данные организации успешно обновлены!', 'success')
-                return redirect(url_for('organizations.organization_details',
-                                        organization_id=organization.id))
-            else:
-                db.session.rollback()  # Откатываем, если ничего не изменилось
-                print("Данные не были изменены, commit не требуется.")
-                flash('Данные не были изменены!', 'info')  # &lt;&lt;&lt; Это ваше сообщение!
-
-            return redirect(url_for('organizations.manage_orgs'))
-        except Exception as e:
-            db.session.rollback()
-            print(f"ОШИБКА ПРИ СОХРАНЕНИИ ДАННЫХ: {e}")
-            flash(f'Произошла ошибка при сохранении данных: {e}', 'error')
-
-    else:  # Если validate_on_submit() вернул False (для GET-запроса или невалидного POST)
         if request.method == 'POST':
-            print("Форма НЕ ПРОШЛА валидацию. Ошибки:")
-            print(form.errors)
-            for field, errors in form.errors.items():
-                for error in errors:
-                    flash(f"Ошибка в поле '{form[field].label.text}': {error}", 'error')
+            # *******************************************************************
+            # &gt;&gt;&gt;&gt;&gt; ИСПРАВЛЕНИЕ: Явно передаем formdata=request.form на POST &lt;&lt;&lt;&lt;&lt;
+            # *******************************************************************
+            form = OrganizationForm(formdata=request.form, original_org_id=organization.id)
+            # Также добавим отладочный вывод сырых данных из request.form
+            print(f"Raw request.form content (SERVER): {request.form}")
+        else:
+            # Для GET-запроса, продолжаем использовать obj=organization для предзаполнения
+            form = OrganizationForm(obj=organization, original_org_id=organization.id)
 
-    print("--- Завершение обработки запроса ---")
-    return render_template('edit_organization.html', form=form, organization=organization)
+        if form.validate_on_submit():
+            print("Форма успешно прошла валидацию!")
+            print("Данные из формы (form.data) ПОСЛЕ ВАЛИДАЦИИ:")
+            # Выведем каждое поле, чтобы убедиться, что form.data теперь содержит НОВЫЕ значения
+            print(f" Name: '{form.name.data}' (Тип: {type(form.name.data)})")
+            print(f" INN: '{form.inn.data}' (Тип: {type(form.inn.data)})")
+            print(f" Address: '{form.address.data}' (Тип: {type(form.address.data)})")
+            print(f" Phone Number: '{form.phone_number.data}' (Тип: {type(form.phone_number.data)})")
+            print(f" Email: '{form.email.data}' (Тип: {type(form.email.data)})")
+            print(f" Is Active: {form.is_active.data} (Тип: {type(form.is_active.data)})")
+            print(f" Info: '{form.info.data}' (Тип: {type(form.info.data)})")
+
+            # Здесь находится ваш код, который выдает "Данные не были изменены!"
+            # Это обычно проверка, не модифицирован ли объект.
+            # Если вы используете SQLAlchemy's is_modified, то этот код должен быть
+            # ПОСЛЕ того, как вы обновите 'organization' из формы.
+            # Пример ниже включает такую проверку.
+
+            try:
+                # ***************************************************************
+                # &gt;&gt;&gt;&gt;&gt; ИСПРАВЛЕНИЕ: Обновляем поля СУЩЕСТВУЮЩЕГО объекта 'organization' &lt;&lt;&lt;&lt;&lt;
+                # ***************************************************************
+                form.populate_obj(organization)  # &lt;-- Самый чистый и правильный способ!
+
+                print(f"Организация в памяти (ПОСЛЕ populate_obj, ДО commit):")
+                print(f" Имя='{organization.name}', ИНН='{organization.inn}'")
+                print(f" Is Active='{organization.is_active}'")  # Проверяем и is_active
+
+                # Проверка, были ли внесены изменения в объект в сессии SQLAlchemy
+                # (Если вы используете свой собственный check for changes, вставьте его здесь)
+                if db.session.is_modified(organization):
+                    organization.updated_at = get_current_nsk_time()
+                    organization.updated_by_user_id = current_user.id
+                    user_crud_control = UserCrudControl(user=current_user,
+                                                        db_object=db)
+                    user_crud_control.commit_other_table()
+                    db.session.commit()  # Сохраняем изменения в базе данных
+                    print("db.session.commit() УСПЕШНО ВЫПОЛНЕН.")
+                    flash('Данные организации успешно обновлены!', 'success')
+                    PageLocker.unlock_page(lock_data=lock_info)
+                    return redirect(url_for('organizations.organization_details',
+                                            organization_id=organization.id))
+                else:
+                    db.session.rollback()  # Откатываем, если ничего не изменилось
+                    print("Данные не были изменены, commit не требуется.")
+                    flash('Данные не были изменены!', 'info')  # &lt;&lt;&lt; Это ваше сообщение!
+                PageLocker.unlock_page(lock_data=lock_info)
+                return redirect(url_for('organizations.manage_orgs'))
+            except Exception as e:
+                db.session.rollback()
+                print(f"ОШИБКА ПРИ СОХРАНЕНИИ ДАННЫХ: {e}")
+                flash(f'Произошла ошибка при сохранении данных: {e}', 'error')
+
+        else:  # Если validate_on_submit() вернул False (для GET-запроса или невалидного POST)
+            if request.method == 'POST':
+                print("Форма НЕ ПРОШЛА валидацию. Ошибки:")
+                print(form.errors)
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        flash(f"Ошибка в поле '{form[field].label.text}': {error}", 'error')
+
+        print("--- Завершение обработки запроса ---")
+        return render_template('edit_organization.html', form=form, organization=organization)
+    else:
+        return redirect(url_for('organizations.manage_orgs'))
 
 
 @orgs_bp.route('/check_inn_exists', methods=['GET'])

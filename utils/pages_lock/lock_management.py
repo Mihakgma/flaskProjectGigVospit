@@ -1,4 +1,6 @@
-from models.models import get_current_nsk_time
+from flask import flash
+
+from models.models import get_current_nsk_time, User
 from utils.pages_lock.lock_info import LockInfo
 
 
@@ -15,7 +17,7 @@ class PageLocker:
     __LOCKED_PAGES = {key: lock_info, value: get_current_nsk_time (TS with TZ)}
     """
     __LOCKED_PAGES = {}
-    __TIMEOUT_SECONDS = 60 * 15
+    __TIMEOUT_SECONDS = 60 * 1  # 60 *15 - for prod
     __PAGES_LOCKED_TOTAL = 0
     __PAGES_UNLOCKED_TOTAL = 0
 
@@ -66,18 +68,32 @@ class PageLocker:
         PageLocker.__LOCKED_PAGES = {}
 
     @staticmethod
-    def lock_page(page_to_lock: LockInfo):
-        check_if_lock_info(page_to_lock)
+    def lock_page(lock_data: LockInfo) -> bool:
+        check_if_lock_info(lock_data)
         locked_pages = PageLocker.get_locked_pages()
         # ПЕРЕДЕЛАТЬ !!! НЕПРАВИЛЬНО!!!
-        if page_to_lock not in locked_pages:
-            locked_pages[page_to_lock] = get_current_nsk_time()
-        for locked_page in locked_pages:
-            pass
-
+        # перезаход на редактирование (обновил страницу) одним и тем же пользователем,
+        # обновляется таймаут на доступ к странице для пользователя...
+        if lock_data in locked_pages:
+            locked_pages[lock_data] = get_current_nsk_time()
+            flash('Таймаут для текущей страницы - обновлен.', 'warning')
+            return True
+        # текущая функция и строка в таблице не редактируется пользователем,
+        # который пытается зайти в нее на редактирование
+        else:
+            for locked_page in locked_pages:
+                if locked_page.funct_tablerow_equivalence(lock_data):
+                    # ДОБАВИТЬ ПРОВЕРКУ НА ТАЙМАУТ РЕДАКТИРОВАНИЯ!!! по истекшему для редактора времени!!!
+                    user_id = locked_page.user_id
+                    user_editor = User.query.get_or_404(user_id)
+                    flash(f'Текущая страница редактируется пользователем: <{user_editor.full_name}>',
+                          'danger')
+                    return False
+        locked_pages[lock_data] = get_current_nsk_time()
+        return True
 
     @staticmethod
-    def unlock_page(lock_info: LockInfo):
-        check_if_lock_info(lock_info)
+    def unlock_page(lock_data: LockInfo):
+        check_if_lock_info(lock_data)
         locked_pages = PageLocker.get_locked_pages()
-        locked_pages.pop(lock_info, None)
+        locked_pages.pop(lock_data, None)

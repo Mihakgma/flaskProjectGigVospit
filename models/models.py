@@ -85,6 +85,12 @@ class User(BaseModel, UserMixin):
         """
         return check_password_hash(self.password, password)
 
+    @property
+    def full_name(self):
+        """ Возвращает полное имя заявителя """
+        parts = [self.last_name, self.first_name, self.middle_name]
+        return ' '.join([part for part in parts if part]).strip()
+
 
 class CrudInfoModel:
 
