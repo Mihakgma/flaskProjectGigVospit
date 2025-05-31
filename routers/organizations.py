@@ -323,6 +323,7 @@ def edit_organization(organization_id):
         return render_template('edit_organization.html', form=form, organization=organization)
     else:
         return redirect(url_for('organizations.manage_orgs'))
+    PageLocker.unlock_page(lock_data=lock_info)
 
 
 @orgs_bp.route('/check_inn_exists', methods=['GET'])
