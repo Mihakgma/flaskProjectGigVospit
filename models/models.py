@@ -4,7 +4,7 @@ import pytz
 from werkzeug.security import check_password_hash
 
 from database import db
-from sqlalchemy import Table, UniqueConstraint
+from sqlalchemy import Table, UniqueConstraint, event
 from sqlalchemy.types import String, Integer, Boolean, DateTime, Text
 from flask_login import UserMixin
 
@@ -20,6 +20,11 @@ nsk_tz = pytz.timezone('Asia/Novosibirsk')
 def get_current_nsk_time() -> datetime:
     """Возвращает текущее время в новосибирской временной зоне."""
     return datetime.now(nsk_tz)
+
+
+def check_int(obj):
+    if not type(obj) is int:
+        raise ValueError("Ожидается целое число!")
 
 
 class BaseModel(db.Model):
@@ -350,3 +355,147 @@ class Vizit(BaseModel, CrudInfoModel):
     contract = db.relationship('Contract',
                                backref=db.backref('vizits', cascade=None),
                                lazy='subquery')
+
+
+class AccessSetting(BaseModel):
+    """
+    Класс для таблицы, которая содержит информацию о настройках для
+    1) page_lock_seconds - времени блокировки страниц для редактирования одной записи (с учетом таблицы и функции,
+        с контролем через класс PageLocker), сек;
+    2) activity_timeout_seconds - допустимого времени простоя пользователя (без проявления активности, т.е.
+        без перехода по другим страницам приложения, контроль через класс UserCrudControl), сек;
+    3) max_admins_number - максимальное количество пользователей с ролью admin;
+    4) max_moders_number - максимальное количество пользователей с ролью moder;
+    5) is_activated_now - активирована ли сейчас данная настройка или нет;
+    6) name - наименование настройки;
+    7) activity_period_counter - с данным интервалом (количество нажатий всеми юзерами) будет осуществляться
+        проверка на последнюю активность (время последней активности) каждым вошедшим в систему на данный момент.
+        Срабатывает внутри декоратора role_required, который оборачивает
+        функции-роуты для перехода на страницы приложения;
+    8) activity_counter_max_threshold - с такой периодичностью (количество нажатий всеми юзерами) будет осуществляться
+        завершение сессий всех активных на данный момент.
+
+    При этом в текущей таблице БД одномоментно может быть только одна запись со значением поля
+    is_activated_now = True
+
+    Метод get_activated_setting - получить строку таблицы (объект класса), у которого is_activated_now = True.
+    """
+    id = db.Column(Integer, primary_key=True)
+    name = db.Column(String(50), default="По умолчанию №1", nullable=True)
+    page_lock_seconds = db.Column(Integer,
+                                  default=300,
+                                  nullable=False)
+    activity_timeout_seconds = db.Column(Integer, default=900, nullable=False)
+    max_admins_number = db.Column(Integer, default=1, nullable=False)
+    max_moders_number = db.Column(Integer, default=2, nullable=False)
+    is_activated_now = db.Column(Boolean, default=False, nullable=False)
+    activity_period_counter = db.Column(Integer, default=50, nullable=False)
+    activity_counter_max_threshold = db.Column(Integer, default=1000, nullable=False)
+
+    @validates('page_lock_seconds')
+    def validate_page_lock_seconds(self, key, page_lock_seconds):
+        time_low_boundary = 30
+        time_up_boundary = 600
+        if page_lock_seconds is None:
+            raise IntegrityError("Необходимо указать максимально допустимое время доступа к страницам редактирования.")
+        check_int(page_lock_seconds)
+        if page_lock_seconds < time_low_boundary:
+            raise ValueError("Максимально допустимое время доступа к страницам редактирования"
+                             f" не может быть менее <{time_low_boundary}> секунд.")
+        elif page_lock_seconds > time_up_boundary:
+            raise ValueError("Максимально допустимое время доступа к страницам редактирования"
+                             f" не может быть более <{time_up_boundary}> секунд.")
+        return page_lock_seconds
+
+    @validates('activity_timeout_seconds')
+    def validate_activity_timeout_seconds(self, key, activity_timeout_seconds):
+        time_low_boundary = 60
+        time_up_boundary = 1800
+        if activity_timeout_seconds is None:
+            raise IntegrityError("Необходимо указать максимально допустимое время простоя пользователя.")
+        check_int(activity_timeout_seconds)
+        if activity_timeout_seconds < time_low_boundary:
+            raise ValueError("Максимально допустимое время простоя пользователя не может быть менее "
+                             f"<{time_low_boundary}> секунд.")
+        elif activity_timeout_seconds > time_up_boundary:
+            raise ValueError("Максимально допустимое время простоя пользователя"
+                             f" не может быть более <{time_up_boundary}> секунд.")
+        return activity_timeout_seconds
+
+    @validates('max_admins_number')
+    def validate_max_admins_number(self, key, max_admins_number):
+        if max_admins_number is not None:
+            check_int(max_admins_number)
+            if max_admins_number < 1:
+                raise ValueError("Максимальное количество пользователей с ролью администратор"
+                                 " не может быть менее 1.")
+            return max_admins_number
+
+    @validates('max_moders_number')
+    def validate_max_moders_number(self, key, max_moders_number):
+        if max_moders_number is not None:
+            check_int(max_moders_number)
+            if max_moders_number < 1:
+                raise ValueError("Максимальное количество пользователей с ролью модератор"
+                                 " не может быть менее 1.")
+            return max_moders_number
+
+    @validates('activity_period_counter')
+    def validate_activity_period_counter(self, key, activity_period_counter):
+        clicks_low_boundary = 5
+        clicks_up_boundary = 100
+        if activity_period_counter is None:
+            raise IntegrityError("Необходимо указать периодичность проверки активности пользователей.")
+        check_int(activity_period_counter)
+        if activity_period_counter < clicks_low_boundary:
+            raise ValueError("Периодичность проверки активности пользователей"
+                             f" не может быть менее <{clicks_low_boundary}> кликов.")
+        elif activity_period_counter > clicks_up_boundary:
+            raise ValueError("Периодичность проверки активности пользователей"
+                             f" не может быть более <{clicks_up_boundary}> кликов.")
+        return activity_period_counter
+
+    @validates('activity_counter_max_threshold')
+    def validate_activity_counter_max_threshold(self, key, activity_counter_max_threshold):
+        clicks_low_boundary = 10
+        clicks_up_boundary = 10000
+        if activity_counter_max_threshold is None:
+            raise IntegrityError("Необходимо указать периодичность проверки активности пользователей.")
+        check_int(activity_counter_max_threshold)
+        if activity_counter_max_threshold < clicks_low_boundary:
+            raise ValueError("Периодичность обновления сессий пользователей"
+                             f" не может быть менее <{clicks_low_boundary}> кликов.")
+        if activity_counter_max_threshold < self.activity_period_counter:
+            raise ValueError("Периодичность обновления сессий пользователей"
+                             f" не может быть меньше периодичности проверки активности пользователей "
+                             f"({self.activity_period_counter}) кликов.")
+        elif activity_counter_max_threshold > clicks_up_boundary:
+            raise ValueError("Периодичность обновления сессий пользователей"
+                             f" не может быть более <{clicks_up_boundary}> кликов.")
+        return activity_counter_max_threshold
+
+    @staticmethod
+    def get_activated_setting():
+        return AccessSetting.query.filter_by(is_activated_now=True).first()
+
+    # --- Метод для строкового представления объекта (из предыдущих исправлений) ---
+    def __repr__(self):
+        return (f"<AccessSetting(id={self.id}, name='{self.name}', "
+                f"is_activated_now={self.is_activated_now})>")
+
+
+# --- Слушатели событий SQLAlchemy (из предыдущих исправлений) ---
+@event.listens_for(AccessSetting, 'before_insert')
+@event.listens_for(AccessSetting, 'before_update')
+def receive_before_activate_setting(mapper, connection, target):
+    if target.is_activated_now:
+        session = db.session.object_session(target) or connection.query(AccessSetting).session()
+
+        query = session.query(AccessSetting).filter(
+            AccessSetting.is_activated_now)
+        if target.id is not None:
+            query = query.filter(AccessSetting.id != target.id)
+
+        other_active_settings = query.all()
+        for setting in other_active_settings:
+            setting.is_activated_now = False

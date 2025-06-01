@@ -1,5 +1,6 @@
 __all__ = [
     'BaseModel',
+    'AccessSetting',
     'Role',
     'Status',
     'Department',
@@ -15,7 +16,9 @@ __all__ = [
     'Vizit'
 ]
 
-from .models import (BaseModel,
+from .models import (
+                     BaseModel,
+                     AccessSetting,
                      Role,
                      Status,
                      Department,

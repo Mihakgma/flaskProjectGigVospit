@@ -17,7 +17,7 @@ class PageLocker:
     __LOCKED_PAGES = {key: lock_info, value: get_current_nsk_time (TS with TZ)}
     """
     __LOCKED_PAGES = {}
-    __TIMEOUT_SECONDS = 60 * 1  # 60 *15 - for prod
+    __TIMEOUT_SECONDS = 60 * 1  # 60 *15 - for prod - get from DB table access_setting
     __PAGES_LOCKED_TOTAL = 0
     __PAGES_UNLOCKED_TOTAL = 0
 

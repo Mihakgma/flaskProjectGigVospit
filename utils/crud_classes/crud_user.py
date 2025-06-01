@@ -16,11 +16,11 @@ class UserCrudControl:
     т.е. не внутри методов класса!
     :return:
     """
-    __ACTIVITY_TIMEOUT_SECONDS = 900  # 15 min = 900 secs, test = 60-120-180 secs
+    __ACTIVITY_TIMEOUT_SECONDS = 900  # 15 min = 900 secs, test = 60-120-180 secs - get from DB table access_setting
     __USERS_LAST_ACTIVITY = {}
     __ACTIVITY_COUNTER = 0
-    __ACTIVITY_COUNTER_MAX_THRESHOLD = 10000  # 10000 optimal
-    __ACTIVITY_PERIOD_COUNTER = 50  # 50 and >
+    __ACTIVITY_PERIOD_COUNTER = 50  # 50 and > - get from DB table access_setting
+    __ACTIVITY_COUNTER_MAX_THRESHOLD = 1000  # 1000 optimal - get from DB table access_setting
     __USERS_OBJECTS = []
 
     def __init__(self,

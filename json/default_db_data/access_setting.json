@@ -1,0 +1,32 @@
+{
+  "1": {
+    "name": "Настройка по умолчанию (Активная)",
+    "page_lock_seconds": 300,
+    "activity_timeout_seconds": 900,
+    "max_admins_number": 1,
+    "max_moders_number": 2,
+    "is_activated_now": true,
+    "activity_period_counter": 50,
+    "activity_counter_max_threshold": 1000
+  },
+  "2": {
+    "name": "Альтернативная настройка (Менее строгая)",
+    "page_lock_seconds": 600,
+    "activity_timeout_seconds": 1800,
+    "max_admins_number": 2,
+    "max_moders_number": 3,
+    "is_activated_now": false,
+    "activity_period_counter": 100,
+    "activity_counter_max_threshold": 2000
+  },
+  "3": {
+    "name": "Строгие ограничения (Неактивная)",
+    "page_lock_seconds": 60,
+    "activity_timeout_seconds": 300,
+    "max_admins_number": 1,
+    "max_moders_number": 1,
+    "is_activated_now": false,
+    "activity_period_counter": 10,
+    "activity_counter_max_threshold": 200
+  }
+}

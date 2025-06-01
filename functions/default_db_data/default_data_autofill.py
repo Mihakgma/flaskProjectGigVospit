@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 
 from models import (Role, Status, Department, ApplicantType,
                     Contingent, WorkField, AttestationType,
-                    Organization, Applicant, Vizit, User, TableDb)
+                    Organization, Applicant, Vizit, User, TableDb, AccessSetting)
 
 import json
 import os
@@ -21,6 +21,7 @@ if str(project_dir) not in sys.path:
 
 def load_initial_data(data_dir, db):
     model_map = {
+        "access_setting.json": AccessSetting,
         "contingent.json": Contingent,
         "attestation_type.json": AttestationType,
         "work_field.json": WorkField,
