@@ -1,6 +1,6 @@
 from flask import flash
 
-from models.models import get_current_nsk_time, User
+from models.models import get_current_nsk_time, User, AccessSetting
 from utils.pages_lock.lock_info import LockInfo
 
 
@@ -66,6 +66,11 @@ class PageLocker:
     @staticmethod
     def clear_locked_pages():
         PageLocker.__LOCKED_PAGES = {}
+        activated_setting = AccessSetting.get_activated_setting()
+        activated_setting_name = activated_setting.name
+        __TIMEOUT_SECONDS = activated_setting.page_lock_seconds
+        print(f"Параметр __TIMEOUT_SECONDS установлен из сеттинга: <{activated_setting_name}>: "
+              f"<{__TIMEOUT_SECONDS}>")
 
     @staticmethod
     def lock_page(lock_data: LockInfo) -> bool:
@@ -81,14 +86,28 @@ class PageLocker:
         # текущая функция и строка в таблице не редактируется пользователем,
         # который пытается зайти в нее на редактирование
         else:
+            timeout = PageLocker.get_timeout()
             for locked_page in locked_pages:
-                if locked_page.funct_tablerow_equivalence(lock_data):
+                last_activity_at = locked_pages[locked_page]
+                secs_elapsed = (get_current_nsk_time() - last_activity_at).seconds
+                is_time_out = secs_elapsed > timeout
+                if locked_page.funct_tablerow_equivalence(lock_data) and not is_time_out:
                     # ДОБАВИТЬ ПРОВЕРКУ НА ТАЙМАУТ РЕДАКТИРОВАНИЯ!!! по истекшему для редактора времени!!!
                     user_id = locked_page.user_id
                     user_editor = User.query.get_or_404(user_id)
-                    flash(f'Текущая страница редактируется пользователем: <{user_editor.full_name}>',
+                    flash(f'Текущая страница редактируется пользователем: <{user_editor.full_name}>,'
+                          f'Время до авто-разблокировки страницы: <{timeout - secs_elapsed}> сек.',
                           'danger')
                     return False
+                elif locked_page.funct_tablerow_equivalence(lock_data) and is_time_out:
+                    user_id = locked_page.user_id
+                    user_editor = User.query.get_or_404(user_id)
+                    flash(f'У пользователем: <{user_editor.full_name}> вышло '
+                          f'максимально возможное время на редактирование страницы ({timeout}) сек.',
+                          'warning')
+                    PageLocker.unlock_page(locked_page)
+                    locked_pages[lock_data] = get_current_nsk_time()
+                    return True
         locked_pages[lock_data] = get_current_nsk_time()
         return True
 

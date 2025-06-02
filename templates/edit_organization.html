@@ -21,7 +21,7 @@
                           action="{{ url_for('organizations.edit_organization', organization_id=organization.id) }}">
                         {#                <form method="POST" action="" novalidate>#}
                         <!-- Защита от CSRF-атак -->
-{#                        {{ form.csrf_token }}#}
+                        {{ form.csrf_token }}
 
                         <!-- Поле: Название организации -->
                         <div class="mb-3">
@@ -128,4 +128,5 @@
         </div>
     </div>
     <script src="{{ url_for('static', filename='js/inn_checker.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/to_main_page_on_timeout.js') }}"></script>
 {% endblock %}

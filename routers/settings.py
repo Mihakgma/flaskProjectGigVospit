@@ -59,49 +59,49 @@ def create_setting():
 
 
 # Роут для активации настройки (используется AJAX)
-@settings_bp.route('/activate/<int:setting_id>', methods=['POST'])
-@login_required
-@role_required('super')
-def activate_setting(setting_id):
-    setting_to_activate = AccessSetting.query.get(setting_id)
-    if not setting_to_activate:
-        print(f"Setting {setting_id} not found.") # Для отладки
-        return jsonify({'status': 'error', 'message': 'Настройка не найдена.'}), 404
-
-    try:
-        # Шаг 1: Деактивировать все остальные активные настройки
-        # Использование .update() с synchronize_session=False минимизирует ORM-накладные расходы
-        # и напрямую отправляет SQL-запрос для обновления.
-        # Это более надежный способ для массового обновления.
-        db.session.query(AccessSetting).filter(
-            AccessSetting.is_activated_now == True,
-            AccessSetting.id != setting_id
-        ).update({AccessSetting.is_activated_now: False}, synchronize_session=False)
-
-        # Шаг 2: Активировать выбранную настройку
-        setting_to_activate.is_activated_now = True
-        db.session.add(setting_to_activate) # Убедимся, что объект отслеживается сессией
-
-        # Шаг 3: Коммит всех изменений в одной транзакции
-        db.session.commit()
-
-        flash('Настройка успешно активирована!', 'success')
-        return jsonify({'status': 'success', 'message': 'Настройка успешно активирована!'})
-
-    except Exception as e:
-        db.session.rollback()
-        # Этот импорт нужен для получения полного трейсбэка
-        import traceback
-        error_traceback = traceback.format_exc()
-        print(f"EXCEPTION during activation: {e}\n{error_traceback}") # Для отладки на сервере
-
-        # Возвращаем более подробную ошибку в AJAX-ответ
-        flash(f'Ошибка при активации настройки: {e}', 'error')
-        return jsonify({
-            'status': 'error',
-            'message': f'Ошибка при активации настройки: {str(e)}',
-            'detail': error_traceback # В продакшене это лучше логировать, а не отправлять пользователю
-        }), 500
+# @settings_bp.route('/activate/<int:setting_id>', methods=['POST'])
+# @login_required
+# @role_required('super')
+# def activate_setting(setting_id):
+#     setting_to_activate = AccessSetting.query.get(setting_id)
+#     if not setting_to_activate:
+#         print(f"Setting {setting_id} not found.") # Для отладки
+#         return jsonify({'status': 'error', 'message': 'Настройка не найдена.'}), 404
+#
+#     try:
+#         # Шаг 1: Деактивировать все остальные активные настройки
+#         # Использование .update() с synchronize_session=False минимизирует ORM-накладные расходы
+#         # и напрямую отправляет SQL-запрос для обновления.
+#         # Это более надежный способ для массового обновления.
+#         db.session.query(AccessSetting).filter(
+#             AccessSetting.is_activated_now == True,
+#             AccessSetting.id != setting_id
+#         ).update({AccessSetting.is_activated_now: False}, synchronize_session=False)
+#
+#         # Шаг 2: Активировать выбранную настройку
+#         setting_to_activate.is_activated_now = True
+#         db.session.add(setting_to_activate) # Убедимся, что объект отслеживается сессией
+#
+#         # Шаг 3: Коммит всех изменений в одной транзакции
+#         db.session.commit()
+#
+#         flash('Настройка успешно активирована!', 'success')
+#         return jsonify({'status': 'success', 'message': 'Настройка успешно активирована!'})
+#
+#     except Exception as e:
+#         db.session.rollback()
+#         # Этот импорт нужен для получения полного трейсбэка
+#         import traceback
+#         error_traceback = traceback.format_exc()
+#         print(f"EXCEPTION during activation: {e}\n{error_traceback}") # Для отладки на сервере
+#
+#         # Возвращаем более подробную ошибку в AJAX-ответ
+#         flash(f'Ошибка при активации настройки: {e}', 'error')
+#         return jsonify({
+#             'status': 'error',
+#             'message': f'Ошибка при активации настройки: {str(e)}',
+#             'detail': error_traceback # В продакшене это лучше логировать, а не отправлять пользователю
+#         }), 500
 
 
 # Роут для удаления настройки
@@ -215,19 +215,19 @@ def activate_setting_no_js():
 
         # Шаг 2: Активировать выбранную настройку
         setting_to_activate.is_activated_now = True
-        db.session.add(setting_to_activate) # Убедимся, что объект отслеживается сессией
+        db.session.add(setting_to_activate)  # Убедимся, что объект отслеживается сессией
 
         # Шаг 3: Коммит всех изменений в одной транзакции
         db.session.commit()
 
         flash('Настройка успешно активирована!', 'success')
-        return redirect(url_for('settings.list_settings')) # Перенаправляем обратно на список настроек
+        return redirect(url_for('settings.list_settings'))  # Перенаправляем обратно на список настроек
 
     except Exception as e:
         db.session.rollback()
         import traceback
         error_traceback = traceback.format_exc()
-        print(f"EXCEPTION during activation (no JS): {e}\n{error_traceback}") # Для отладки на сервере
+        print(f"EXCEPTION during activation (no JS): {e}\n{error_traceback}")  # Для отладки на сервере
 
         flash(f'Ошибка при активации настройки: {str(e)}', 'error')
         return redirect(url_for('settings.list_settings'))

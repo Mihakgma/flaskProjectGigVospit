@@ -29,8 +29,8 @@ def create_app():
     login_manager.login_view = 'auth.login'  # Роут для входа, если пользователь не авторизован
     login_manager.init_app(app)
     # Инициализация CSRFProtect
-    # csrf = CSRFProtect()
-    # csrf.init_app(app)
+    csrf = CSRFProtect()
+    csrf.init_app(app)
 
     init_app(app, db=db)
 

@@ -4,6 +4,7 @@ from models import User
 from functions.default_db_data.default_data_autofill import db_load_data
 
 from utils.crud_classes import UserCrudControl
+from utils.pages_lock.lock_management import PageLocker
 
 
 def init_app(app, db):
@@ -17,3 +18,4 @@ def init_app(app, db):
         # update users fields data with default values
         users = User.query.all()
         UserCrudControl.sessions_restart(db_obj=db, users=users, need_commit=True)
+        PageLocker.clear_locked_pages()

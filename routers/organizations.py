@@ -234,11 +234,15 @@ def manage_orgs():
 @login_required
 @role_required('admin', 'moder')
 def edit_organization(organization_id):
+    edit_timeout_seconds = PageLocker.get_timeout()
     lock_info = LockInfo("orgs_bp",
                          "edit_organization",
                          organization_id,
                          current_user.id)
     if PageLocker.lock_page(lock_data=lock_info):
+
+        flash(f'У Вас есть <{edit_timeout_seconds}> секунд на редактирование '
+              f'и сохранение изменений для текущей страницы...', 'warning')
         organization = Organization.query.get(organization_id)
         if not organization:
             abort(404, description="Организация не найдена.")
@@ -320,7 +324,10 @@ def edit_organization(organization_id):
                         flash(f"Ошибка в поле '{form[field].label.text}': {error}", 'error')
 
         print("--- Завершение обработки запроса ---")
-        return render_template('edit_organization.html', form=form, organization=organization)
+        return render_template('edit_organization.html',
+                               form=form,
+                               organization=organization,
+                               edit_timeout_seconds=edit_timeout_seconds)
     else:
         return redirect(url_for('organizations.manage_orgs'))
     PageLocker.unlock_page(lock_data=lock_info)

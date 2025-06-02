@@ -3,7 +3,7 @@ from flask import flash, redirect, url_for
 from database import db
 from functions import get_ip_address
 from models import User
-from models.models import get_current_nsk_time
+from models.models import get_current_nsk_time, AccessSetting
 from sqlalchemy.exc import IntegrityError
 
 
@@ -181,6 +181,17 @@ class UserCrudControl:
         :return:
         """
         UserCrudControl.reset_users_last_activity()
+        activated_setting = AccessSetting.get_activated_setting()
+        activated_setting_name = activated_setting.name
+        __ACTIVITY_TIMEOUT_SECONDS = activated_setting.activity_timeout_seconds
+        __ACTIVITY_PERIOD_COUNTER = activated_setting.activity_period_counter
+        __ACTIVITY_COUNTER_MAX_THRESHOLD = activated_setting.activity_counter_max_threshold
+        print(f"Параметр __ACTIVITY_TIMEOUT_SECONDS установлен из сеттинга: <{activated_setting_name}>: "
+              f"<{__ACTIVITY_TIMEOUT_SECONDS}>")
+        print(f"Параметр __ACTIVITY_PERIOD_COUNTER установлен из сеттинга: <{activated_setting_name}>: "
+              f"<{__ACTIVITY_PERIOD_COUNTER}>")
+        print(f"Параметр __ACTIVITY_COUNTER_MAX_THRESHOLD установлен из сеттинга: <{activated_setting_name}>: "
+              f"<{__ACTIVITY_COUNTER_MAX_THRESHOLD}>")
         for user in users:
             try:
                 user.is_logged_in = False
