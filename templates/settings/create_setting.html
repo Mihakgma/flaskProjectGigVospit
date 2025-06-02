@@ -1,0 +1,43 @@
+<!-- templates/settings/create_setting.html -->
+{% extends "base.html" %}
+
+{% block title %}Создать новую настройку{% endblock %}
+
+{% block content %}
+    <div class="container background-body-1">
+        <h1>Создать новую настройку программы</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <form method="post">
+            {{ form.hidden_tag() }}
+
+            {% for field in form if field.name not in ['csrf_token', 'submit'] %}
+                <div>
+                    {{ field.label(class_="form-label") }}
+                    {% if field.errors %}
+                        <ul class="errors">
+                            {% for error in field.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                    {{ field(class_="input") }}
+                </div><br>
+            {% endfor %}
+
+            <div>
+                {{ form.submit(class_="button") }}
+                <a href="{{ url_for('settings.list_settings') }}" class="button cancel-button">Отмена</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}

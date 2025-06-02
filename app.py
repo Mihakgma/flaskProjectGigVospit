@@ -9,7 +9,8 @@ from routers import (auth_bp,
                      users_bp,
                      applicants_bp,
                      contracts_bp,
-                     orgs_bp)  # Импортируем blueprint
+                     orgs_bp,
+                     settings_bp)  # Импортируем blueprint
 
 # from flask_script import Manager
 from flask_login import LoginManager
@@ -40,6 +41,7 @@ def create_app():
     app.register_blueprint(applicants_bp, url_prefix='/applicants')
     app.register_blueprint(contracts_bp, url_prefix='/contracts')
     app.register_blueprint(orgs_bp, url_prefix='/organizations')
+    app.register_blueprint(settings_bp, url_prefix='/settings')
     app.register_blueprint(routes_bp, url_prefix='/')
     csrf = CSRFProtect()
     csrf.init_app(app)  # Инициализация CSRFProtect

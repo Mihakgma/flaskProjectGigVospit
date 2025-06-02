@@ -7,12 +7,13 @@ from wtforms import (StringField,
                      TextAreaField,
                      PasswordField,
                      SelectMultipleField, validators)
+from wtforms.fields.numeric import IntegerField
 from wtforms.validators import (DataRequired,
                                 Length,
                                 Email,
                                 ValidationError,
                                 Optional,
-                                InputRequired, Regexp)
+                                InputRequired, Regexp, NumberRange)
 from wtforms_sqlalchemy.fields import (QuerySelectField)
 
 from functions import validate_birth_date
@@ -379,3 +380,51 @@ class ApplicantEditForm(FlaskForm):
                              Optional(),
                              Length(max=300, message="Максимальное количество символов: 300")])
     submit = SubmitField('Сохранить')
+
+
+class AccessSettingForm(FlaskForm):
+    """
+    Форма для создания и редактирования настроек программы AccessSetting.
+    """
+    name = StringField('Название настройки',
+                       validators=[DataRequired(), Length(min=3, max=50,
+                                                          message="Название должно быть от 3 до 50 символов.")])
+
+    page_lock_seconds = IntegerField('Время блокировки страниц (сек)', validators=[
+        DataRequired(message="Обязательное поле."),
+        NumberRange(min=30, max=600, message="Значение должно быть от 30 до 600 секунд.")
+    ])
+
+    activity_timeout_seconds = IntegerField('Время простоя пользователя (сек)', validators=[
+        DataRequired(message="Обязательное поле."),
+        NumberRange(min=60, max=900, message="Значение должно быть от 60 до 900 секунд.")
+    ])
+
+    max_admins_number = IntegerField('Макс. число администраторов', validators=[
+        DataRequired(message="Обязательное поле."),
+        NumberRange(min=1, message="Значение не может быть менее 1.")
+    ])
+
+    max_moders_number = IntegerField('Макс. число модераторов', validators=[
+        DataRequired(message="Обязательное поле."),
+        NumberRange(min=1, message="Значение не может быть менее 1.")
+    ])
+
+    activity_period_counter = IntegerField('Периодичность проверки активности (клики)', validators=[
+        DataRequired(message="Обязательное поле."),
+        NumberRange(min=5, max=100, message="Значение должно быть от 5 до 100 кликов.")
+    ])
+
+    activity_counter_max_threshold = IntegerField('Периодичность обновления сессий (клики)', validators=[
+        DataRequired(message="Обязательное поле."),
+        NumberRange(min=10, max=10000, message="Значение должно быть от 10 до 10000 кликов.")
+    ])
+
+    submit = SubmitField('Сохранить')
+
+    # Пользовательский валидатор для проверки зависимости между полями
+    def validate_activity_counter_max_threshold(self, field):
+        if self.activity_period_counter.data is not None and field.data is not None:
+            if field.data < self.activity_period_counter.data:
+                raise ValidationError(
+                    "Периодичность обновления сессий не может быть меньше периодичности проверки активности.")

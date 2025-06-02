@@ -1,0 +1,103 @@
+<!-- templates/settings/list_settings.html -->
+{% extends "base.html" %}
+
+{% block title %}Настройки программы{% endblock %}
+
+{% block content %}
+    <div class="container background-body-1">
+        <h1>Настройки программы</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+
+        <a href="{{ url_for('settings.create_setting') }}" class="button">Создать новую настройку</a>
+        <br><br>
+
+        {% if settings %}
+            <table class="data-table">
+                <thead>
+                <tr>
+                    <th>Активна</th>
+                    <th>Название</th>
+                    <th>Блок. стр. (сек)</th>
+                    <th>Пр. польз. (сек)</th>
+                    <th>Макс. админы</th>
+                    <th>Макс. модеры</th>
+                    <th>Пров. акт. (клики)</th>
+                    <th>Обновл. сесс. (клики)</th>
+                    <th>Действия</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for setting in settings %}
+                    <tr>
+                        <td>
+                            <input type="radio" name="active_setting" value="{{ setting.id }}"
+                                   {% if setting.is_activated_now %}checked{% endif %}>
+                        </td>
+                        <td>{{ setting.name }}</td>
+                        <td>{{ setting.page_lock_seconds }}</td>
+                        <td>{{ setting.activity_timeout_seconds }}</td>
+                        <td>{{ setting.max_admins_number }}</td>
+                        <td>{{ setting.max_moders_number }}</td>
+                        <td>{{ setting.activity_period_counter }}</td>
+                        <td>{{ setting.activity_counter_max_threshold }}</td>
+                        <td>
+                            <form action="{{ url_for('settings.delete_setting', setting_id=setting.id) }}" method="post"
+                                  onsubmit="return confirm('Вы уверены, что хотите удалить эту настройку? Это действие необратимо.');"
+                                  style="display:inline;">
+                                <button type="submit" class="button delete-button">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>Настройки не найдены. <a href="{{ url_for('settings.create_setting') }}">Создайте первую настройку.</a>
+            </p>
+        {% endif %}
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            // Обработчик изменения радиобаттона для активации настройки
+            $('input[name="active_setting"]').change(function () {
+                const settingId = $(this).val(); // Получаем ID выбранной настройки
+                const $currentRadio = $(this); // Ссылка на текущий радиобаттон
+
+                $.ajax({
+                    url: "{{ url_for('settings.activate_setting', setting_id=0) }}".replace('/0', '/' + settingId),
+                    type: 'POST',
+                    success: function (response) {
+                        if (response.status === 'success') {
+                            // Если успешно, ничего не делаем, радиобаттон уже выбран
+                            console.log(response.message);
+                            // Опционально: можно добавить Flash-сообщение через JS
+                            // Или просто перезагрузить страницу для обновления UI, если необходимо
+                            // window.location.reload();
+                        } else {
+                            // Если ошибка, возвращаем радиобаттон к предыдущему состоянию
+                            // или перезагружаем страницу, чтобы отразить истинное состояние из БД.
+                            console.error('Ошибка активации:', response.message);
+                            alert('Не удалось активировать настройку: ' + response.message + '\nСтраница будет перезагружена.');
+                            window.location.reload(); // Перезагружаем страницу для синхронизации
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.error("AJAX Error:", textStatus, errorThrown, jqXHR.responseText);
+                        alert('Произошла ошибка при активации настройки. Страница будет перезагружена.');
+                        window.location.reload(); // Перезагружаем страницу
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}
