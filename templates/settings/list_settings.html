@@ -17,8 +17,27 @@
             {% endif %}
         {% endwith %}
 
-        <a href="{{ url_for('settings.create_setting') }}" class="button">Создать новую настройку</a>
-        <br><br>
+        <div style="margin-bottom: 20px;">
+            <a href="{{ url_for('settings.create_setting') }}" class="button">Создать новую настройку</a>
+
+            <form action="{{ url_for('settings.restart_all_sessions') }}" method="post"
+                  style="display:inline-block; margin-left: 10px;">
+                <button type="submit" class="button"
+                        title="Принудительно завершить сессии всех пользователей. Им придется повторно войти в систему.">
+                    РАЗЛОГИНИТЬ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ
+                    <span class="tooltip-icon">?</span>
+                </button>
+            </form>
+
+            <form action="{{ url_for('settings.clear_all_locks') }}" method="post"
+                  style="display:inline-block; margin-left: 10px;">
+                <button type="submit" class="button"
+                        title="Сбросить все текущие блокировки страниц, позволяя другим пользователям редактировать их.">
+                    Разблокировать все редактируемые страницы
+                    <span class="tooltip-icon">?</span>
+                </button>
+            </form>
+        </div>
 
         {% if settings %}
             <table class="data-table">
@@ -40,7 +59,7 @@
                     <tr>
                         <td>
                             <input type="radio" name="active_setting" value="{{ setting.id }}"
-                                   {% if setting.is_activated_now %}checked{% endif %}>
+                                   {% if setting.id == active_setting_id %}checked{% endif %}>
                         </td>
                         <td>{{ setting.name }}</td>
                         <td>{{ setting.page_lock_seconds }}</td>
@@ -66,38 +85,5 @@
         {% endif %}
     </div>
 
-    <script>
-        $(document).ready(function () {
-            // Обработчик изменения радиобаттона для активации настройки
-            $('input[name="active_setting"]').change(function () {
-                const settingId = $(this).val(); // Получаем ID выбранной настройки
-                const $currentRadio = $(this); // Ссылка на текущий радиобаттон
-
-                $.ajax({
-                    url: "{{ url_for('settings.activate_setting', setting_id=0) }}".replace('/0', '/' + settingId),
-                    type: 'POST',
-                    success: function (response) {
-                        if (response.status === 'success') {
-                            // Если успешно, ничего не делаем, радиобаттон уже выбран
-                            console.log(response.message);
-                            // Опционально: можно добавить Flash-сообщение через JS
-                            // Или просто перезагрузить страницу для обновления UI, если необходимо
-                            // window.location.reload();
-                        } else {
-                            // Если ошибка, возвращаем радиобаттон к предыдущему состоянию
-                            // или перезагружаем страницу, чтобы отразить истинное состояние из БД.
-                            console.error('Ошибка активации:', response.message);
-                            alert('Не удалось активировать настройку: ' + response.message + '\nСтраница будет перезагружена.');
-                            window.location.reload(); // Перезагружаем страницу для синхронизации
-                        }
-                    },
-                    error: function (jqXHR, textStatus, errorThrown) {
-                        console.error("AJAX Error:", textStatus, errorThrown, jqXHR.responseText);
-                        alert('Произошла ошибка при активации настройки. Страница будет перезагружена.');
-                        window.location.reload(); // Перезагружаем страницу
-                    }
-                });
-            });
-        });
-    </script>
+    <script src="{{ url_for('static', filename='js/active_setting_rb.js') }}"></script>
 {% endblock %}

@@ -4,7 +4,7 @@ import pytz
 from werkzeug.security import check_password_hash
 
 from database import db
-from sqlalchemy import Table, UniqueConstraint, event
+from sqlalchemy import Table, UniqueConstraint, event, Index
 from sqlalchemy.types import String, Integer, Boolean, DateTime, Text
 from flask_login import UserMixin
 
@@ -380,6 +380,9 @@ class AccessSetting(BaseModel):
 
     Метод get_activated_setting - получить строку таблицы (объект класса), у которого is_activated_now = True.
     """
+
+    __tablename__ = 'access_settings'
+
     id = db.Column(Integer, primary_key=True)
     name = db.Column(String(50), default="По умолчанию №1", nullable=True)
     page_lock_seconds = db.Column(Integer,
@@ -391,6 +394,18 @@ class AccessSetting(BaseModel):
     is_activated_now = db.Column(Boolean, default=False, nullable=False)
     activity_period_counter = db.Column(Integer, default=50, nullable=False)
     activity_counter_max_threshold = db.Column(Integer, default=1000, nullable=False)
+
+    # Добавляем уникальный индекс с условием
+    # Это обеспечит, что в таблице будет только одна запись с is_activated_now = True
+    ___table_args__ = (
+        Index(
+            'uix_only_one_activated_setting',  # Имя индекса
+            'is_activated_now',  # Имя колонки, по которой создается индекс
+            unique=True,  # Делаем индекс уникальным
+            # Условие для PostgreSQL
+            postgresql_where=is_activated_now == True
+        ),
+    )
 
     @validates('page_lock_seconds')
     def validate_page_lock_seconds(self, key, page_lock_seconds):
@@ -488,14 +503,39 @@ class AccessSetting(BaseModel):
 @event.listens_for(AccessSetting, 'before_insert')
 @event.listens_for(AccessSetting, 'before_update')
 def receive_before_activate_setting(mapper, connection, target):
+    """
+    Слушатель, который срабатывает перед вставкой или обновлением объекта AccessSetting.
+    Если is_activated_now устанавливается в True для текущего объекта,
+    он деактивирует все остальные настройки.
+    """
+    # Этот слушатель запускается до фактического коммита.
+    # Если is_activated_now меняется на True, мы деактивируем все остальные.
     if target.is_activated_now:
-        session = db.session.object_session(target) or connection.query(AccessSetting).session()
+        # Получаем текущую сессию SQLAlchemy, связанную с объектом
+        session = db.session.object_session(target)
+        if session is None:
+            # Если объект не привязан к сессии (например, при прямом использовании connection)
+            # В Flask-SQLAlchemy обычно всегда есть db.session.
+            # Если у вас нет активной сессии, это может быть проблемой в инфраструктуре.
+            # Для надежности, особенно в контексте Flask-SQLAlchemy,
+            # можно использовать `db.session` напрямую.
+            session = db.session  # Используем глобальную сессию Flask-SQLAlchemy
 
+        # Находим все другие активные настройки, исключая текущую, если она уже существует
         query = session.query(AccessSetting).filter(
-            AccessSetting.is_activated_now)
+            AccessSetting.is_activated_now == True
+        )
+        # Если target уже имеет ID, это означает, что это существующая запись, которую обновляют.
+        # В этом случае мы исключаем ее из запроса, чтобы не деактивировать саму себя.
         if target.id is not None:
             query = query.filter(AccessSetting.id != target.id)
 
         other_active_settings = query.all()
         for setting in other_active_settings:
+            # Деактивируем другие настройки.
+            # Эти изменения будут отслеживаться сессией и зафиксированы вместе с target при commit.
             setting.is_activated_now = False
+
+        # Важное примечание: здесь НЕ НУЖЕН db.session.commit() или db.session.flush().
+        # Изменения, внесенные в объекты, привязанные к сессии, будут зафиксированы
+        # в той же транзакции, когда вызывается db.session.commit() для target.

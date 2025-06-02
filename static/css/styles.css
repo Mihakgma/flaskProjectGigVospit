@@ -43,7 +43,7 @@
     background-image: url("../bremen_musicians.jpg");
     background-size: contain;
     background-repeat: no-repeat;
-    background-position: right;
+    background-position: bottom;
 }
 
 /*<!--  Простой CSS для дропдауна, добавьте в static /css/ styles.css  -->*/
@@ -80,4 +80,21 @@
     display: block;
 }
 
+
+/* Стиль для всплывающих подсказок */
+.tooltip-icon {
+    cursor: help;
+    display: inline-block;
+    width: 1.2em;
+    height: 1.2em;
+    line-height: 1.2em;
+    text-align: center;
+    border-radius: 50%;
+    background-color: #007bff; /* Примерный цвет, можно изменить */
+    color: white;
+    font-weight: bold;
+    font-size: 0.8em;
+    vertical-align: middle;
+    margin-left: 5px;
+}
 
