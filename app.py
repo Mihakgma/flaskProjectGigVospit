@@ -16,20 +16,28 @@ from routers import (auth_bp,
 from flask_login import LoginManager
 from flask_migrate import Migrate
 
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 
 
 def create_app():
     app = Flask(__name__)
     # ... (ваша конфигурация)
     migrate = Migrate(app, db)
-    app.config.from_object('config.Config')  # Конфигурация из отдельного файла (см. ниже)
-    app.secret_key = secrets.token_urlsafe(16)
+    app.config.from_object('config.Config')
+    app.secret_key = app.config['SECRET_KEY']
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'  # Роут для входа, если пользователь не авторизован
     login_manager.init_app(app)
+    # Инициализация CSRFProtect
+    # csrf = CSRFProtect()
+    # csrf.init_app(app)
 
     init_app(app, db=db)
+
+    @app.context_processor
+    def inject_csrf_token():
+        return dict(csrf_token=generate_csrf)
+
     app.register_blueprint(auth_bp, url_prefix='/auth')
 
     @login_manager.user_loader
@@ -43,15 +51,13 @@ def create_app():
     app.register_blueprint(orgs_bp, url_prefix='/organizations')
     app.register_blueprint(settings_bp, url_prefix='/settings')
     app.register_blueprint(routes_bp, url_prefix='/')
-    csrf = CSRFProtect()
-    csrf.init_app(app)  # Инициализация CSRFProtect
+
     # app.config['WTF_CSRF_TIME_LIMIT'] = None
     return app
 
 
-app = create_app()
-
 if __name__ == '__main__':
+    app = create_app()
     # serve(app, host='0.0.0.0', port=5000)
     # ДЛЯ ОТЛАДКИ ПРИЛОЖЕНИЯ ЗАПУСКАЕМ В РЕЖИМЕ ДЕБАГГИНГА!!!
     app.run(debug=True)

@@ -21,7 +21,7 @@
                           action="{{ url_for('organizations.edit_organization', organization_id=organization.id) }}">
                         {#                <form method="POST" action="" novalidate>#}
                         <!-- Защита от CSRF-атак -->
-                        {{ form.csrf_token }}
+{#                        {{ form.csrf_token }}#}
 
                         <!-- Поле: Название организации -->
                         <div class="mb-3">

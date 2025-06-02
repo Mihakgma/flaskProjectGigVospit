@@ -46,6 +46,13 @@
     background-position: bottom;
 }
 
+.background-body-fiks-1 {
+    background-image: url("../fixiks_1.jpg");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: right;
+}
+
 /*<!--  Простой CSS для дропдауна, добавьте в static /css/ styles.css  -->*/
 .dropdown {
     position: relative;

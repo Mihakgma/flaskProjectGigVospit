@@ -1,17 +1,21 @@
 import os
+import secrets
 
 filename = 'config/db_conf_pg.txt'
-with open(filename, 'r') as file:
-    db_config_info = file.read().replace('\n', '')
+try:
+    with open(filename, 'r') as file:
+        db_config_info = file.read().replace('\n', '')
+except FileNotFoundError:
+    db_config_info = None # Устанавливаем None, если файл не найден
 
 
 class Config:
-    # Читаем строку подключения из переменной окружения DATABASE_URL
-    # Если переменная не установлена (например, при локальной разработке без Docker Compose),
-    # можно подставить значение по умолчанию или выбросить ошибку.
-    # Для Docker Compose переменная ДОЛЖНА быть установлена.
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
-    SECRET_KEY = os.environ.get('SECRET_KEY')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or db_config_info
+    # Теперь SECRET_KEY всегда будет иметь значение:
+    # либо из переменной окружения, либо сгенерированное (для локальной разработки)
+    SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_urlsafe(40)  # Увеличим длину для лучшей безопасности
+
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Проверка на случай, если переменная окружения не установлена (опционально, но рекомендуется)
     if not SQLALCHEMY_DATABASE_URI:

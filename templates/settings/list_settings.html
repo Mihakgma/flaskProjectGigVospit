@@ -1,89 +1,97 @@
-<!-- templates/settings/list_settings.html -->
 {% extends "base.html" %}
 
-{% block title %}Настройки программы{% endblock %}
-
 {% block content %}
-    <div class="container background-body-1">
-        <h1>Настройки программы</h1>
+    <div>
+        <div class="container mt-4">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Управление настройками доступа</h3>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <ul class="flashes">
-                    {% for category, message in messages %}
-                        <li class="{{ category }}">{{ message }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        {% endwith %}
+                    <!-- Форма для активации настройки БЕЗ JAVASCRIPT -->
+                    <!-- Каждая радиокнопка должна быть частью этой формы -->
+                    <form method="POST" action="{{ url_for('settings.activate_setting_no_js') }}">
+                        <!-- Защита от CSRF-атак -->
+                        {# Если вы временно отключили CSRF, можно закомментировать, НО В ПРОДАКШЕНЕ ОБЯЗАТЕЛЬНО ВКЛЮЧИТЕ! #}
+{#                        {{ csrf_token() }}#}
 
-        <div style="margin-bottom: 20px;">
-            <a href="{{ url_for('settings.create_setting') }}" class="button">Создать новую настройку</a>
+                        <table class="table table-striped table-hover">
+                            <thead>
+                            <tr>
+                                <th></th> <!-- Для радиобаттона -->
+                                <th>Имя настройки</th>
+                                <th>Описание</th>
+                                <th>Дата создания</th>
+                                <th>Дата последнего изменения</th>
+                                <th>Действия</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for setting in access_settings %}
+                                <tr>
+                                    <td>
+                                        <input type="radio"
+                                               name="selected_setting_id" {# ОДНО ИМЯ для всех радиокнопок в группе #}
+                                               value="{{ setting.id }}" {# ID настройки, который будет отправлен #}
+                                               {% if setting.is_activated_now %}checked{% endif %}>
+                                    </td>
+                                    <td>{{ setting.name }}</td>
+                                    <td>{{ setting.description }}</td>
+                                    <td>{{ setting.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>{{ setting.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>
+{#                                        <a href="{{ url_for('settings.edit_setting', setting_id=setting.id) }}"#}
+{#                                           class="btn btn-primary btn-sm">Редактировать</a>#}
+                                        <a href="{{ url_for('settings.delete_setting', setting_id=setting.id) }}"
+                                           class="btn btn-danger btn-sm"
+                                           onclick="return confirm('Вы уверены, что хотите удалить эту настройку?')">Удалить</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
 
-            <form action="{{ url_for('settings.restart_all_sessions') }}" method="post"
-                  style="display:inline-block; margin-left: 10px;">
-                <button type="submit" class="button"
-                        title="Принудительно завершить сессии всех пользователей. Им придется повторно войти в систему.">
-                    РАЗЛОГИНИТЬ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ
-                    <span class="tooltip-icon">?</span>
-                </button>
-            </form>
+                        {# Кнопка отправки формы #}
+                        <button type="submit" class="btn btn-success mt-3">Активировать выбранную настройку</button>
+                    </form>
 
-            <form action="{{ url_for('settings.clear_all_locks') }}" method="post"
-                  style="display:inline-block; margin-left: 10px;">
-                <button type="submit" class="button"
-                        title="Сбросить все текущие блокировки страниц, позволяя другим пользователям редактировать их.">
-                    Разблокировать все редактируемые страницы
-                    <span class="tooltip-icon">?</span>
-                </button>
-            </form>
+                    <div style="margin-top: 20px;">
+                        <a href="{{ url_for('settings.create_setting') }}" class="btn btn-info">Создать новую
+                            настройку</a>
+                    </div>
+
+                    {# Ваши формы для "РАЗЛОГИНИТЬ ВСЕХ" и "Разблокировать" могут остаться отдельными,
+                       если они не часть логики выбора настройки. #}
+                    <form action="{{ url_for('settings.restart_all_sessions') }}" method="post"
+                          style="display:inline-block; margin-left: 10px;">
+{#                        {{ csrf_token() }}#}
+                        <button type="submit" class="btn btn-warning"
+                                title="Принудительно завершить сессии всех пользователей. Им придется повторно войти в систему.">
+                            РАЗЛОГИНИТЬ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ
+                            <span class="tooltip-icon">?</span>
+                        </button>
+                    </form>
+
+                    <form action="{{ url_for('settings.clear_all_locks') }}" method="post"
+                          style="display:inline-block; margin-left: 10px;">
+{#                        {{ csrf_token() }}#}
+                        <button type="submit" class="btn btn-info"
+                                title="Сбросить все текущие блокировки страниц, позволяя другим пользователям редактировать их.">
+                            Разблокировать все редактируемые страницы
+                            <span class="tooltip-icon">?</span>
+                        </button>
+                    </form>
+
+                </div>
+            </div>
         </div>
-
-        {% if settings %}
-            <table class="data-table">
-                <thead>
-                <tr>
-                    <th>Активна</th>
-                    <th>Название</th>
-                    <th>Блок. стр. (сек)</th>
-                    <th>Пр. польз. (сек)</th>
-                    <th>Макс. админы</th>
-                    <th>Макс. модеры</th>
-                    <th>Пров. акт. (клики)</th>
-                    <th>Обновл. сесс. (клики)</th>
-                    <th>Действия</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for setting in settings %}
-                    <tr>
-                        <td>
-                            <input type="radio" name="active_setting" value="{{ setting.id }}"
-                                   {% if setting.id == active_setting_id %}checked{% endif %}>
-                        </td>
-                        <td>{{ setting.name }}</td>
-                        <td>{{ setting.page_lock_seconds }}</td>
-                        <td>{{ setting.activity_timeout_seconds }}</td>
-                        <td>{{ setting.max_admins_number }}</td>
-                        <td>{{ setting.max_moders_number }}</td>
-                        <td>{{ setting.activity_period_counter }}</td>
-                        <td>{{ setting.activity_counter_max_threshold }}</td>
-                        <td>
-                            <form action="{{ url_for('settings.delete_setting', setting_id=setting.id) }}" method="post"
-                                  onsubmit="return confirm('Вы уверены, что хотите удалить эту настройку? Это действие необратимо.');"
-                                  style="display:inline;">
-                                <button type="submit" class="button delete-button">Удалить</button>
-                            </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        {% else %}
-            <p>Настройки не найдены. <a href="{{ url_for('settings.create_setting') }}">Создайте первую настройку.</a>
-            </p>
-        {% endif %}
     </div>
-
-    <script src="{{ url_for('static', filename='js/active_setting_rb.js') }}"></script>
 {% endblock %}

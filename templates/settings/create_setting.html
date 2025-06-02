@@ -4,7 +4,7 @@
 {% block title %}Создать новую настройку{% endblock %}
 
 {% block content %}
-    <div class="container background-body-1">
+    <div class="background-body-fiks-1">
         <h1>Создать новую настройку программы</h1>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -19,7 +19,7 @@
 
         <form method="post">
             {{ form.hidden_tag() }}
-
+{#            {{ csrf_token }}#}
             {% for field in form if field.name not in ['csrf_token', 'submit'] %}
                 <div>
                     {{ field.label(class_="form-label") }}
