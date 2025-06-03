@@ -3,9 +3,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     try {
         // Получаем значение переменной из шаблона Flask
-        let timeoutValue = "{{ timeout }}";
-
-        const editTimeoutSeconds = parseInt(timeoutValue) || 0;
+        const editTimeoutSeconds = FLASK_EDIT_TIMEOUT_SECONDS
 
         console.log('Получено значение таймаута:', editTimeoutSeconds);
 

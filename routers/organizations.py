@@ -234,7 +234,7 @@ def manage_orgs():
 @login_required
 @role_required('admin', 'moder')
 def edit_organization(organization_id):
-    timeout = str(PageLocker.get_timeout())
+    timeout = PageLocker.get_timeout()
     print(f'Timeout: {timeout} secs...')
     lock_info = LockInfo("orgs_bp",
                          "edit_organization",

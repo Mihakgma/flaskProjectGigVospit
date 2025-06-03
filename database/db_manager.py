@@ -18,4 +18,4 @@ def init_app(app, db):
         # update users fields data with default values
         users = User.query.all()
         UserCrudControl.sessions_restart(db_obj=db, users=users, need_commit=True)
-        PageLocker.clear_locked_pages()
+        PageLocker.clear_all_lock_info()

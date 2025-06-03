@@ -1,5 +1,5 @@
 # settings_bp.py (или расширьте ваш admin_bp.py)
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, abort
 from flask_login import login_required, current_user
 from database import db
 from models import AccessSetting, User  # Убедитесь, что AccessSetting и db импортированы
@@ -56,52 +56,6 @@ def create_setting():
                 flash(f"Ошибка в поле '{form[field].label.text}': {error}", 'error')
 
     return render_template('settings/create_setting.html', form=form)
-
-
-# Роут для активации настройки (используется AJAX)
-# @settings_bp.route('/activate/<int:setting_id>', methods=['POST'])
-# @login_required
-# @role_required('super')
-# def activate_setting(setting_id):
-#     setting_to_activate = AccessSetting.query.get(setting_id)
-#     if not setting_to_activate:
-#         print(f"Setting {setting_id} not found.") # Для отладки
-#         return jsonify({'status': 'error', 'message': 'Настройка не найдена.'}), 404
-#
-#     try:
-#         # Шаг 1: Деактивировать все остальные активные настройки
-#         # Использование .update() с synchronize_session=False минимизирует ORM-накладные расходы
-#         # и напрямую отправляет SQL-запрос для обновления.
-#         # Это более надежный способ для массового обновления.
-#         db.session.query(AccessSetting).filter(
-#             AccessSetting.is_activated_now == True,
-#             AccessSetting.id != setting_id
-#         ).update({AccessSetting.is_activated_now: False}, synchronize_session=False)
-#
-#         # Шаг 2: Активировать выбранную настройку
-#         setting_to_activate.is_activated_now = True
-#         db.session.add(setting_to_activate) # Убедимся, что объект отслеживается сессией
-#
-#         # Шаг 3: Коммит всех изменений в одной транзакции
-#         db.session.commit()
-#
-#         flash('Настройка успешно активирована!', 'success')
-#         return jsonify({'status': 'success', 'message': 'Настройка успешно активирована!'})
-#
-#     except Exception as e:
-#         db.session.rollback()
-#         # Этот импорт нужен для получения полного трейсбэка
-#         import traceback
-#         error_traceback = traceback.format_exc()
-#         print(f"EXCEPTION during activation: {e}\n{error_traceback}") # Для отладки на сервере
-#
-#         # Возвращаем более подробную ошибку в AJAX-ответ
-#         flash(f'Ошибка при активации настройки: {e}', 'error')
-#         return jsonify({
-#             'status': 'error',
-#             'message': f'Ошибка при активации настройки: {str(e)}',
-#             'detail': error_traceback # В продакшене это лучше логировать, а не отправлять пользователю
-#         }), 500
 
 
 # Роут для удаления настройки
@@ -172,7 +126,7 @@ def clear_all_locks():
     Разблокирует все редактируемые на данный момент страницы.
     """
     try:
-        PageLocker.clear_locked_pages()
+        PageLocker.clear_all_lock_info()
         db.session.commit()  # Если clear_locked_pages изменяет БД, нужно commit
         flash('Все заблокированные страницы успешно разблокированы!', 'success')
     except Exception as e:
@@ -183,7 +137,7 @@ def clear_all_locks():
 
 @settings_bp.route('/activate_setting_no_js', methods=['POST'])
 @login_required
-@role_required('super', 'admin')
+@role_required('super')
 def activate_setting_no_js():
     # Получаем ID выбранной настройки из данных формы
     # request.form - это словарь с данными, отправленными формой
@@ -231,3 +185,25 @@ def activate_setting_no_js():
 
         flash(f'Ошибка при активации настройки: {str(e)}', 'error')
         return redirect(url_for('settings.list_settings'))
+
+
+@settings_bp.route('/page_lock_total_info', methods=['GET'])
+@login_required
+@role_required('super', 'admin', 'moder')
+def page_lock_total_info():
+    info = PageLocker.get_summary()
+    flash(info, 'success')
+    return redirect(url_for('settings.list_settings'))
+
+
+@settings_bp.route('/view/<int:setting_id>')
+@login_required
+@role_required('super', 'admin', 'moder')
+def view_setting(setting_id):
+    """
+    Отображает детали конкретной настройки доступа.
+    """
+    setting = AccessSetting.query.get(setting_id)
+    if not setting:
+        abort(404) # Если настройка не найдена, возвращаем 404
+    return render_template('settings/view_setting.html', setting=setting)

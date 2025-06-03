@@ -17,9 +17,17 @@ class PageLocker:
     __LOCKED_PAGES = {key: lock_info, value: get_current_nsk_time (TS with TZ)}
     """
     __LOCKED_PAGES = {}
-    __TIMEOUT_SECONDS = 60 * 1  # 60 *15 - for prod - get from DB table access_setting
+    __TIMEOUT_SECONDS = 60  # 60 * 15 - for prod - get from DB table access_setting
     __PAGES_LOCKED_TOTAL = 0
     __PAGES_UNLOCKED_TOTAL = 0
+
+    @staticmethod
+    def pages_lock_increment():
+        PageLocker.__PAGES_LOCKED_TOTAL += 1
+
+    @staticmethod
+    def pages_unlock_increment():
+        PageLocker.__PAGES_UNLOCKED_TOTAL += 1
 
     @staticmethod
     def get_locked_pages():
@@ -48,29 +56,40 @@ class PageLocker:
                 user_ids_count[current_user_id] = 1
             else:
                 user_ids_count[obj.user_id] = +1
-        most_frequent = sorted(user_ids_count.items(), key=lambda x: x[1], reverse=True)
-        most_frequent_user_id = most_frequent[0]
-        less_frequent = sorted(user_ids_count.items(), key=lambda x: x[1], reverse=False)
+
+        most_frequent_user_id, most_frequent_pages_num = 0, 0
+        less_frequent_user_id, less_frequent_pages_num = 0, 0
+
+        try:
+            most_frequent = sorted(user_ids_count.items(), key=lambda x: x[1], reverse=True)
+            most_frequent_user_id, most_frequent_pages_num = most_frequent[0], most_frequent[1]
+            less_frequent = sorted(user_ids_count.items(), key=lambda x: x[1], reverse=False)
+            less_frequent_user_id, less_frequent_pages_num = less_frequent[0], less_frequent[1]
+        except IndexError as e:
+            print(str(e))
+
         pages_locked_total = PageLocker.get_pages_locked_total()
         pages_unlocked_total = PageLocker.get_pages_unlocked_total()
 
-        out = (f"Всего ЗАблокировано страниц НА ТЕКУЩИЙ МОМЕНТ: <{len(locked_pages)}>, "
+        out = (f"Всего Заблокировано страниц НА ТЕКУЩИЙ МОМЕНТ: <{len(locked_pages)}>, "
                f"Наибольшее число страниц, заблокированных на текущий момент пользователем (id): "
-               f"<{most_frequent_user_id}>: <{most_frequent[1]}>, "
+               f"<{most_frequent_user_id}>: <{most_frequent_pages_num}>, "
                f"Наименьшее число страниц, заблокированных на текущий момент пользователем (id): "
-               f"<{less_frequent[0]}>: <{less_frequent[1]}>, "
-               f"Всего ЗАблокировано страниц ПОСЛЕ РЕСТАРТА ПРИЛОЖЕНИЯ: <{pages_locked_total}>, "
-               f"Всего РАЗблокировано страниц ПОСЛЕ РЕСТАРТА ПРИЛОЖЕНИЯ: <{pages_unlocked_total}>, ")
+               f"<{less_frequent_user_id}>: <{less_frequent_pages_num}>, "
+               f"Всего Заблокировано страниц ПОСЛЕ РЕСТАРТА ПРИЛОЖЕНИЯ: <{pages_locked_total}>, "
+               f"Разблокировано страниц (по времени простоя) ПОСЛЕ РЕСТАРТА ПРИЛОЖЕНИЯ: <{pages_unlocked_total}>.")
         return out
 
     @staticmethod
-    def clear_locked_pages():
+    def clear_all_lock_info():
         PageLocker.__LOCKED_PAGES = {}
+        PageLocker.__PAGES_LOCKED_TOTAL = 0
+        PageLocker.__PAGES_UNLOCKED_TOTAL = 0
         activated_setting = AccessSetting.get_activated_setting()
         activated_setting_name = activated_setting.name
-        __TIMEOUT_SECONDS = activated_setting.page_lock_seconds
+        PageLocker.__TIMEOUT_SECONDS = activated_setting.page_lock_seconds
         print(f"Параметр __TIMEOUT_SECONDS установлен из сеттинга: <{activated_setting_name}>: "
-              f"<{__TIMEOUT_SECONDS}>")
+              f"<{activated_setting.page_lock_seconds}>")
 
     @staticmethod
     def lock_page(lock_data: LockInfo) -> bool:
@@ -82,6 +101,7 @@ class PageLocker:
         if lock_data in locked_pages:
             locked_pages[lock_data] = get_current_nsk_time()
             flash('Таймаут для текущей страницы - обновлен.', 'warning')
+            PageLocker.pages_lock_increment()
             return True
         # текущая функция и строка в таблице не редактируется пользователем,
         # который пытается зайти в нее на редактирование
@@ -107,8 +127,11 @@ class PageLocker:
                           'warning')
                     PageLocker.unlock_page(locked_page)
                     locked_pages[lock_data] = get_current_nsk_time()
+                    PageLocker.pages_lock_increment()
+                    PageLocker.pages_unlock_increment()
                     return True
         locked_pages[lock_data] = get_current_nsk_time()
+        PageLocker.pages_lock_increment()
         return True
 
     @staticmethod

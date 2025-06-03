@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header">
+                <h3>Просмотр настройки доступа: {{ setting.name }}</h3>
+            </div>
+            <div class="card-body">
+                <p><strong>ID:</strong> {{ setting.id }}</p>
+                <p><strong>Имя настройки:</strong> {{ setting.name }}</p>
+                <p><strong>Описание:</strong> {{ setting.description }}</p>
+                <p><strong>Активна сейчас:</strong> {% if setting.is_activated_now %}Да{% else %}Нет{% endif %}</p>
+                <p><strong>Дата создания:</strong> {{ setting.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                <p><strong>Дата последнего изменения:</strong> {{ setting.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                </p>
+                <p><strong>Кем создано (ID):</strong> {{ setting.created_by_user_id }}</p>
+                <p><strong>Кем изменено (ID):</strong> {{ setting.updated_by_user_id }}</p>
+
+                {# Здесь можно добавить другие поля из вашей модели AccessSetting #}
+
+                <a href="{{ url_for('settings.list_settings') }}" class="btn btn-secondary mt-3">Назад к списку</a>
+{#                <a href="{{ url_for('settings.edit_setting', setting_id=setting.id) }}" class="btn btn-primary mt-3">Редактировать</a>#}
+                <a href="{{ url_for('settings.delete_setting', setting_id=setting.id) }}"
+                   class="btn btn-danger mt-3"
+                   onclick="return confirm('Вы уверены, что хотите удалить эту настройку?')">Удалить</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
