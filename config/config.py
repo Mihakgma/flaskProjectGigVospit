@@ -1,6 +1,8 @@
 import os
 import secrets
 
+from pathlib import Path
+
 filename = 'config/db_conf_pg.txt'
 try:
     with open(filename, 'r') as file:
@@ -8,10 +10,15 @@ try:
 except FileNotFoundError:
     db_config_info = None # Устанавливаем None, если файл не найден
 
+# db_path = Path(__file__).resolve().parent.parent / 'example.db'
+
 
 class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or db_config_info
+    # SQLALCHEMY_DATABASE_URI = f'sqlite:///{db_path}'
+
     # Теперь SECRET_KEY всегда будет иметь значение:
+
     # либо из переменной окружения, либо сгенерированное (для локальной разработки)
     SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_urlsafe(40)  # Увеличим длину для лучшей безопасности
 

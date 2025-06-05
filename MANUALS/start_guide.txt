@@ -1,6 +1,9 @@
 for running application from windows shell:
 
 1) cd in application root dir
+2) python app.py (check if PYPATH has been set in system environment variable - through control panel)
+
+DEBUG MODE!!!
 2) set FLASK_APP=app.py
 3) set FLASK_ENV=development
 4) flask run
