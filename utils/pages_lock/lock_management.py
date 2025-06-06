@@ -145,8 +145,23 @@ class PageLocker:
         locked_pages = PageLocker.get_locked_pages()
         locked_pages = list(locked_pages)
         counter = 0
+
+        # Получаем объект пользователя по user_id, переданному в функцию
+        # Делаем это ДО цикла, так как flash-сообщение оперирует общим user_id функции.
+        user_to_unlock = User.query.get(user_id)
+
+        # Определяем отображаемое имя пользователя
+        if user_to_unlock:
+            username_display = user_to_unlock.username
+        else:
+            username_display = f"ID {user_id} (пользователь не найден)"
+
         for locked_page in locked_pages:
-            if user_id == locked_page.get_user_id():
+            lock_user_id = locked_page.get_user_id()
+            if user_id == lock_user_id:  # Проверка, что user_id совпадает с user_id, который заблокировал страницу
                 counter += 1
                 PageLocker.unlock_page(locked_page)
-        flash(f'Разблокировано <{counter}> страниц!')
+
+        # Выводим flash-сообщение
+        flash(f'Разблокировано <{counter}> страниц, '
+              f'заблокированных пользователем: <{username_display}>')
