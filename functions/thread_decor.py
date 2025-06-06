@@ -3,6 +3,8 @@ from threading import Thread, Event
 from threading import enumerate as thread_enumerate
 from time import sleep as time_sleep
 
+from flask import request, current_app, flash, redirect, url_for
+
 
 def thread(func):
     """
@@ -25,6 +27,27 @@ def thread(func):
         return func(*args, **kwargs)
 
     return wrapper
+
+
+def background_task(f, redirect_to='applicants.search_applicants'):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        # Получаем данные из request context ДО его закрытия
+        # applicant_ids_str = request.form.get('applicant_ids')
+
+        # Получаем текущее приложение для восстановления контекста
+        app_context = current_app._get_current_object()
+
+        # Создаем новый поток
+        t = Thread(target=f, args=(app_context, *args),
+                   kwargs=kwargs)  # Передаем applicant_ids_str и app_context
+        t.daemon = True  # Или False, если хотите, чтобы задача завершилась, даже если главный процесс умрет
+        t.start()
+        # Возвращаем ответ сразу, не дожидаясь завершения потока
+        flash('Экспорт данных запущен в фоновом режиме. Файл будет создан.', 'info')
+        return redirect(url_for(redirect_to))  # или куда-то еще
+
+    return wrapped
 
 
 def stop_thread(thread_name: str):

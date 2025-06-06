@@ -20,7 +20,7 @@ from datetime import timezone, datetime
 
 from forms.forms import (AddApplicantForm,
                          VizitForm, ApplicantSearchForm, ApplicantEditForm)
-from sqlalchemy import and_, event
+from sqlalchemy import and_
 from sqlalchemy.sql.expression import func
 
 from utils.crud_classes import UserCrudControl
@@ -311,6 +311,7 @@ def search_applicants():
 @role_required('admin', 'dload')
 @thread
 def export_found_data():
+    # with app_context.app_context():
     applicant_ids_str = request.form.get('applicant_ids')
     if not applicant_ids_str:
         flash('Не выбраны заявители для экспорта.', 'warning')
@@ -383,7 +384,8 @@ def export_found_data():
             'ФИО заявителя': f"{vizit.applicant.last_name} {vizit.applicant.first_name} {vizit.applicant.middle_name or ''}".strip() if vizit.applicant else None,
             'Дата визита': vizit.visit_date.strftime('%d.%m.%Y %H:%M:%S') if vizit.visit_date else None,
             'Контингент': vizit.contingent.name if vizit.contingent else None,  # Предполагаем 'name'
-            'Тип аттестации': vizit.attestation_type.name if vizit.attestation_type else None,  # Предполагаем 'name'
+            'Тип аттестации': vizit.attestation_type.name if vizit.attestation_type else None,
+            # Предполагаем 'name'
             'Область работ': vizit.work_field.name if vizit.work_field else None,  # Предполагаем 'name'
             'Тип заявителя (в визите)': vizit.applicant_type.name if vizit.applicant_type else None,
             'ID контракта (FK)': vizit.contract_id,
@@ -408,11 +410,13 @@ def export_found_data():
                 'Номер контракта': contract.number,
                 'Наименование контракта': contract.name,
                 'Дата заключения': contract.contract_date.strftime('%d.%m.%Y') if contract.contract_date else None,
-                'Срок действия до': contract.expiration_date.strftime('%d.%m.%Y') if contract.expiration_date else None,
+                'Срок действия до': contract.expiration_date.strftime(
+                    '%d.%m.%Y') if contract.expiration_date else None,
                 'Пролонгирован': 'Да' if contract.is_extended else 'Нет',
                 'ID организации (FK)': contract.organization_id,
-                'ИНН организации': contract.organization.inn if contract.organization and hasattr(contract.organization,
-                                                                                                  'inn') else None,
+                'ИНН организации': contract.organization.inn if contract.organization and hasattr(
+                    contract.organization,
+                    'inn') else None,
                 # Предполагаем у Organization есть 'inn'
                 'Наименование организации': contract.organization.name if contract.organization and hasattr(
                     contract.organization, 'name') else None,

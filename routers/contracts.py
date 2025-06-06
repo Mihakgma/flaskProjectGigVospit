@@ -45,7 +45,8 @@ def add_contract():
                 user_crud_control.commit_other_table()
                 db.session.commit()
                 flash('Новый контракт успешно добавлен!', 'success')
-                return redirect(url_for('contract_details', contract_id=new_contract.id))
+                return redirect(url_for('contracts.contract_details',
+                                        contract_id=new_contract.id))
             except ValidationError as e:
                 db.session.rollback()
                 # flash(e)
