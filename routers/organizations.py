@@ -30,7 +30,7 @@ orgs_bp = Blueprint('organizations', __name__)
 
 @orgs_bp.route('/add', methods=['GET', 'POST'])
 @login_required
-@role_required('admin', 'moder', 'oper', )
+@role_required('super', 'admin', 'moder', 'oper', )
 def add_organization():
     form = OrganizationForm()  # Создаем форму для GET-запроса или для первоначального отображения
 
@@ -103,7 +103,7 @@ def organization_details(organization_id):
 
 @orgs_bp.route('/search')
 @login_required
-@role_required('admin', 'moder', 'oper', )
+@role_required('anyone')
 def search_organizations():
     q = request.args.get('q')
     if not q:
@@ -134,7 +134,7 @@ def check_inn():
 
 @orgs_bp.route('/search')
 @login_required
-@role_required('admin', 'moder', 'oper')
+@role_required('super', 'admin', 'moder', 'oper')
 def search_orgs():
     q = request.args.get('q')
     page = int(request.args.get('page', 1))
@@ -186,7 +186,7 @@ def search_orgs():
 
 @orgs_bp.route('/manage', methods=['GET'])
 @login_required
-@role_required('admin', 'moder', 'oper')
+@role_required('super', 'admin', 'moder', 'oper')
 def manage_orgs():
     # Получаем параметры поиска из URL (GET-запрос)
     search_name = request.args.get('search_name', '').strip()
@@ -232,7 +232,7 @@ def manage_orgs():
 
 @orgs_bp.route('/<int:organization_id>/edit', methods=['GET', 'POST'])
 @login_required
-@role_required('admin', 'moder')
+@role_required('super', 'admin', 'moder')
 def edit_organization(organization_id):
     timeout = PageLocker.get_timeout()
     print(f'Timeout: {timeout} secs...')

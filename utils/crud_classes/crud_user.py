@@ -6,6 +6,8 @@ from models import User
 from models.models import get_current_nsk_time, AccessSetting
 from sqlalchemy.exc import IntegrityError
 
+from utils.pages_lock.lock_management import PageLocker
+
 
 class UserCrudControl:
     """
@@ -143,6 +145,7 @@ class UserCrudControl:
         user = self.get_user()
         need_commit = self.get_need_commit()
         try:
+            PageLocker.unlock_all_user_pages(user_id=user.id)
             user.is_logged_in = False
             user.valid_ip = ""
             user.last_activity_at = get_current_nsk_time()

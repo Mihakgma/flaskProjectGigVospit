@@ -76,8 +76,9 @@ class PageLocker:
                f"<{most_frequent_user_id}>: <{most_frequent_pages_num}>, "
                f"Наименьшее число страниц, заблокированных на текущий момент пользователем (id): "
                f"<{less_frequent_user_id}>: <{less_frequent_pages_num}>, "
-               f"Всего Заблокировано страниц ПОСЛЕ РЕСТАРТА ПРИЛОЖЕНИЯ: <{pages_locked_total}>, "
-               f"Разблокировано страниц (по времени простоя) ПОСЛЕ РЕСТАРТА ПРИЛОЖЕНИЯ: <{pages_unlocked_total}>.")
+               f"Всего Заблокировано страниц ПОСЛЕ РАЗБЛОИКРОВАНИЯ ВСЕХ СТРАНИЦ: <{pages_locked_total}>, "
+               f"Разблокировано страниц (по времени простоя) ПОСЛЕ РАЗБЛОИКРОВАНИЯ ВСЕХ СТРАНИЦ: "
+               f"<{pages_unlocked_total}>.")
         return out
 
     @staticmethod
@@ -95,7 +96,6 @@ class PageLocker:
     def lock_page(lock_data: LockInfo) -> bool:
         check_if_lock_info(lock_data)
         locked_pages = PageLocker.get_locked_pages()
-        # ПЕРЕДЕЛАТЬ !!! НЕПРАВИЛЬНО!!!
         # перезаход на редактирование (обновил страницу) одним и тем же пользователем,
         # обновляется таймаут на доступ к странице для пользователя...
         if lock_data in locked_pages:
@@ -139,3 +139,14 @@ class PageLocker:
         check_if_lock_info(lock_data)
         locked_pages = PageLocker.get_locked_pages()
         locked_pages.pop(lock_data, None)
+
+    @staticmethod
+    def unlock_all_user_pages(user_id: int):
+        locked_pages = PageLocker.get_locked_pages()
+        locked_pages = list(locked_pages)
+        counter = 0
+        for locked_page in locked_pages:
+            if user_id == locked_page.get_user_id():
+                counter += 1
+                PageLocker.unlock_page(locked_page)
+        flash(f'Разблокировано <{counter}> страниц!')
