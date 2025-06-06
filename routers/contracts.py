@@ -203,7 +203,8 @@ def edit_contract(contract_id):
                         db.session.commit()
                         flash('Договор успешно обновлен!', 'success')
                         PageLocker.unlock_page(lock_data=lock_info)
-                        return redirect(url_for('contracts.contract_details', contract_id=contract.id))
+                        return redirect(url_for('contracts.contract_details',
+                                                contract_id=contract_id))
                     except Exception as e:
                         db.session.rollback()
                         flash(f'Ошибка при обновлении договора: {e}', 'error')
@@ -252,7 +253,6 @@ def edit_contract(contract_id):
     else:
         return redirect(url_for('contracts.contract_details',
                                 contract_id=contract_id))
-    PageLocker.unlock_page(lock_data=lock_info)
 
 
 # ОПЦИОНАЛЬНО: Роут для открепления визита от контракта

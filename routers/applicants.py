@@ -24,13 +24,15 @@ from sqlalchemy import and_
 from sqlalchemy.sql.expression import func
 
 from utils.crud_classes import UserCrudControl
+from utils.pages_lock.lock_info import LockInfo
+from utils.pages_lock.lock_management import PageLocker
 
 applicants_bp = Blueprint('applicants', __name__)
 
 
 @applicants_bp.route('/add', methods=['GET', 'POST'])
 @login_required
-@role_required('admin', 'moder', 'oper', )
+@role_required('super', 'admin', 'moder', 'oper', )
 def add_applicant():
     applicant_form = AddApplicantForm()
     vizit_form = VizitForm()
@@ -85,7 +87,7 @@ def add_applicant():
 
 @applicants_bp.route('/details/<int:applicant_id>')
 @login_required
-@role_required('admin', 'moder', 'oper', )
+@role_required('super', 'admin', 'moder', 'oper', )
 def applicant_details(applicant_id):
     applicant = Applicant.query.get_or_404(applicant_id)
     visits = Vizit.query.filter_by(applicant_id=applicant_id).all()
@@ -100,62 +102,80 @@ def applicant_details(applicant_id):
 
 @applicants_bp.route('/applicant/<int:applicant_id>/edit', methods=['GET', 'POST'])
 @login_required
-@role_required('admin', 'moder', 'oper')
+@role_required('super', 'admin', 'moder', 'oper')
 def edit_applicant(applicant_id):
-    applicant = Applicant.query.get_or_404(applicant_id)
-    visits = Vizit.query.filter_by(applicant_id=applicant_id).all()
-    applicant_form = ApplicantEditForm(obj=applicant)
-    applicant_form._obj = applicant
-    vizit_form = VizitForm()
-    applicant.updated_by_user_id = current_user.id
-    applicant.updated_at = get_current_nsk_time()
+    timeout = PageLocker.get_timeout()
+    print(f'Timeout: {timeout} secs...')
+    lock_info = LockInfo("applicants_bp",
+                         "edit_applicant",
+                         applicant_id,
+                         current_user.id)
+    if PageLocker.lock_page(lock_data=lock_info):
+        flash(f'У Вас есть <{timeout}> секунд на редактирование '
+              f'и сохранение изменений для текущей страницы...',
+              'warning')
+        applicant = Applicant.query.get_or_404(applicant_id)
+        visits = Vizit.query.filter_by(applicant_id=applicant_id).all()
+        applicant_form = ApplicantEditForm(obj=applicant)
+        applicant_form._obj = applicant
+        vizit_form = VizitForm()
+        applicant.updated_by_user_id = current_user.id
+        applicant.updated_at = get_current_nsk_time()
 
-    if request.method == 'POST':
-        # Обработка формы заявителя
-        if 'submit' in request.form and applicant_form.validate_on_submit():
-            user_crud_control = UserCrudControl(user=current_user,
-                                                db_object=db)
-            user_crud_control.commit_other_table()
-            applicant_form.populate_obj(applicant)
-            db.session.commit()
-            flash('Данные заявителя обновлены', 'success')
-            return redirect(url_for('applicants.edit_applicant', applicant_id=applicant.id))
-
-        # Обработка формы визита
-        elif 'submit_visit' in request.form and vizit_form.validate_on_submit():
-            try:
-                new_vizit = Vizit()
-                vizit_form.populate_obj(new_vizit)
-                new_vizit.applicant_id = applicant.id
-                new_vizit.created_by_user_id = current_user.id
-                new_vizit.updated_by_user_id = current_user.id
-                db.session.add(new_vizit)
+        if request.method == 'POST':
+            # Обработка формы заявителя
+            if 'submit' in request.form and applicant_form.validate_on_submit():
                 user_crud_control = UserCrudControl(user=current_user,
                                                     db_object=db)
                 user_crud_control.commit_other_table()
+                applicant_form.populate_obj(applicant)
                 db.session.commit()
-                flash('Визит добавлен', 'success')
-                return redirect(url_for('applicants.applicant_details', applicant_id=applicant.id))
-            except Exception as e:
-                db.session.rollback()
-                flash(f"Ошибка при добавлении визита: {str(e)}", 'danger')
+                flash('Данные заявителя обновлены', 'success')
+                PageLocker.unlock_page(lock_data=lock_info)
+                return redirect(url_for('applicants.applicant_details',
+                                        applicant_id=applicant_id))
 
-        # Обработка ошибок
-        if 'submit' in request.form and not applicant_form.validate_on_submit():
-            for field, errors in applicant_form.errors.items():
-                for error in errors:
-                    flash(f"Ошибка в поле '{getattr(applicant_form, field).label.text}': {error}", 'danger')
+            # Обработка формы визита
+            elif 'submit_visit' in request.form and vizit_form.validate_on_submit():
+                try:
+                    new_vizit = Vizit()
+                    vizit_form.populate_obj(new_vizit)
+                    new_vizit.applicant_id = applicant.id
+                    new_vizit.created_by_user_id = current_user.id
+                    new_vizit.updated_by_user_id = current_user.id
+                    db.session.add(new_vizit)
+                    user_crud_control = UserCrudControl(user=current_user,
+                                                        db_object=db)
+                    user_crud_control.commit_other_table()
+                    db.session.commit()
+                    flash('Визит добавлен', 'success')
+                    PageLocker.unlock_page(lock_data=lock_info)
+                    return redirect(url_for('applicants.applicant_details',
+                                            applicant_id=applicant_id))
+                except Exception as e:
+                    db.session.rollback()
+                    flash(f"Ошибка при добавлении визита: {str(e)}", 'danger')
 
-        if 'submit_visit' in request.form and not vizit_form.validate_on_submit():
-            for field, errors in vizit_form.errors.items():
-                for error in errors:
-                    flash(f"Ошибка в поле '{getattr(vizit_form, field).label.text}': {error}", 'danger')
+            # Обработка ошибок
+            if 'submit' in request.form and not applicant_form.validate_on_submit():
+                for field, errors in applicant_form.errors.items():
+                    for error in errors:
+                        flash(f"Ошибка в поле '{getattr(applicant_form, field).label.text}': {error}", 'danger')
 
-    return render_template('edit_applicant.html',
-                           applicant=applicant,
-                           applicant_form=applicant_form,
-                           visit_form=vizit_form,
-                           visits=visits)
+            if 'submit_visit' in request.form and not vizit_form.validate_on_submit():
+                for field, errors in vizit_form.errors.items():
+                    for error in errors:
+                        flash(f"Ошибка в поле '{getattr(vizit_form, field).label.text}': {error}", 'danger')
+
+        return render_template('edit_applicant.html',
+                               applicant=applicant,
+                               applicant_form=applicant_form,
+                               visit_form=vizit_form,
+                               visits=visits,
+                               timeout=timeout)
+    else:
+        return redirect(url_for('applicants.applicant_details',
+                                applicant_id=applicant_id))
 
 
 @applicants_bp.route('/search_applicants', methods=['GET', 'POST'])
@@ -308,7 +328,7 @@ def search_applicants():
 
 @applicants_bp.route('/export/found_data', methods=['POST'])
 @login_required
-@role_required('admin', 'dload')
+@role_required('dload')
 @thread
 def export_found_data():
     # with app_context.app_context():
@@ -446,8 +466,3 @@ def export_found_data():
         download_name=filename  # Для Flask 2.0+
         # attachment_filename=filename # Для старых версий Flask
     )
-
-# @event.listens_for(Applicant, 'before_update')
-# def receive_before_update(mapper, connection, target):
-#     target.row_updated_at = datetime.utcnow()
-#     target.updated_by_user = current_user.id # Записываем id текущего пользователя

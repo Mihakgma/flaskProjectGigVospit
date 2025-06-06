@@ -304,7 +304,7 @@ def edit_organization(organization_id):
                     flash('Данные организации успешно обновлены!', 'success')
                     PageLocker.unlock_page(lock_data=lock_info)
                     return redirect(url_for('organizations.organization_details',
-                                            organization_id=organization.id))
+                                            organization_id=organization_id))
                 else:
                     db.session.rollback()  # Откатываем, если ничего не изменилось
                     print("Данные не были изменены, commit не требуется.")
@@ -330,8 +330,8 @@ def edit_organization(organization_id):
                                organization=organization,
                                timeout=timeout)
     else:
-        return redirect(url_for('organizations.manage_orgs'))
-    PageLocker.unlock_page(lock_data=lock_info)
+        return redirect(url_for('organizations.organization_details',
+                                organization_id=organization_id))
 
 
 @orgs_bp.route('/check_inn_exists', methods=['GET'])
