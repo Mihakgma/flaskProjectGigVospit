@@ -18,8 +18,7 @@
         {% endwith %}
 
         <form method="post">
-            {{ form.hidden_tag() }}
-{#            {{ csrf_token }}#}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {% for field in form if field.name not in ['csrf_token', 'submit'] %}
                 <div>
                     {{ field.label(class_="form-label") }}

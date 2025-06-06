@@ -9,10 +9,16 @@
             <div class="card-body">
                 <p><strong>ID:</strong> {{ setting.id }}</p>
                 <p><strong>Имя настройки:</strong> {{ setting.name }}</p>
+                <p><strong>Время блокировки страницы редактирования, сек:</strong> {{ setting.page_lock_seconds }}</p>
+                <p><strong>Таймаут до блокировки пользователя, сек:</strong> {{ setting.activity_timeout_seconds }}</p>
+                <p><strong>Максимальное количество админов, пользователей с указанной ролью:</strong> {{ setting.max_admins_number }}</p>
+                <p><strong>Максимальное количество модераторов, пользователей с указанной ролью:</strong> {{ setting.max_moders_number }}</p>
+                <p><strong>Количество нажатий до проверки на время последней активности, кликов:</strong> {{ setting.activity_period_counter }}</p>
+                <p><strong>Количество нажатий до разлогинивания всех вошедших пользователей, кликов:</strong> {{ setting.activity_counter_max_threshold }}</p>
                 <p><strong>Описание:</strong> {{ setting.description }}</p>
                 <p><strong>Активна сейчас:</strong> {% if setting.is_activated_now %}Да{% else %}Нет{% endif %}</p>
                 <p><strong>Дата создания:</strong> {{ setting.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-                <p><strong>Дата последнего изменения:</strong> {{ setting.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                <p><strong>Дата последнего исправления:</strong> {{ setting.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}
                 </p>
                 <p><strong>Кем создано (ID):</strong> {{ setting.created_by_user_id }}</p>
                 <p><strong>Кем изменено (ID):</strong> {{ setting.updated_by_user_id }}</p>

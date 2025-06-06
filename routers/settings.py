@@ -5,6 +5,7 @@ from database import db
 from models import AccessSetting, User  # Убедитесь, что AccessSetting и db импортированы
 from forms.forms import AccessSettingForm  # Убедитесь, что AccessSettingForm импортирована
 from functions.access_control import role_required  # Ваш декоратор role_required
+from models.models import get_current_nsk_time
 from utils.crud_classes import UserCrudControl
 from utils.pages_lock.lock_management import PageLocker
 
@@ -44,6 +45,9 @@ def create_setting():
                 is_activated_now=False  # Новые настройки по умолчанию не активны
             )
             db.session.add(new_setting)
+            user_crud_control = UserCrudControl(user=current_user,
+                                                db_object=db)
+            user_crud_control.commit_other_table()
             db.session.commit()
             flash('Настройка успешно создана!', 'success')
             return redirect(url_for('settings.list_settings'))
@@ -86,6 +90,9 @@ def delete_setting(setting_id):
             if remaining_settings:
                 # Наш слушатель before_update позаботится о том, чтобы другие стали False
                 remaining_settings.is_activated_now = True
+                user_crud_control = UserCrudControl(user=current_user,
+                                                    db_object=db)
+                user_crud_control.commit_other_table()
                 db.session.commit()  # Отдельный коммит для активации новой
                 flash(f'Удаленная настройка была активной. Новая активная настройка: "{remaining_settings.name}".',
                       'info')
@@ -109,6 +116,9 @@ def restart_all_sessions():
     """
     try:
         users = User.query.all()  # Получаем всех пользователей
+        user_crud_control = UserCrudControl(user=current_user,
+                                            db_object=db)
+        user_crud_control.commit_other_table()
         UserCrudControl.sessions_restart(db_obj=db, users=users, need_commit=True)
         flash('Все пользовательские сессии успешно сброшены!', 'success')
     except Exception as e:
@@ -165,12 +175,17 @@ def activate_setting_no_js():
         db.session.query(AccessSetting).filter(
             AccessSetting.is_activated_now == True,
             AccessSetting.id != selected_setting_id
-        ).update({AccessSetting.is_activated_now: False}, synchronize_session=False)
+        ).update({AccessSetting.is_activated_now: False},
+                 synchronize_session=False)
 
         # Шаг 2: Активировать выбранную настройку
         setting_to_activate.is_activated_now = True
+        setting_to_activate.updated_at = get_current_nsk_time()
+        setting_to_activate.updated_by_user_id = current_user.id
         db.session.add(setting_to_activate)  # Убедимся, что объект отслеживается сессией
-
+        user_crud_control = UserCrudControl(user=current_user,
+                                            db_object=db)
+        user_crud_control.commit_other_table()
         # Шаг 3: Коммит всех изменений в одной транзакции
         db.session.commit()
 

@@ -1,14 +1,15 @@
 import os
 import secrets
 
-from pathlib import Path
+# from pathlib import Path
 
 filename = 'config/db_conf_pg.txt'
 try:
     with open(filename, 'r') as file:
         db_config_info = file.read().replace('\n', '')
 except FileNotFoundError:
-    db_config_info = None # Устанавливаем None, если файл не найден
+    db_config_info = None  # Устанавливаем None, если файл не найден
+
 
 # db_path = Path(__file__).resolve().parent.parent / 'example.db'
 
@@ -21,7 +22,8 @@ class Config:
 
     # либо из переменной окружения, либо сгенерированное (для локальной разработки)
     SECRET_KEY = os.environ.get('SECRET_KEY') or secrets.token_urlsafe(40)  # Увеличим длину для лучшей безопасности
-
+    # SECRET_KEY = secrets.token_urlsafe(40)
+    # SECRET_KEY = ""
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Проверка на случай, если переменная окружения не установлена (опционально, но рекомендуется)

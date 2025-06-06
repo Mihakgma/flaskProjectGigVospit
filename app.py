@@ -1,4 +1,3 @@
-# import secrets
 from waitress import serve
 
 from flask import Flask
@@ -28,15 +27,15 @@ def create_app():
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'  # Роут для входа, если пользователь не авторизован
     login_manager.init_app(app)
-    # Инициализация CSRFProtect
     csrf = CSRFProtect()
     csrf.init_app(app)
 
-    init_app(app, db=db)
-
+    # Контекстный процессор для CSRF-токена - ПЕРЕМЕСТИТЕ ЭТО СЮДА
     @app.context_processor
     def inject_csrf_token():
         return dict(csrf_token=generate_csrf)
+
+    init_app(app, db=db)
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
 

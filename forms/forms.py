@@ -428,3 +428,10 @@ class AccessSettingForm(FlaskForm):
             if field.data < self.activity_period_counter.data:
                 raise ValidationError(
                     "Периодичность обновления сессий не может быть меньше периодичности проверки активности.")
+
+    def validate_activity_timeout_seconds(self, field):
+        if self.page_lock_seconds.data is not None and field.data is not None:
+            if field.data < self.page_lock_seconds.data:
+                raise ValidationError(
+                    "Время простоя пользователя "
+                    "не может быть меньше времени блокировки страниц редактирования.")
