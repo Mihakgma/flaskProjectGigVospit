@@ -349,13 +349,3 @@ def check_inn_exists():
         return jsonify({'exists': True, 'message': 'Организация с таким ИНН уже зарегистрирована.'}), 200
     else:
         return jsonify({'exists': False, 'message': 'ИНН свободен.'}), 200
-
-# @orgs_bp.route('/<int:organization_id>/details')
-# @login_required  # Добавьте, если нужно, чтобы только авторизованные пользователи могли просматривать
-# @role_required('anyone')
-# def details_organization(organization_id):
-#     organization = Organization.query.get(organization_id)
-#     if not organization:
-#         abort(404, description="Организация не найдена.")
-#
-#     return render_template('details_organization.html', organization=organization)

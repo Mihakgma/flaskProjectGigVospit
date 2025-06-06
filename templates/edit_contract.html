@@ -134,5 +134,8 @@
         <hr>
 
     </div>
-
+    <script>
+        const FLASK_EDIT_TIMEOUT_SECONDS = {{ timeout | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='js/to_main_page_on_timeout.js') }}"></script>
 {% endblock %}
