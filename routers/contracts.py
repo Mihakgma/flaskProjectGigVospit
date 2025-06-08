@@ -59,7 +59,7 @@ def add_contract():
                 print(f"Ошибка при добавлении контракта: {e}")
                 flash('Произошла ошибка при добавлении контракта. Попробуйте позже.', 'danger')
 
-    return render_template('add_contract.html', form=form)
+    return render_template('contracts/add_contract.html', form=form)
 
 
 @contracts_bp.route('/details/<int:contract_id>')
@@ -84,7 +84,7 @@ def contract_details(contract_id):
 
     num_unique_applicants = len(unique_applicant_ids)
 
-    return render_template('contract_details.html',  # Имя вашего шаблона деталей контракта
+    return render_template('contracts/contract_details.html',  # Имя вашего шаблона деталей контракта
                            contract=contract,
                            num_related_vizits=num_related_vizits,
                            num_unique_applicants=num_unique_applicants)
@@ -163,7 +163,7 @@ def search_contracts():
             'detail_url': f'/contracts/{contract.id}'
         })
 
-    return render_template('search_contracts.html',
+    return render_template('contracts/search_contracts.html',
                            contracts=results,
                            total_count=contracts.total)
 
@@ -242,7 +242,7 @@ def edit_contract(contract_id):
 
         current_linked_visits = Vizit.query.filter_by(contract_id=contract.id).options(joinedload(Vizit.applicant)).all()
 
-        return render_template('edit_contract.html',
+        return render_template('contracts/edit_contract.html',
                                contract=contract,
                                contract_form=contract_form,
                                # applicant_search_form=applicant_search_form,

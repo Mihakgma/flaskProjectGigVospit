@@ -88,7 +88,7 @@ def add_organization():
 
     # Рендерим шаблон. Если это GET-запрос, форма будет пустой.
     # Если это POST-запрос с ошибками, форма будет заполнена данными, которые ввел пользователь.
-    return render_template('add_organization.html', form=form)
+    return render_template('orgs/add_organization.html', form=form)
 
 
 @orgs_bp.route('/details/<int:organization_id>')
@@ -96,7 +96,7 @@ def add_organization():
 @role_required('anyone')
 def organization_details(organization_id):
     organization = Organization.query.get_or_404(organization_id)
-    return render_template('organization_details.html',
+    return render_template('orgs/organization_details.html',
                            organization=organization,
                            title="Детали организации")
 
@@ -221,7 +221,7 @@ def manage_orgs():
     # edit_form = OrganizationForm()
 
     return render_template(
-        'manage_orgs.html',
+        'orgs/manage_orgs.html',
         organizations=organizations_pagination,  # Объект пагинации
         search_name=search_name,  # Возвращаем введенные значения в форму поиска
         search_inn=search_inn,
@@ -325,7 +325,7 @@ def edit_organization(organization_id):
                         flash(f"Ошибка в поле '{form[field].label.text}': {error}", 'error')
 
         print("--- Завершение обработки запроса ---")
-        return render_template('edit_organization.html',
+        return render_template('orgs/edit_organization.html',
                                form=form,
                                organization=organization,
                                timeout=timeout)

@@ -80,7 +80,7 @@ def add_applicant():
             for error in errors:
                 flash(f"Ошибка в поле '{applicant_form[field].label.text}': {error}", 'danger')
 
-    return render_template('add_applicant.html',
+    return render_template('applicants/add_applicant.html',
                            form=applicant_form,
                            vizit_form=vizit_form)
 
@@ -94,7 +94,7 @@ def applicant_details(applicant_id):
     for visit in visits:
         if not visit.contract:
             flash(f"Визит от {visit.visit_date} не прикреплен к контракту (договору).", category='warning')
-    return render_template('applicant_details.html',
+    return render_template('applicants/applicant_details.html',
                            applicant=applicant,
                            visits=visits,
                            timezone=timezone)
@@ -167,7 +167,7 @@ def edit_applicant(applicant_id):
                     for error in errors:
                         flash(f"Ошибка в поле '{getattr(vizit_form, field).label.text}': {error}", 'danger')
 
-        return render_template('edit_applicant.html',
+        return render_template('applicants/edit_applicant.html',
                                applicant=applicant,
                                applicant_form=applicant_form,
                                visit_form=vizit_form,
@@ -201,24 +201,24 @@ def search_applicants():
         if not any(field.data for field in form if field.name not in ['csrf_token', 'submit', 'last_name_exact']) and \
                 not ('snils_part1' in request.form or 'medbook_part1' in request.form):
             flash('Заполните хотя бы одно поле для поиска', 'error')
-            return render_template('search_applicants.html', form=form, applicants=applicants)
+            return render_template('applicants/search_applicants.html', form=form, applicants=applicants)
 
         if form.last_name.data:
             if len(form.last_name.data) < 2:
                 flash('Фамилия должна содержать не менее 2 символов', 'error')
-                return render_template('search_applicants.html', form=form, applicants=applicants)
+                return render_template('applicants/search_applicants.html', form=form, applicants=applicants)
             search_criteria['last_name'] = form.last_name.data
 
         if form.registration_address.data:
             if len(form.registration_address.data) < 2:
                 flash('Адрес регистрации должен содержать не менее 2 символов', 'error')
-                return render_template('search_applicants.html', form=form, applicants=applicants)
+                return render_template('applicants/search_applicants.html', form=form, applicants=applicants)
             search_criteria['registration_address'] = form.registration_address.data
 
         if form.residence_address.data:
             if len(form.residence_address.data) < 2:
                 flash('Адрес проживания должен содержать не менее 2 символов', 'error')
-                return render_template('search_applicants.html', form=form, applicants=applicants)
+                return render_template('applicants/search_applicants.html', form=form, applicants=applicants)
             search_criteria['residence_address'] = form.residence_address.data
 
         if 'snils_part1' in request.form:
@@ -229,7 +229,7 @@ def search_applicants():
                     search_criteria['snils_number'] = int(snils)
                 except ValueError:
                     flash('СНИЛС должен содержать только цифры', 'error')
-                    return render_template('search_applicants.html', form=form, applicants=applicants)
+                    return render_template('applicants/search_applicants.html', form=form, applicants=applicants)
 
         if 'medbook_part1' in request.form:
             medbook_parts = [request.form.get(f'medbook_part{i}') for i in range(1, 5)]
@@ -239,7 +239,7 @@ def search_applicants():
                     search_criteria['medbook_number'] = int(medbook)
                 except ValueError:
                     flash('Номер медкнижки должен содержать только цифры', 'error')
-                    return render_template('search_applicants.html', form=form, applicants=applicants)
+                    return render_template('applicants/search_applicants.html', form=form, applicants=applicants)
 
         if form.updated_by_user.data:  # Если выбран пользователь
             search_criteria['updated_by_user'] = form.updated_by_user.data
@@ -259,7 +259,7 @@ def search_applicants():
                 search_criteria[f'{field_name}_end'] = end_date
             elif start_date or end_date:  # Если заполнена только одна дата
                 flash(f'Заполните обе даты для "{field_name.replace("_", " ").title()}"', 'error')
-                return render_template('search_applicants.html', form=form, applicants=applicants)
+                return render_template('applicants/search_applicants.html', form=form, applicants=applicants)
 
         # Построение запроса с учетом last_visit
         last_visit_sq = (
@@ -319,7 +319,7 @@ def search_applicants():
             applicant_ids_for_export = []
 
     return render_template(
-        'search_applicants.html',
+        'applicants/search_applicants.html',
         form=form,
         applicants=applicants,
         applicant_ids_for_export=applicant_ids_for_export

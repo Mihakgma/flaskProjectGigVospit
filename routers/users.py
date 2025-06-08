@@ -23,7 +23,7 @@ users_bp = Blueprint('users', __name__)
 @role_required('admin', 'moder', )
 def user_list():
     users_lst = User.query.all()
-    return render_template('user_list.html', users=users_lst)
+    return render_template('users/user_list.html', users=users_lst)
 
 
 @users_bp.route('/add', methods=['GET', 'POST'])
@@ -39,7 +39,7 @@ def add_user():
 
             if not hashed_password:  # Дополнительная проверка, что пароль введен при добавлении
                 flash('Пароль обязателен при создании нового пользователя.', 'danger')
-                return render_template('user_form.html', form=form, title='Добавление нового пользователя',
+                return render_template('users/user_form.html', form=form, title='Добавление нового пользователя',
                                        submit_button_text='Добавить')
 
             selected_roles = Role.query.filter(Role.id.in_(form.roles.data)).all()
@@ -70,7 +70,7 @@ def add_user():
             current_app.logger.error(f"Exception on user add: {e}")
             flash(f'Произошла непредвиденная ошибка: {str(e)}', 'danger')
 
-    return render_template('user_form.html', form=form, title='Добавление нового пользователя',
+    return render_template('users/user_form.html', form=form, title='Добавление нового пользователя',
                            submit_button_text='Добавить')
 
 
@@ -131,7 +131,7 @@ def edit_user(user_id):
         form.info.data = user_to_edit.info
         form.roles.data = [role.id for role in user_to_edit.roles]  # Для SelectMultipleField нужны ID
 
-    return render_template('user_form.html',
+    return render_template('users/user_form.html',
                            form=form,
                            title=f'Редактирование пользователя: {user_to_edit.username}',
                            submit_button_text='Сохранить изменения',
@@ -144,4 +144,4 @@ def edit_user(user_id):
 @role_required('admin', 'moder', 'oper', )
 def user_details(user_id):
     user = User.query.get_or_404(user_id)
-    return render_template('user_details.html', user=user)
+    return render_template('users/user_details.html', user=user)
