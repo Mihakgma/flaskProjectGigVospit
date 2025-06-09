@@ -539,3 +539,41 @@ def receive_before_activate_setting(mapper, connection, target):
         # Важное примечание: здесь НЕ НУЖЕН db.session.commit() или db.session.flush().
         # Изменения, внесенные в объекты, привязанные к сессии, будут зафиксированы
         # в той же транзакции, когда вызывается db.session.commit() для target.
+
+
+# class BackupSetting(BaseModel):
+#     """
+#     Данный класс применяется для создания (описания) таблицы БД, которая
+#     задает настройки сохранения таблиц БД:
+#     - периодичность (по умолч. 1 раз в 24 часа);
+#     - условия (последняя активность, посл. БД-коммит пользователей + таймаут ожидания перед запуском сохранения);
+#     - файлы (таблицы) для сохранения;
+#     - корневая папка (директория) для хранения всех поддиректорий (по дате сохранения);
+#     - максимальный период хранения бэкап-папок с файлами (от 7 до 30 дней).
+#
+#     Сохранять физически данные предполагается в файлах-json.
+#     При этом названия файлов берутся из названий таблиц БД.
+#     """
+#     __tablename__ = 'backup_settings'
+#
+#     id = db.Column(Integer, primary_key=True)
+#     name = db.Column(String(50), default="По умолчанию №1", nullable=True)
+#     period_secs = db.Column(Integer, default=86400, nullable=True)  # 24 hours
+#     check_period_secs = db.Column(Integer, default=3600, nullable=True)  # 1 hour
+#     backup_dir_path = db.Column(String(200), nullable=True)
+#     is_activated_now = db.Column(Boolean, default=False, nullable=False)
+#
+#
+# class BackupLog(BaseModel):
+#     """
+#     Данная таблица создана для хранения логов бэкапа.
+#     """
+#     __tablename__ = 'backup_log'
+#
+#     id = db.Column(Integer, primary_key=True)
+#     started_at = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
+#     ended_at = db.Column(DateTime(timezone=True), nullable=True)
+#     is_successful = db.Column(Boolean, default=False, nullable=False)
+#     total_size_mb = db.Column(Integer, default=0, nullable=False)
+#     backup_setting_id = db.Column(Integer, db.ForeignKey('backup_settings.id'), nullable=False)
+#     backup_setting = db.relationship('BackupSetting', back_populates='backup_log')

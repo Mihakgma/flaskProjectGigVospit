@@ -1,35 +1,47 @@
 {
   "1": {
-    "name": "applicant"
+    "name": "access_settings"
   },
   "2": {
-    "name": "applicant_type"
+    "name": "applicant"
   },
   "3": {
-    "name": "attestation_type"
+    "name": "applicant_type"
   },
   "4": {
-    "name": "contingent"
+    "name": "attestation_type"
   },
   "5": {
-    "name": "contract"
+    "name": "backup_log"
   },
   "6": {
-    "name": "department"
+    "name": "backup_settings"
   },
   "7": {
-    "name": "organization"
+    "name": "contingent"
   },
   "8": {
-    "name": "role"
+    "name": "contract"
   },
   "9": {
-    "name": "status"
+    "name": "department"
   },
   "10": {
-    "name": "vizit"
+    "name": "organization"
   },
   "11": {
+    "name": "role"
+  },
+  "12": {
+    "name": "status"
+  },
+  "13": {
+    "name": "user_roles"
+  },
+  "14": {
+    "name": "vizit"
+  },
+  "15": {
     "name": "work_field"
   }
 }
