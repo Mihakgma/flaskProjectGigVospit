@@ -3,7 +3,7 @@ from flask import (Blueprint,
                    redirect,
                    url_for,
                    flash, request, current_app)
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 from functions.access_control import role_required
 from models.models import (User,
@@ -20,7 +20,7 @@ users_bp = Blueprint('users', __name__)
 
 @users_bp.route('/users')
 @login_required
-@role_required('admin', 'moder', )
+@role_required('super', 'admin', 'moder', )
 def user_list():
     users_lst = User.query.all()
     return render_template('users/user_list.html', users=users_lst)
@@ -28,12 +28,11 @@ def user_list():
 
 @users_bp.route('/add', methods=['GET', 'POST'])
 @login_required
-@role_required('admin')
+@role_required('super', 'admin')
 def add_user():
     form = UserForm()
     if form.validate_on_submit():
         try:
-            # Валидаторы формы уже проверят уникальность username и email
             hashed_password = generate_password_hash(form.password.data, method='pbkdf2:sha256') \
                 if form.password.data else None  # Пароль обязателен при добавлении
 
@@ -43,6 +42,15 @@ def add_user():
                                        submit_button_text='Добавить')
 
             selected_roles = Role.query.filter(Role.id.in_(form.roles.data)).all()
+            if (any(role.code == 'super' for role in selected_roles) and
+                    any('admin' == role.code for role in current_user.roles)):
+                flash('Нового пользователя с ролью супер администратор (super)'
+                      ' может создать только супер администратор!',
+                      'danger')
+                return render_template('users/user_form.html',
+                                       form=form,
+                                       title='Добавление нового пользователя',
+                                       submit_button_text='Добавить')
 
             new_user = User(
                 first_name=form.first_name.data,
@@ -52,8 +60,8 @@ def add_user():
                 email=form.email.data,
                 password=hashed_password,
                 phone_number=form.phone_number.data if form.phone_number.data else None,
-                department=form.dept_id.data,  # QuerySelectField возвращает объект модели
-                status=form.status_id.data,  # QuerySelectField возвращает объект модели
+                department=form.dept_id.data,
+                status=form.status_id.data,
                 info=form.info.data if form.info.data else None,
                 roles=selected_roles
             )
@@ -70,13 +78,15 @@ def add_user():
             current_app.logger.error(f"Exception on user add: {e}")
             flash(f'Произошла непредвиденная ошибка: {str(e)}', 'danger')
 
-    return render_template('users/user_form.html', form=form, title='Добавление нового пользователя',
+    return render_template('users/user_form.html',
+                           form=form,
+                           title='Добавление нового пользователя',
                            submit_button_text='Добавить')
 
 
 @users_bp.route('/edit/<int:user_id>', methods=['GET', 'POST'])
 @login_required
-@role_required('admin')  # Укажите нужные роли
+@role_required('super', 'admin')
 def edit_user(user_id):
     user_to_edit = User.query.get_or_404(user_id)
     # Передаем original_username и original_email для валидаторов
@@ -98,6 +108,18 @@ def edit_user(user_id):
                 user_to_edit.password = generate_password_hash(form.password.data, method='pbkdf2:sha256')
 
             selected_roles = Role.query.filter(Role.id.in_(form.roles.data)).all()
+            if (any(role.code == 'super' for role in selected_roles) and
+                    any('admin' == role.code for role in current_user.roles)):
+                flash('Присвоить пользователю роль супер администратор (super),'
+                      'а также редактировать ранее созданного,'
+                      ' может только супер администратор!',
+                      'danger')
+                return render_template('users/user_form.html',
+                                       form=form,
+                                       title=f'Редактирование пользователя: {user_to_edit.username}',
+                                       submit_button_text='Сохранить изменения',
+                                       user=user_to_edit)
+
             user_to_edit.roles = selected_roles
 
             db.session.commit()
@@ -129,19 +151,19 @@ def edit_user(user_id):
         form.dept_id.data = user_to_edit.department
         form.status_id.data = user_to_edit.status
         form.info.data = user_to_edit.info
-        form.roles.data = [role.id for role in user_to_edit.roles]  # Для SelectMultipleField нужны ID
+        form.roles.data = [role.id for role in user_to_edit.roles]
 
     return render_template('users/user_form.html',
                            form=form,
                            title=f'Редактирование пользователя: {user_to_edit.username}',
                            submit_button_text='Сохранить изменения',
-                           user=user_to_edit)  # Передаем пользователя для контекста в шаблоне
+                           user=user_to_edit)
 
 
 @users_bp.route('/details/<int:user_id>/',
                 methods=['GET'])
 @login_required
-@role_required('admin', 'moder', 'oper', )
+@role_required('super', 'admin', 'moder', )
 def user_details(user_id):
     user = User.query.get_or_404(user_id)
     return render_template('users/user_details.html', user=user)
