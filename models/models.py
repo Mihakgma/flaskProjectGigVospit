@@ -545,23 +545,65 @@ def receive_before_activate_setting(mapper, connection, target):
 #     """
 #     Данный класс применяется для создания (описания) таблицы БД, которая
 #     задает настройки сохранения таблиц БД:
-#     - периодичность (по умолч. 1 раз в 24 часа);
-#     - условия (последняя активность, посл. БД-коммит пользователей + таймаут ожидания перед запуском сохранения);
+#     - периодичность (по умолч. 1 раз в 24 часа) "пробуждения";
+#     - условия (последняя активность, посл. БД-коммит пользователей + таймаут ожидания перед запуском сохранения +
+#       количество таймаутов после пробуждения);
 #     - файлы (таблицы) для сохранения;
 #     - корневая папка (директория) для хранения всех поддиректорий (по дате сохранения);
 #     - максимальный период хранения бэкап-папок с файлами (от 7 до 30 дней).
 #
 #     Сохранять физически данные предполагается в файлах-json.
 #     При этом названия файлов берутся из названий таблиц БД.
+#
+#     ДОБАВИТЬ:
+#
+#     1) валидатор для check_times (количество чекаутов после пробуждения);
+#     2) валидатор для backup_dir_path (является ли реальным путем для текущего ПК с помощью либы Path)
 #     """
 #     __tablename__ = 'backup_settings'
 #
 #     id = db.Column(Integer, primary_key=True)
-#     name = db.Column(String(50), default="По умолчанию №1", nullable=True)
-#     period_secs = db.Column(Integer, default=86400, nullable=True)  # 24 hours
-#     check_period_secs = db.Column(Integer, default=3600, nullable=True)  # 1 hour
-#     backup_dir_path = db.Column(String(200), nullable=True)
+#     name = db.Column(String(50), default="По умолчанию №1", nullable=False)
+#     period_secs = db.Column(Integer, default=86400, nullable=False)  # 24 hours
+#     check_period_secs = db.Column(Integer, default=3600, nullable=False)  # 1 hour
+#     check_times = db.Column(Integer, default=2, nullable=False)
+#     backup_dir_path = db.Column(String(200), nullable=False)
 #     is_activated_now = db.Column(Boolean, default=False, nullable=False)
+#
+#     @validates('period_secs')
+#     def validate_period_secs(self, key, period_secs):
+#         period_low_boundary = 300
+#         period_up_boundary = 86400 * 3
+#         if period_secs is None:
+#             raise IntegrityError("Необходимо указать периодичность ПРОБУЖДЕНИЯ для бэкапа БД.")
+#         check_int(period_secs)
+#         if period_secs < period_low_boundary:
+#             raise ValueError("Периодичность ПРОБУЖДЕНИЯ для бэкапа БД"
+#                              f" не может быть менее <{period_low_boundary}> секунд.")
+#         elif period_secs > period_up_boundary:
+#             raise ValueError("Периодичность ПРОБУЖДЕНИЯ для бэкапа БД"
+#                              f" не может быть более <{period_up_boundary}> секунд.")
+#         return period_secs
+#
+#     @validates('check_period_secs')
+#     def validate_check_period_secs(self, key, check_period_secs):
+#         period_low_boundary = 90
+#         period_up_boundary = 3600 * 3
+#         period_secs_half = self.period_secs // 2
+#         if check_period_secs is None:
+#             raise IntegrityError("Необходимо указать периодичность проверки возможности бэкапа БД.")
+#         check_int(check_period_secs)
+#         if check_period_secs < period_low_boundary:
+#             raise ValueError("Периодичность проверки возможности  бэкапа БД (после ПРОБУЖДЕНИЯ)"
+#                              f" не может быть менее <{period_low_boundary}> секунд.")
+#         elif check_period_secs > period_secs_half:
+#             raise ValueError("Периодичность проверки возможности бэкапа БД (после ПРОБУЖДЕНИЯ)"
+#                              f" не может быть более ПОЛОВИНЫ <{period_secs_half}> (округл. до целого числа)"
+#                              f" от значения периодичности бэкапа <{self.period_secs}> секунд.")
+#         elif check_period_secs > period_up_boundary:
+#             raise ValueError("Периодичность проверки возможности бэкапа БД (после ПРОБУЖДЕНИЯ)"
+#                              f" не может быть более <{period_up_boundary}> секунд.")
+#         return check_period_secs
 #
 #
 # class BackupLog(BaseModel):
