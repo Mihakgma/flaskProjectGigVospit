@@ -6,8 +6,8 @@ BACKEND:
 1.5) add organization page                                               - (DONE)
 1.6) add contract page                                                   - (DONE)
 1.7) link prev. created contract to a new visit in applicant edit page   - (DONE)
-1.8) link created visits to contract on a new contract page              - (?)
-1.9) link created visits to contract on edit contract page               - (?)
+1.8) link created visits to contract on a new contract page              - (XXX)
+1.9) link created visits to contract on edit contract page               - (XXX)
 1.10) contracts search page                                              - (DONE)
 1.11) edited by user filter to applicant search page                     - (DONE)
 1.12) edited when date filter to applicant search page                   - (DONE)
@@ -21,16 +21,20 @@ BACKEND:
 1.20) add fields create_at, create_by_user_id for another tables         - (DONE)
 1.21) add search and edit pages for organizations                        - (DONE)
 1.22) add search and edit pages for contracts                            - (DONE)
-1.23) on add and edit applicant add snils, med book fix validation       - (...)
-1.24) add department page (admin-moder access only)                      - (?)
-1.25) check if one login is per one IP-adress (PC)                       - (!!!)
-1.26) add a new work field page (admin-moder access only)                - (?)
+1.23) on add and edit applicant add snils, med book fix validation       - (DONE)
+1.24) add department page (admin-moder access only)                      - (XXX)
+1.25) check if one login is per one IP-adress (PC)                       - (DONE)
+1.26) add a new work field page (admin-moder access only)                - (XXX)
 1.27) on search applicants page add role policy restriction (num rows)   - (DONE)
 1.28) add detailed info (show info property) for orgs and contracts      - (DONE)
 1.29) on search applicants censore (applicant model prop) search results - (DONE)
 1.30) on contracts edit page add feature for new many similar vizits     - (XXX)
-1.31) table blocked pages contents auto-clear during application restart - (?)
-1.31) page for manage table blocked pages (admin, moder access only)     - (?)
+1.31) table blocked pages contents auto-clear after application restart  - (DONE)
+1.32) page for manage table blocked pages (for super, admin, moder only) - (DONE)
+1.33) add edit and delete vists on edit applicant page                   - (!!!)
+1.34) add access settings page for super, moder users                    - (DONE)
+1.35) add backup settings page for super user                            - (!!!)
+1.36) admins cannot create & edit super users                            - (DONE)
 
 LINKS: 1.9 + 1.22 + 1.30
 
@@ -39,7 +43,7 @@ DATA BASE:
 2.2) add DB views                                                        - (?)
 2.3) DB schema in Miro                                                   - (DONE)
 2.4) DB tables autofilling upon first app run                            - (DONE)
-2.5) add table with blocked pages (blocked_at, blocked_by_id, url, ...)  - (?)
+2.5) add table with blocked pages (blocked_at, blocked_by_id, url, ...)  - (DONE)
 2.6) add DB copy auto-save every 24 hours period feature in SQLIte file  - (?)
 2.7) DB save file life-span (period) ~ 7-30 days                         - (?)
 
@@ -47,6 +51,7 @@ FRONTEND:
 3.1) add frontend framework                                              - (?)
 3.2) navigation bar                                                      - (DONE)
 3.3) css, js, templates (jinja2) added                                   - (DONE)
+3.4) different start page for users with different access level (roles)  - (DONE)
 
 MULTITHREADING / ASYNC:
 4.1) add asyncio to some parts of a project                              - (?)
@@ -54,7 +59,7 @@ MULTITHREADING / ASYNC:
 
 TOOLS:
 5.1) added tool for dependency management to project                     - (DONE)
-5.2) add docker and share working app via www or lan                     - (!!!)
+5.2) add docker and share working app via www or lan                     - (DONE)
 5.3) added tool for DB migrations (alembic) to project                   - (DONE)
 5.4) use alembic                                                         - (...)
 

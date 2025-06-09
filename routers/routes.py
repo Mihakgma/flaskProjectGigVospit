@@ -22,7 +22,7 @@ ROUTES_INFO_FULL = [
     {'title': 'Управление организациями', 'route': 'organizations.manage_orgs'},
     {'title': 'Добавить контракт', 'route': 'contracts.add_contract'},
     {'title': 'Искать контракты', 'route': 'contracts.search_contracts'},
-    {'title': 'УПРАВЛЕНИЕ ПРОГРАММОЙ', 'route': 'settings.list_settings'},
+    {'title': 'УПРАВЛЕНИЕ ДОСТУПОМ', 'route': 'settings.list_settings'},
     {'title': 'Вход', 'route': 'auth.login'},
     {'title': 'Выход', 'route': 'auth.logout'}
 ]
