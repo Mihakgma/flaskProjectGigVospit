@@ -61,7 +61,8 @@ def add_organization():
                 # ***** ВАЖНО: РАСКОММЕНТИРУЙТЕ ЭТУ СТРОКУ! *****
                 db.session.add(new_org)
                 user_crud_control = UserCrudControl(user=current_user,
-                                                    db_object=db)
+                                                    db_object=db,
+                                                    need_commit=False)
                 user_crud_control.commit_other_table()
                 db.session.commit()  # Теперь commit будет пытаться сохранить new_org
 
@@ -297,7 +298,8 @@ def edit_organization(organization_id):
                     organization.updated_at = get_current_nsk_time()
                     organization.updated_by_user_id = current_user.id
                     user_crud_control = UserCrudControl(user=current_user,
-                                                        db_object=db)
+                                                        db_object=db,
+                                                        need_commit=False)
                     user_crud_control.commit_other_table()
                     db.session.commit()  # Сохраняем изменения в базе данных
                     print("db.session.commit() УСПЕШНО ВЫПОЛНЕН.")

@@ -46,7 +46,8 @@ def create_setting():
             )
             db.session.add(new_setting)
             user_crud_control = UserCrudControl(user=current_user,
-                                                db_object=db)
+                                                db_object=db,
+                                                need_commit=False)
             user_crud_control.commit_other_table()
             db.session.commit()
             flash('Настройка успешно создана!', 'success')
@@ -116,7 +117,8 @@ def restart_all_sessions():
     try:
         users = User.query.all()  # Получаем всех пользователей
         user_crud_control = UserCrudControl(user=current_user,
-                                            db_object=db)
+                                            db_object=db,
+                                            need_commit=False)
         user_crud_control.commit_other_table()
         UserCrudControl.sessions_restart(db_obj=db, users=users, need_commit=True)
         flash('Все пользовательские сессии успешно сброшены!', 'success')

@@ -46,7 +46,8 @@ def add_applicant():
                 applicant_form.populate_obj(new_applicant)
                 db.session.add(new_applicant)
                 user_crud_control = UserCrudControl(user=current_user,
-                                                    db_object=db)
+                                                    db_object=db,
+                                                    need_commit=False)
                 user_crud_control.commit_other_table()
                 db.session.flush()
 
@@ -127,7 +128,8 @@ def edit_applicant(applicant_id):
             # Обработка формы заявителя
             if 'submit' in request.form and applicant_form.validate_on_submit():
                 user_crud_control = UserCrudControl(user=current_user,
-                                                    db_object=db)
+                                                    db_object=db,
+                                                    need_commit=False)
                 user_crud_control.commit_other_table()
                 applicant_form.populate_obj(applicant)
                 db.session.commit()

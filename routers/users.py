@@ -14,6 +14,7 @@ from werkzeug.security import generate_password_hash
 from sqlalchemy.exc import IntegrityError
 
 from forms.forms import UserForm
+from utils.crud_classes import UserCrudControl
 
 users_bp = Blueprint('users', __name__)
 
@@ -66,6 +67,10 @@ def add_user():
                 roles=selected_roles
             )
             db.session.add(new_user)
+            user_crud_control = UserCrudControl(user=current_user,
+                                                db_object=db,
+                                                need_commit=False)
+            user_crud_control.commit_other_table()
             db.session.commit()
             flash('Новый пользователь успешно добавлен!', 'success')
             return redirect(url_for('users.user_details', user_id=new_user.id))
@@ -121,7 +126,10 @@ def edit_user(user_id):
                                        user=user_to_edit)
 
             user_to_edit.roles = selected_roles
-
+            user_crud_control = UserCrudControl(user=current_user,
+                                                db_object=db,
+                                                need_commit=False)
+            user_crud_control.commit_other_table()
             db.session.commit()
             flash('Данные пользователя успешно обновлены!', 'success')
             return redirect(url_for('users.user_details', user_id=user_to_edit.id))

@@ -43,7 +43,8 @@ def add_contract():
                 )
                 db.session.add(new_contract)
                 user_crud_control = UserCrudControl(user=current_user,
-                                                    db_object=db)
+                                                    db_object=db,
+                                                    need_commit=False)
                 user_crud_control.commit_other_table()
                 db.session.commit()
                 flash('Новый контракт успешно добавлен!', 'success')
@@ -198,7 +199,8 @@ def edit_contract(contract_id):
                     try:
                         contract_form.populate_obj(contract)
                         user_crud_control = UserCrudControl(user=current_user,
-                                                            db_object=db)
+                                                            db_object=db,
+                                                            need_commit=False)
                         user_crud_control.commit_other_table()
                         db.session.commit()
                         flash('Договор успешно обновлен!', 'success')
@@ -269,7 +271,8 @@ def unlink_visit(visit_id):
         visit.contract_id = None  # Открепляем визит
         try:
             user_crud_control = UserCrudControl(user=current_user,
-                                                db_object=db)
+                                                db_object=db,
+                                                need_commit=False)
             user_crud_control.commit_other_table()
             db.session.commit()
             flash('Визит успешно откреплен от договора.', 'info')
