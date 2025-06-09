@@ -20,34 +20,34 @@
 }
 
 .background-body {
-    background-image: url("../devka.jpg");
+    background-image: url("../pics/devka.jpg");
     background-size: cover;
     background-position: center;
 }
 
 .background-body-1 {
-    background-image: url("../muzhik.jpg");
+    background-image: url("../pics/muzhik.jpg");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
 }
 
 .background-body-2 {
-    background-image: url("../syschik.jpg");
+    background-image: url("../pics/syschik.jpg");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: right;
 }
 
 .background-body-org {
-    background-image: url("../bremen_musicians.jpg");
+    background-image: url("../pics/bremen_musicians.jpg");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: bottom;
 }
 
 .background-body-fiks-1 {
-    background-image: url("../fixiks_1.jpg");
+    background-image: url("../pics/fixiks_1.jpg");
     background-size: contain;
     background-repeat: no-repeat;
     background-position: right;

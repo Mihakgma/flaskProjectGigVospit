@@ -78,28 +78,6 @@
 
             <button type="button" onclick="resetForm()">Очистить</button>
 
-            <script>
-                function resetForm() {
-                    document.getElementById("search_form").reset();
-
-                    for (let i = 1; i <= 4; i++) {
-                        document.getElementById('snils_part' + i).value = '';
-                        document.getElementById('medbook_part' + i).value = '';
-                    }
-                    document.getElementById('last_name').value = '';
-                    document.getElementById('last_name_exact').value = '';
-                    document.getElementById('birth_date_start').value = '';
-                    document.getElementById('birth_date_end').value = '';
-                    document.getElementById('last_visit_start').value = '';
-                    document.getElementById('last_visit_end').value = '';
-                    document.getElementById('registration_address').value = '';
-                    document.getElementById('residence_address').value = '';
-                    document.getElementById('updated_by_user').value = 'Все';
-                    document.getElementById('updated_at_start').value = '';
-                    document.getElementById('updated_at_end').value = '';
-                }
-            </script>
-
         </form>
     </div>
 
@@ -123,5 +101,9 @@
             {% endfor %}
         </ul>
     {% endif %}
+
+    <script src="{{ url_for('static', filename='js/clear_applicants_search_form.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/copypaste_splitted_snils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/copypaste_splitted_medbooknumber.js') }}"></script>
 
 {% endblock %}
