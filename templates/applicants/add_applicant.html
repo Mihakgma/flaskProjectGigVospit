@@ -7,7 +7,7 @@
     <head>
         <meta charset="UTF-8">
         <title>Добавление заявителя</title>
-        <link rel="stylesheet" href="{{ url_for('static', filename='../static/css/styles.css') }}">
+{#        <link rel="stylesheet" href="{{ url_for('static', filename='../static/css/styles.css') }}">#}
         <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
         <script>
             $(document).ready(function () {
@@ -34,7 +34,8 @@
         <form method="post">
             {{ form.hidden_tag() }}
 
-            {% for field in form if field.name != 'csrf_token' %}
+            {% for field in form if field.name != 'csrf_token' and field.name != 'submit' and
+            field.name != 'medbook_number' and field.name != 'snils_number' and field.widget.input_type != 'hidden' %}
                 <div>
                     {{ field.label }}
                     {% if field.errors %}
@@ -47,6 +48,20 @@
                     {{ field(class_="input") }}
                 </div><br>
             {% endfor %}
+
+            <div>
+            {{ form.medbook_number.label }}
+            {{ form.medbook_number(class_="input", id="form-medbook_number") }}
+            <button type="button" onclick="checkMedbookNumber()">Проверить</button>
+            <div id="medbook-check-result"></div>
+        </div><br>
+
+        <div>
+            {{ form.snils_number.label }}
+            {{ form.snils_number(class_="input", id="form-snils_number") }}
+            <button type="button" onclick="checkSnilsNumber()">Проверить</button>
+            <div id="snils-check-result"></div>
+        </div><br>
 
             <button type="submit" name="submit_applicant">Добавить заявителя</button>
 
@@ -64,7 +79,8 @@
                 </div>
                 <br>
 
-                {% for field in vizit_form if field.name != 'csrf_token' and field.name != 'visit_date' %}
+                {% for field in vizit_form if field.name != 'csrf_token' and
+                field.name != 'visit_date' and field.name != 'submit_visit' %}
                     <div>
                         {{ field.label }}
                         {% if field.errors %}
@@ -85,5 +101,6 @@
     </div>
     </body>
     </html>
-
+    <script src="{{ url_for('static', filename='js/check_med_book.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/check_snils.js') }}"></script>
 {% endblock %}

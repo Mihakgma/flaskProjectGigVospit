@@ -73,7 +73,8 @@ def add_applicant():
 
         else:  # Если форма заявителя не валидна, проверяем и добавляем визит отдельно, если валиден
             if vizit_form.validate_on_submit():
-                flash('Форма заявителя содержит ошибки. Пожалуйста исправьте их.', 'danger')
+                flash('Форма заявителя содержит ошибки. Пожалуйста исправьте их. '
+                      'Проверьте, пожалуйста, номер мед. книжки и СНИЛС', 'danger')
 
         # Выводим ошибки валидации формы заявителя, если они есть
         for field, errors in applicant_form.errors.items():
@@ -466,3 +467,37 @@ def export_found_data():
         download_name=filename  # Для Flask 2.0+
         # attachment_filename=filename # Для старых версий Flask
     )
+
+
+@applicants_bp.route('/check_medbook')
+def check_medbook_number():
+    medbook_number = request.args.get('medbook_number')
+
+    # Серверная валидация:
+    if not medbook_number.isdigit() or len(medbook_number) != 12:
+        return "Некорректный формат номера медкнижки (должно быть 12 цифр)."
+
+    applicant = Applicant.query.filter_by(medbook_number=medbook_number).first()
+    if applicant:
+        out = f"Заявитель с таким номером медкнижки уже существует: {applicant.full_name}"
+        flash(out, 'warning')
+        return out
+    else:
+        return "Заявитель с таким номером медкнижки не найден."
+
+
+@applicants_bp.route('/check_snils')
+def check_snils_number():
+    snils_number = request.args.get('snils_number')
+
+    # Серверная валидация:
+    if not snils_number.isdigit() or len(snils_number) != 11:
+        return "Некорректный формат СНИЛСа (должно быть 11 цифр)."
+
+    applicant = Applicant.query.filter_by(snils_number=snils_number).first()
+    if applicant:
+        out = f"Заявитель с таким СНИЛСом уже существует: {applicant.full_name}"
+        flash(out, 'warning')
+        return out
+    else:
+        return "Заявитель с таким СНИЛСом не найден."

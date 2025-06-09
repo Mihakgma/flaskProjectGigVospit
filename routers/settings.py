@@ -62,7 +62,6 @@ def create_setting():
     return render_template('settings/create_setting.html', form=form)
 
 
-# Роут для удаления настройки
 @settings_bp.route('/delete/<int:setting_id>', methods=['POST'])
 @login_required
 @role_required('super')
@@ -91,9 +90,10 @@ def delete_setting(setting_id):
                 # Наш слушатель before_update позаботится о том, чтобы другие стали False
                 remaining_settings.is_activated_now = True
                 user_crud_control = UserCrudControl(user=current_user,
-                                                    db_object=db)
+                                                    db_object=db,
+                                                    need_commit=False)
                 user_crud_control.commit_other_table()
-                db.session.commit()  # Отдельный коммит для активации новой
+                db.session.flush()  # Отдельный коммит для активации новой
                 flash(f'Удаленная настройка была активной. Новая активная настройка: "{remaining_settings.name}".',
                       'info')
             else:
@@ -106,7 +106,6 @@ def delete_setting(setting_id):
     return redirect(url_for('settings.list_settings'))
 
 
-# Новый роут для сброса сессий всех пользователей
 @settings_bp.route('/restart_all_sessions', methods=['POST'])
 @login_required
 @role_required('super', 'admin')  # Или отдельная роль, если нужна более гранулярная настройка
@@ -220,5 +219,5 @@ def view_setting(setting_id):
     """
     setting = AccessSetting.query.get(setting_id)
     if not setting:
-        abort(404) # Если настройка не найдена, возвращаем 404
+        abort(404)  # Если настройка не найдена, возвращаем 404
     return render_template('settings/view_setting.html', setting=setting)

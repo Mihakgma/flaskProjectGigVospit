@@ -52,9 +52,15 @@
                                         {#                                        <a href="{{ url_for('settings.edit_setting', setting_id=setting.id) }}"#}
                                         {#                                           class="btn btn-primary btn-sm">Редактировать</a>#}
 
-                                        <a href="{{ url_for('settings.delete_setting', setting_id=setting.id) }}"
-                                           class="btn btn-danger btn-sm"
-                                           onclick="return confirm('Вы уверены, что хотите удалить эту настройку?')">Удалить</a>
+                                        <form method="POST"
+                                              action="{{ url_for('settings.delete_setting', setting_id=setting.id) }}">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit"
+                                                    onclick="return confirm('Вы уверены, что хотите удалить эту настройку?')">
+                                                Удалить
+                                            </button>
+                                        </form>
+
                                     </td>
                                 </tr>
                             {% endfor %}
