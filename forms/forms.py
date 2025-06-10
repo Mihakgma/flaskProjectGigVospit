@@ -435,3 +435,46 @@ class AccessSettingForm(FlaskForm):
                 raise ValidationError(
                     "Время простоя пользователя "
                     "не может быть меньше времени блокировки страниц редактирования.")
+
+
+class EditVisitForm(FlaskForm):
+    # Поля, напрямую соответствующие колонкам в модели Visit
+    visit_date = DateField('Дата визита', format='%Y-%m-%d', validators=[DataRequired()])
+    info = TextAreaField('Дополнительная информация',
+                         validators=[
+                             Optional(),
+                             Length(max=300, message="Максимальное количество символов: 300")])
+
+    # SelectField для Foreign Key ID (как у вас в VizitForm)
+    contingent_id = SelectField('Контингент', coerce=int, validators=[DataRequired()])
+    attestation_type_id = SelectField('Тип аттестации', coerce=int, validators=[DataRequired()])
+    work_field_id = SelectField('Сфера деятельности', coerce=int, validators=[DataRequired()])
+    applicant_type_id = SelectField('Тип заявителя', coerce=int, validators=[DataRequired()])
+
+    # QuerySelectField для Contract (как у вас в VizitForm)
+    # Важно: QuerySelectField ожидает, что `visit.contract` будет объектом Contract,
+    # а не `contract_id`. Если ваша модель Visit имеет связь `contract`, то это сработает.
+    contract = QuerySelectField(
+        'Выберите контракт',
+        query_factory=lambda: Contract.query.all(),
+        get_label='show_info', # Метод или атрибут вашей модели Contract, который возвращает отображаемое имя
+        allow_blank=True,
+        blank_text='-- Не выбрано --',
+        validators=[Optional()]
+    )
+
+    submit = SubmitField('Сохранить изменения') # Имя кнопки для редактирования
+
+    def __init__(self, *args, **kwargs):
+        super(EditVisitForm, self).__init__(*args, **kwargs)
+        # Динамическое заполнение вариантов для SelectField
+        self.contingent_id.choices = [(c.id, c.name) for c in Contingent.query.order_by(Contingent.name).all()]
+        self.attestation_type_id.choices = [(a.id, a.name) for a in AttestationType.query.order_by(AttestationType.name).all()]
+        self.work_field_id.choices = [(w.id, w.name) for w in WorkField.query.order_by(WorkField.name).all()]
+        self.applicant_type_id.choices = [(a.id, a.name) for a in ApplicantType.query.order_by(ApplicantType.name).all()]
+
+        # QuerySelectField `contract` будет автоматически заполнен, если вы передадите `obj=visit`
+        # и у вашей модели Visit есть атрибут `contract`, который является объектом Contract.
+        # Если ваша модель Visit хранит только `contract_id`, то вам, возможно, придется
+        # изменить тип поля `contract` на `SelectField` и вручную заполнять его `choices`.
+        # Но если есть relationship, QuerySelectField - более элегантное решение.

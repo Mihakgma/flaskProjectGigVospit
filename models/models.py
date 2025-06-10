@@ -558,7 +558,10 @@ def receive_before_activate_setting(mapper, connection, target):
 #     ДОБАВИТЬ:
 #
 #     1) валидатор для check_times (количество чекаутов после пробуждения);
-#     2) валидатор для backup_dir_path (является ли реальным путем для текущего ПК с помощью либы Path)
+#     2) валидатор для backup_local_dir (является ли реальным путем для текущего ПК с помощью либы Path)
+#     3) валидатор для backup_lan_dir (является ли реальным путем для текущей локальной сети, в которой состоит ПК
+#      с помощью либы Path, начинается ли на ip-адрес сервера и т.д.)
+#
 #     """
 #     __tablename__ = 'backup_settings'
 #
@@ -567,7 +570,8 @@ def receive_before_activate_setting(mapper, connection, target):
 #     period_secs = db.Column(Integer, default=86400, nullable=False)  # 24 hours
 #     check_period_secs = db.Column(Integer, default=3600, nullable=False)  # 1 hour
 #     check_times = db.Column(Integer, default=2, nullable=False)
-#     backup_dir_path = db.Column(String(200), nullable=False)
+#     backup_local_dir = db.Column(String(200), nullable=False)
+#     backup_lan_dir = db.Column(String(200), nullable=False)
 #     is_activated_now = db.Column(Boolean, default=False, nullable=False)
 #
 #     @validates('period_secs')
@@ -604,6 +608,28 @@ def receive_before_activate_setting(mapper, connection, target):
 #             raise ValueError("Периодичность проверки возможности бэкапа БД (после ПРОБУЖДЕНИЯ)"
 #                              f" не может быть более <{period_up_boundary}> секунд.")
 #         return check_period_secs
+#
+#     @validates('check_times')
+#     def validate_check_times(self, key, check_times):
+#         times_low_boundary = 1
+#         times_up_boundary = 10
+#         period_secs_half = self.period_secs // 2
+#         check_period_secs = self.check_period_secs
+#         if check_times is None:
+#             raise IntegrityError("Необходимо указать количество проверок возможности бэкапа БД.")
+#         check_int(check_times)
+#         if check_times < times_low_boundary:
+#             raise ValueError("Количество проверок возможности бэкапа БД (после ПРОБУЖДЕНИЯ)"
+#                              f" не может быть менее <{check_times}> раз.")
+#         elif check_times * check_period_secs > period_secs_half:
+#             raise ValueError("Произведение количества чекаутов на продолжительность таймаута "
+#                              "между проверками возможности бэкапа"
+#                              f" не может быть более ПОЛОВИНЫ <{period_secs_half}> (округл. до целого числа)"
+#                              f" от значения периодичности бэкапа <{self.period_secs}> секунд.")
+#         elif check_times > times_up_boundary:
+#             raise ValueError("Количество проверок возможности бэкапа БД (после ПРОБУЖДЕНИЯ)"
+#                              f" не может быть более <{times_up_boundary}> раз.")
+#         return check_times
 #
 #
 # class BackupLog(BaseModel):

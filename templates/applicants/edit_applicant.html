@@ -1,4 +1,4 @@
-{## templates/edit_applicant.html#}
+{# templates/edit_applicant.html #}
 {% extends 'base.html' %}
 
 {% block content %}
@@ -29,7 +29,7 @@
         {% if visits %}
             <div class="list-group">
                 {% for vizit in visits %}
-                    <div class="list-group-item">
+                    <div class="list-group-item" id="visit-{{ vizit.id }}">
                         Дата визита: {{ vizit.visit_date.strftime('%d.%m.%Y') }} <br>
                         Контингент: {{ vizit.contingent.name }} <br>
                         Тип аттестации: {{ vizit.attestation_type.name }} <br>
@@ -45,6 +45,22 @@
                         {% else %}
                             <p>Визит не прикреплен к контракту (договору).</p>
                         {% endif %}
+                        <div class="mt-2">
+                            {# Кнопка "Редактировать" - ссылка на новую страницу #}
+                            <a href="{{ url_for('visits.edit_visit', visit_id=vizit.id) }}"
+                               class="btn btn-info btn-sm">Редактировать</a>
+
+                            {# Форма для удаления визита (POST-запрос) #}
+                            <form method="POST" action="{{ url_for('visits.delete_visit', visit_id=vizit.id) }}"
+                                  style="display:inline-block; margin-left: 5px;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                {# Чтобы кнопки были в одну строку #}
+                                <button type="submit" class="btn btn-danger btn-sm"
+                                        onclick="return confirm('Вы уверены, что хотите удалить визит от {{ vizit.visit_date.strftime('%d.%m.%Y') }}?')">
+                                    Удалить
+                                </button>
+                            </form>
+                        </div>
                     </div>
                 {% endfor %}
             </div>
@@ -57,6 +73,7 @@
     <h2 class="mt-4">Добавить визит</h2>
     <form method="post" novalidate>
         {{ visit_form.hidden_tag() }}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="form_type" value="visit">
 
         {% for field in visit_form if field.name not in ['csrf_token', 'submit_visit'] %}
@@ -74,6 +91,9 @@
 
     <a href="{{ url_for('applicants.applicant_details', applicant_id=applicant.id) }}"
        class="btn btn-link mt-3">Назад к деталям заявителя</a>
+    {#{% endblock %}#}
+    {#{% block scripts %}#}
+    {#    {{ super() }}#}
 
     <script>
         document.getElementById('toggleVizits').addEventListener('click', function () {

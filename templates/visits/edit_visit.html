@@ -1,0 +1,30 @@
+{# templates/edit_visit.html #}
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>Редактирование визита от {{ visit.visit_date.strftime('%d.%m.%Y') }}</h1>
+
+    <form method="post" novalidate>
+        {{ form.hidden_tag() }} {# Для CSRF-токена и других скрытых полей #}
+
+        {% for field in form if field.name not in ['csrf_token', 'submit'] %}
+            <div class="form-group">
+                {{ field.label(class="form-control-label") }}
+                {{ field(class="form-control") }}
+                {% for error in field.errors %}
+                    <div class="invalid-feedback d-block">{{ error }}</div>
+                    {# d-block для отображения ошибок Bootstrap #}
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
+
+    <a href="{{ url_for('applicants.applicant_details', applicant_id=visit.applicant_id) }}"
+       class="btn btn-link mt-3">Назад к деталям заявителя</a>
+    <script>
+        const FLASK_EDIT_TIMEOUT_SECONDS = {{ timeout | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='js/to_main_page_on_timeout.js') }}"></script>
+{% endblock %}
