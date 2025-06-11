@@ -20,6 +20,7 @@ class PageLocker:
     __TIMEOUT_SECONDS = 60  # 60 * 15 - for prod - get from DB table access_setting
     __PAGES_LOCKED_TOTAL = 0
     __PAGES_UNLOCKED_TOTAL = 0
+    __PERIOD_CONTAINER_CLEAN = 30
 
     @staticmethod
     def pages_lock_increment():
@@ -96,6 +97,21 @@ class PageLocker:
     def lock_page(lock_data: LockInfo) -> bool:
         check_if_lock_info(lock_data)
         locked_pages = PageLocker.get_locked_pages()
+        timeout = PageLocker.get_timeout()
+        lock_counter = PageLocker.get_pages_locked_total()
+        container_clean_period = PageLocker.__PERIOD_CONTAINER_CLEAN
+        if lock_counter and lock_counter % container_clean_period == 0:
+            pages_to_purge = []
+            now_ts = get_current_nsk_time()
+            for locked_page in locked_pages:
+                lock_time = locked_pages[locked_page]
+                secs_elapsed = (now_ts - lock_time).seconds
+                is_time_out = secs_elapsed > timeout
+                if is_time_out:
+                    pages_to_purge.append(locked_page)
+            [PageLocker.unlock_page(page) for page in pages_to_purge]
+            flash(f'Проведена успешная очистка памяти от данных о <{len(pages_to_purge)}> страниц редактирования.',
+                  'success')
         # перезаход на редактирование (обновил страницу) одним и тем же пользователем,
         # обновляется таймаут на доступ к странице для пользователя...
         if lock_data in locked_pages:
@@ -106,7 +122,6 @@ class PageLocker:
         # текущая функция и строка в таблице не редактируется пользователем,
         # который пытается зайти в нее на редактирование
         else:
-            timeout = PageLocker.get_timeout()
             for locked_page in locked_pages:
                 last_activity_at = locked_pages[locked_page]
                 secs_elapsed = (get_current_nsk_time() - last_activity_at).seconds
