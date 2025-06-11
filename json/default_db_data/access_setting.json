@@ -5,7 +5,7 @@
     "activity_timeout_seconds": 900,
     "max_admins_number": 1,
     "max_moders_number": 2,
-    "is_activated_now": true,
+    "is_active_now": true,
     "activity_period_counter": 50,
     "activity_counter_max_threshold": 1000
   },
@@ -15,7 +15,7 @@
     "activity_timeout_seconds": 1800,
     "max_admins_number": 2,
     "max_moders_number": 3,
-    "is_activated_now": false,
+    "is_active_now": false,
     "activity_period_counter": 100,
     "activity_counter_max_threshold": 2000
   },
@@ -25,7 +25,7 @@
     "activity_timeout_seconds": 300,
     "max_admins_number": 1,
     "max_moders_number": 1,
-    "is_activated_now": false,
+    "is_active_now": false,
     "activity_period_counter": 10,
     "activity_counter_max_threshold": 200
   }

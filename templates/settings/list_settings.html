@@ -37,7 +37,7 @@
                                         <input type="radio"
                                                name="selected_setting_id"
                                                value="{{ setting.id }}"
-                                               {% if setting.is_activated_now %}checked{% endif %}>
+                                               {% if setting.is_active_now %}checked{% endif %}>
                                     </td>
                                     <td>{{ setting.name }}</td>
                                     <td>{{ setting.description }}</td>

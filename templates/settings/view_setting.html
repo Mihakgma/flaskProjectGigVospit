@@ -16,7 +16,7 @@
                 <p><strong>Количество нажатий до проверки на время последней активности, кликов:</strong> {{ setting.activity_period_counter }}</p>
                 <p><strong>Количество нажатий до разлогинивания всех вошедших пользователей, кликов:</strong> {{ setting.activity_counter_max_threshold }}</p>
                 <p><strong>Описание:</strong> {{ setting.description }}</p>
-                <p><strong>Активна сейчас:</strong> {% if setting.is_activated_now %}Да{% else %}Нет{% endif %}</p>
+                <p><strong>Активна сейчас:</strong> {% if setting.is_active_now %}Да{% else %}Нет{% endif %}</p>
                 <p><strong>Дата создания:</strong> {{ setting.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
                 <p><strong>Дата последнего исправления:</strong> {{ setting.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}
                 </p>

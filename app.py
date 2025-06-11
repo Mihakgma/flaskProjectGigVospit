@@ -10,7 +10,8 @@ from routers import (auth_bp,
                      contracts_bp,
                      orgs_bp,
                      settings_bp,
-                     visits_bp)  # Импортируем blueprint
+                     visits_bp,
+                     backup_settings_bp)  # Импортируем blueprint
 
 # from flask_script import Manager
 from flask_login import LoginManager
@@ -51,6 +52,7 @@ def create_app():
     app.register_blueprint(orgs_bp, url_prefix='/organizations')
     app.register_blueprint(settings_bp, url_prefix='/settings')
     app.register_blueprint(visits_bp, url_prefix='/visits')
+    app.register_blueprint(backup_settings_bp, url_prefix='/backup_settings')
     app.register_blueprint(routes_bp, url_prefix='/')
 
     # app.config['WTF_CSRF_TIME_LIMIT'] = None

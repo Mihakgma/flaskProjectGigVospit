@@ -32,7 +32,7 @@ def load_initial_data(data_dir, db):
         "user.json": User,
         "organization.json": Organization,
         "applicant.json": Applicant,
-        "vizit.json": Vizit,
+        # "vizit.json": Vizit,
         "table_db.json": TableDb,
     }
 

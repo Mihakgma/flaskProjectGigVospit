@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 import pytz
@@ -25,6 +26,11 @@ def get_current_nsk_time() -> datetime:
 def check_int(obj):
     if not type(obj) is int:
         raise ValueError("Ожидается целое число!")
+
+
+def check_str(obj):
+    if not type(obj) is str:
+        raise ValueError("Ожидается строка!")
 
 
 class BaseModel(db.Model):
@@ -78,6 +84,7 @@ class User(BaseModel, UserMixin):
     last_commit_at = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
     last_activity_at = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
     valid_ip = db.Column(String(15), nullable=True)
+    tg_login = db.Column(String(15), nullable=True)  # имя логина в telegram начинается с @
 
     def get_id(self):  # Необходимо для Flask-Login
         return str(self.id)
@@ -95,6 +102,15 @@ class User(BaseModel, UserMixin):
         """ Возвращает полное имя заявителя """
         parts = [self.last_name, self.first_name, self.middle_name]
         return ' '.join([part for part in parts if part]).strip()
+
+    @validates('tg_login')
+    def validate_tg_login(self, key, tg_login):
+        if tg_login is None:
+            return tg_login
+        check_str(tg_login)
+        if not tg_login.startswith("@"):
+            raise ValueError("Имя телеграм-аккаунта должно начинаться на @")
+        return tg_login
 
 
 class CrudInfoModel:
@@ -366,7 +382,7 @@ class AccessSetting(BaseModel):
         без перехода по другим страницам приложения, контроль через класс UserCrudControl), сек;
     3) max_admins_number - максимальное количество пользователей с ролью admin;
     4) max_moders_number - максимальное количество пользователей с ролью moder;
-    5) is_activated_now - активирована ли сейчас данная настройка или нет;
+    5) is_active_now - активирована ли сейчас данная настройка или нет;
     6) name - наименование настройки;
     7) activity_period_counter - с данным интервалом (количество нажатий всеми юзерами) будет осуществляться
         проверка на последнюю активность (время последней активности) каждым вошедшим в систему на данный момент.
@@ -376,9 +392,9 @@ class AccessSetting(BaseModel):
         завершение сессий всех активных на данный момент.
 
     При этом в текущей таблице БД одномоментно может быть только одна запись со значением поля
-    is_activated_now = True
+    is_active_now = True
 
-    Метод get_activated_setting - получить строку таблицы (объект класса), у которого is_activated_now = True.
+    Метод get_activated_setting - получить строку таблицы (объект класса), у которого is_active_now = True.
     """
 
     __tablename__ = 'access_settings'
@@ -391,19 +407,19 @@ class AccessSetting(BaseModel):
     activity_timeout_seconds = db.Column(Integer, default=900, nullable=False)
     max_admins_number = db.Column(Integer, default=1, nullable=False)
     max_moders_number = db.Column(Integer, default=2, nullable=False)
-    is_activated_now = db.Column(Boolean, default=False, nullable=False)
+    is_active_now = db.Column(Boolean, default=False, nullable=False)
     activity_period_counter = db.Column(Integer, default=50, nullable=False)
     activity_counter_max_threshold = db.Column(Integer, default=1000, nullable=False)
 
     # Добавляем уникальный индекс с условием
-    # Это обеспечит, что в таблице будет только одна запись с is_activated_now = True
+    # Это обеспечит, что в таблице будет только одна запись с is_active_now = True
     ___table_args__ = (
         Index(
             'uix_only_one_activated_setting',  # Имя индекса
-            'is_activated_now',  # Имя колонки, по которой создается индекс
+            'is_active_now',  # Имя колонки, по которой создается индекс
             unique=True,  # Делаем индекс уникальным
             # Условие для PostgreSQL
-            postgresql_where=is_activated_now == True
+            postgresql_where=is_active_now == True
         ),
     )
 
@@ -491,12 +507,12 @@ class AccessSetting(BaseModel):
 
     @staticmethod
     def get_activated_setting():
-        return AccessSetting.query.filter_by(is_activated_now=True).first()
+        return AccessSetting.query.filter_by(is_active_now=True).first()
 
     # --- Метод для строкового представления объекта (из предыдущих исправлений) ---
     def __repr__(self):
         return (f"<AccessSetting(id={self.id}, name='{self.name}', "
-                f"is_activated_now={self.is_activated_now})>")
+                f"is_active_now={self.is_active_now})>")
 
 
 # --- Слушатели событий SQLAlchemy (из предыдущих исправлений) ---
@@ -505,12 +521,12 @@ class AccessSetting(BaseModel):
 def receive_before_activate_setting(mapper, connection, target):
     """
     Слушатель, который срабатывает перед вставкой или обновлением объекта AccessSetting.
-    Если is_activated_now устанавливается в True для текущего объекта,
+    Если is_active_now устанавливается в True для текущего объекта,
     он деактивирует все остальные настройки.
     """
     # Этот слушатель запускается до фактического коммита.
-    # Если is_activated_now меняется на True, мы деактивируем все остальные.
-    if target.is_activated_now:
+    # Если is_active_now меняется на True, мы деактивируем все остальные.
+    if target.is_active_now:
         # Получаем текущую сессию SQLAlchemy, связанную с объектом
         session = db.session.object_session(target)
         if session is None:
@@ -523,7 +539,7 @@ def receive_before_activate_setting(mapper, connection, target):
 
         # Находим все другие активные настройки, исключая текущую, если она уже существует
         query = session.query(AccessSetting).filter(
-            AccessSetting.is_activated_now == True
+            AccessSetting.is_active_now == True
         )
         # Если target уже имеет ID, это означает, что это существующая запись, которую обновляют.
         # В этом случае мы исключаем ее из запроса, чтобы не деактивировать саму себя.
@@ -534,114 +550,158 @@ def receive_before_activate_setting(mapper, connection, target):
         for setting in other_active_settings:
             # Деактивируем другие настройки.
             # Эти изменения будут отслеживаться сессией и зафиксированы вместе с target при commit.
-            setting.is_activated_now = False
+            setting.is_active_now = False
 
         # Важное примечание: здесь НЕ НУЖЕН db.session.commit() или db.session.flush().
         # Изменения, внесенные в объекты, привязанные к сессии, будут зафиксированы
         # в той же транзакции, когда вызывается db.session.commit() для target.
 
 
-# class BackupSetting(BaseModel):
-#     """
-#     Данный класс применяется для создания (описания) таблицы БД, которая
-#     задает настройки сохранения таблиц БД:
-#     - периодичность (по умолч. 1 раз в 24 часа) "пробуждения";
-#     - условия (последняя активность, посл. БД-коммит пользователей + таймаут ожидания перед запуском сохранения +
-#       количество таймаутов после пробуждения);
-#     - файлы (таблицы) для сохранения;
-#     - корневая папка (директория) для хранения всех поддиректорий (по дате сохранения);
-#     - максимальный период хранения бэкап-папок с файлами (от 7 до 30 дней).
-#
-#     Сохранять физически данные предполагается в файлах-json.
-#     При этом названия файлов берутся из названий таблиц БД.
-#
-#     ДОБАВИТЬ:
-#
-#     1) валидатор для check_times (количество чекаутов после пробуждения);
-#     2) валидатор для backup_local_dir (является ли реальным путем для текущего ПК с помощью либы Path)
-#     3) валидатор для backup_lan_dir (является ли реальным путем для текущей локальной сети, в которой состоит ПК
-#      с помощью либы Path, начинается ли на ip-адрес сервера и т.д.)
-#
-#     """
-#     __tablename__ = 'backup_settings'
-#
-#     id = db.Column(Integer, primary_key=True)
-#     name = db.Column(String(50), default="По умолчанию №1", nullable=False)
-#     period_secs = db.Column(Integer, default=86400, nullable=False)  # 24 hours
-#     check_period_secs = db.Column(Integer, default=3600, nullable=False)  # 1 hour
-#     check_times = db.Column(Integer, default=2, nullable=False)
-#     backup_local_dir = db.Column(String(200), nullable=False)
-#     backup_lan_dir = db.Column(String(200), nullable=False)
-#     is_activated_now = db.Column(Boolean, default=False, nullable=False)
-#
-#     @validates('period_secs')
-#     def validate_period_secs(self, key, period_secs):
-#         period_low_boundary = 300
-#         period_up_boundary = 86400 * 3
-#         if period_secs is None:
-#             raise IntegrityError("Необходимо указать периодичность ПРОБУЖДЕНИЯ для бэкапа БД.")
-#         check_int(period_secs)
-#         if period_secs < period_low_boundary:
-#             raise ValueError("Периодичность ПРОБУЖДЕНИЯ для бэкапа БД"
-#                              f" не может быть менее <{period_low_boundary}> секунд.")
-#         elif period_secs > period_up_boundary:
-#             raise ValueError("Периодичность ПРОБУЖДЕНИЯ для бэкапа БД"
-#                              f" не может быть более <{period_up_boundary}> секунд.")
-#         return period_secs
-#
-#     @validates('check_period_secs')
-#     def validate_check_period_secs(self, key, check_period_secs):
-#         period_low_boundary = 90
-#         period_up_boundary = 3600 * 3
-#         period_secs_half = self.period_secs // 2
-#         if check_period_secs is None:
-#             raise IntegrityError("Необходимо указать периодичность проверки возможности бэкапа БД.")
-#         check_int(check_period_secs)
-#         if check_period_secs < period_low_boundary:
-#             raise ValueError("Периодичность проверки возможности  бэкапа БД (после ПРОБУЖДЕНИЯ)"
-#                              f" не может быть менее <{period_low_boundary}> секунд.")
-#         elif check_period_secs > period_secs_half:
-#             raise ValueError("Периодичность проверки возможности бэкапа БД (после ПРОБУЖДЕНИЯ)"
-#                              f" не может быть более ПОЛОВИНЫ <{period_secs_half}> (округл. до целого числа)"
-#                              f" от значения периодичности бэкапа <{self.period_secs}> секунд.")
-#         elif check_period_secs > period_up_boundary:
-#             raise ValueError("Периодичность проверки возможности бэкапа БД (после ПРОБУЖДЕНИЯ)"
-#                              f" не может быть более <{period_up_boundary}> секунд.")
-#         return check_period_secs
-#
-#     @validates('check_times')
-#     def validate_check_times(self, key, check_times):
-#         times_low_boundary = 1
-#         times_up_boundary = 10
-#         period_secs_half = self.period_secs // 2
-#         check_period_secs = self.check_period_secs
-#         if check_times is None:
-#             raise IntegrityError("Необходимо указать количество проверок возможности бэкапа БД.")
-#         check_int(check_times)
-#         if check_times < times_low_boundary:
-#             raise ValueError("Количество проверок возможности бэкапа БД (после ПРОБУЖДЕНИЯ)"
-#                              f" не может быть менее <{check_times}> раз.")
-#         elif check_times * check_period_secs > period_secs_half:
-#             raise ValueError("Произведение количества чекаутов на продолжительность таймаута "
-#                              "между проверками возможности бэкапа"
-#                              f" не может быть более ПОЛОВИНЫ <{period_secs_half}> (округл. до целого числа)"
-#                              f" от значения периодичности бэкапа <{self.period_secs}> секунд.")
-#         elif check_times > times_up_boundary:
-#             raise ValueError("Количество проверок возможности бэкапа БД (после ПРОБУЖДЕНИЯ)"
-#                              f" не может быть более <{times_up_boundary}> раз.")
-#         return check_times
-#
-#
-# class BackupLog(BaseModel):
-#     """
-#     Данная таблица создана для хранения логов бэкапа.
-#     """
-#     __tablename__ = 'backup_log'
-#
-#     id = db.Column(Integer, primary_key=True)
-#     started_at = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
-#     ended_at = db.Column(DateTime(timezone=True), nullable=True)
-#     is_successful = db.Column(Boolean, default=False, nullable=False)
-#     total_size_mb = db.Column(Integer, default=0, nullable=False)
-#     backup_setting_id = db.Column(Integer, db.ForeignKey('backup_settings.id'), nullable=False)
-#     backup_setting = db.relationship('BackupSetting', back_populates='backup_log')
+class BackupSetting(BaseModel):
+    """
+    Данный класс применяется для создания (описания) таблицы БД, которая
+    задает настройки сохранения таблиц БД:
+    - периодичность (по умолч. 1 раз в 24 часа) "пробуждения";
+    - условия (последняя активность, посл. БД-коммит пользователей + таймаут ожидания перед запуском сохранения +
+      количество таймаутов после пробуждения);
+    - файлы (таблицы) для сохранения;
+    - корневая папка (директория) для хранения всех поддиректорий (по дате сохранения);
+    - максимальный период хранения бэкап-папок с файлами (от 7 до 30 дней).
+
+    Сохранять физически данные предполагается в файлах-json.
+    При этом названия файлов берутся из названий таблиц БД.
+
+    ДОБАВИТЬ:
+
+    1) валидатор для check_times (количество чекаутов после пробуждения);
+    2) валидатор для backup_local_dir (является ли реальным путем для текущего ПК с помощью либы Path)
+    3) валидатор для backup_lan_dir (является ли реальным путем для текущей локальной сети, в которой состоит ПК
+     с помощью либы Path, начинается ли на ip-адрес сервера и т.д.)
+
+    """
+    __tablename__ = 'backup_settings'
+
+    id = db.Column(Integer, primary_key=True)
+    name = db.Column(String(50), default="По умолчанию №1", nullable=False)
+    period_secs = db.Column(Integer, default=86400, nullable=False)  # 24 hours
+    check_period_secs = db.Column(Integer, default=3600, nullable=False)  # 1 hour
+    check_times = db.Column(Integer, default=2, nullable=False)
+    backup_local_dir = db.Column(String(200), nullable=False)
+    backup_lan_dir = db.Column(String(200), nullable=False)
+    is_active_now = db.Column(Boolean, default=False, nullable=False)
+    backup_log = db.relationship('BackupLog', back_populates='backup_setting', lazy=True)
+    lifespan_days = db.Column(Integer, default=7, nullable=False)
+
+    @validates('period_secs')
+    def validate_period_secs(self, key, period_secs):
+        period_low_boundary = 300
+        period_up_boundary = 86400 * 3
+        if period_secs is None:
+            raise IntegrityError("Необходимо указать периодичность ПРОБУЖДЕНИЯ для бэкапа БД.")
+        check_int(period_secs)
+        if period_secs < period_low_boundary:
+            raise ValueError("Периодичность ПРОБУЖДЕНИЯ для бэкапа БД"
+                             f" не может быть менее <{period_low_boundary}> секунд.")
+        elif period_secs > period_up_boundary:
+            raise ValueError("Периодичность ПРОБУЖДЕНИЯ для бэкапа БД"
+                             f" не может быть более <{period_up_boundary}> секунд.")
+        return period_secs
+
+    @validates('check_period_secs')
+    def validate_check_period_secs(self, key, check_period_secs):
+        period_low_boundary = 90
+        period_up_boundary = 3600 * 3
+        period_secs_half = self.period_secs // 2
+        if check_period_secs is None:
+            raise IntegrityError("Необходимо указать периодичность проверки возможности бэкапа БД.")
+        check_int(check_period_secs)
+        if check_period_secs < period_low_boundary:
+            raise ValueError("Периодичность проверки возможности  бэкапа БД (после ПРОБУЖДЕНИЯ)"
+                             f" не может быть менее <{period_low_boundary}> секунд.")
+        elif check_period_secs > period_secs_half:
+            raise ValueError("Периодичность проверки возможности бэкапа БД (после ПРОБУЖДЕНИЯ)"
+                             f" не может быть более ПОЛОВИНЫ <{period_secs_half}> (округл. до целого числа)"
+                             f" от значения периодичности бэкапа <{self.period_secs}> секунд.")
+        elif check_period_secs > period_up_boundary:
+            raise ValueError("Периодичность проверки возможности бэкапа БД (после ПРОБУЖДЕНИЯ)"
+                             f" не может быть более <{period_up_boundary}> секунд.")
+        return check_period_secs
+
+    @validates('check_times')
+    def validate_check_times(self, key, check_times):
+        times_low_boundary = 1
+        times_up_boundary = 10
+        period_secs_half = self.period_secs // 2
+        check_period_secs = self.check_period_secs
+        if check_times is None:
+            raise IntegrityError("Необходимо указать количество проверок возможности бэкапа БД.")
+        check_int(check_times)
+        if check_times < times_low_boundary:
+            raise ValueError("Количество проверок возможности бэкапа БД (после ПРОБУЖДЕНИЯ)"
+                             f" не может быть менее <{check_times}> раз.")
+        elif check_times * check_period_secs > period_secs_half:
+            raise ValueError("Произведение количества чекаутов на продолжительность таймаута "
+                             "между проверками возможности бэкапа"
+                             f" не может быть более ПОЛОВИНЫ <{period_secs_half}> (округл. до целого числа)"
+                             f" от значения периодичности бэкапа <{self.period_secs}> секунд.")
+        elif check_times > times_up_boundary:
+            raise ValueError("Количество проверок возможности бэкапа БД (после ПРОБУЖДЕНИЯ)"
+                             f" не может быть более <{times_up_boundary}> раз.")
+        return check_times
+
+    @validates('backup_local_dir')
+    def validate_backup_local_dir(self, key, backup_local_dir):
+        if backup_local_dir:  # Если значение не None и не пустая строка
+            # strip() удалит пробелы по краям
+            clean_path = backup_local_dir.strip()
+            if not clean_path:
+                return None  # Если после удаления пробелов путь пуст, сохраняем как None
+
+            if not os.path.isdir(clean_path):
+                raise ValueError(f"Локальная директория '{clean_path}' не существует.")
+            return clean_path
+        return None  # Разрешаем None, если поле nullable=True и пользователь ничего не ввел
+
+    @validates('backup_lan_dir')
+    def validate_backup_lan_dir(self, key, backup_lan_dir):
+        if backup_lan_dir:  # Если значение не None и не пустая строка
+            clean_path = backup_lan_dir.strip()
+            if not clean_path:
+                return None  # Если после удаления пробелов путь пуст, сохраняем как None
+
+            # Для сетевых путей os.path.isdir может не работать напрямую на всех ОС
+            # или требовать монтирования. Для Windows UNC-путей (\\server\share)
+            # os.path.isdir часто возвращает False, если путь не смонтирован.
+            # Если это критично, возможно, потребуется более сложная проверка
+            # или просто проверка формата пути, а не его существования.
+            # Для простоты, пока используем os.path.isdir:
+            if not os.path.isdir(clean_path):
+                raise ValueError(f"Сетевая директория '{clean_path}' не существует или недоступна.")
+            return clean_path
+        return None  # Разрешаем None
+
+    @validates('lifespan_days')
+    def validate_lifespan_days(self, key, lifespan_days):
+        min_days = 7
+        max_days = 30
+        if lifespan_days is None:
+            raise ValueError("Необходимо указать период хранения бэкапов.")
+        check_int(lifespan_days)
+        if not (min_days <= lifespan_days <= max_days):
+            raise ValueError(f"Период хранения бэкапов должен быть от {min_days} до {max_days} дней.")
+        return lifespan_days
+
+
+class BackupLog(BaseModel):
+    """
+    Данная таблица создана для хранения логов бэкапа.
+    """
+    __tablename__ = 'backup_log'
+
+    id = db.Column(Integer, primary_key=True)
+    started_at = db.Column(DateTime(timezone=True), default=get_current_nsk_time, nullable=False)
+    ended_at = db.Column(DateTime(timezone=True), nullable=True)
+    is_successful = db.Column(Boolean, default=False, nullable=False)
+    total_size_mb = db.Column(Integer, default=0, nullable=False)
+    backup_setting_id = db.Column(Integer, db.ForeignKey('backup_settings.id'), nullable=False)
+    backup_setting = db.relationship('BackupSetting', back_populates='backup_log')

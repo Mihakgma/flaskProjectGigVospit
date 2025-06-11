@@ -31,7 +31,7 @@ BACKEND:
 1.30) on contracts edit page add feature for new many similar vizits     - (XXX)
 1.31) table blocked pages contents auto-clear after application restart  - (DONE)
 1.32) page for manage table blocked pages (for super, admin, moder only) - (DONE)
-1.33) add edit and delete vists on edit applicant page                   - (!!!)
+1.33) add edit and delete vists on edit applicant page                   - (DONE)
 1.34) add access settings page for super, moder users                    - (DONE)
 1.35) add backup settings page for super user                            - (!!!)
 1.36) admins cannot create & edit super users                            - (DONE)
@@ -44,8 +44,8 @@ DATA BASE:
 2.3) DB schema in Miro                                                   - (DONE)
 2.4) DB tables autofilling upon first app run                            - (DONE)
 2.5) add table with blocked pages (blocked_at, blocked_by_id, url, ...)  - (DONE)
-2.6) add DB copy auto-save every 24 hours period feature in SQLIte file  - (?)
-2.7) DB save file life-span (period) ~ 7-30 days                         - (?)
+2.6) add DB copy auto-save every 24 hours period feature in SQLIte file  - (!!!)
+2.7) DB save file life-span (period) ~ 7-30 days                         - (!!!)
 
 FRONTEND:
 3.1) add frontend framework                                              - (?)
@@ -72,6 +72,6 @@ OTHER:
 Details:
 - (DONE) - task has been done
 - (...)  - partially done or task's status cannot be classified
-- (?)    - need of task execution is "under question"
+- (?)    - task execution is "under question"
 - (!!!)  - task is supposed an important one and need to be done
-- (XXX) - no need to do task!
+- (XXX)  - no need to do task!

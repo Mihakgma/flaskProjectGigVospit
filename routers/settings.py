@@ -42,7 +42,7 @@ def create_setting():
                 max_moders_number=form.max_moders_number.data,
                 activity_period_counter=form.activity_period_counter.data,
                 activity_counter_max_threshold=form.activity_counter_max_threshold.data,
-                is_activated_now=False  # Новые настройки по умолчанию не активны
+                is_active_now=False  # Новые настройки по умолчанию не активны
             )
             db.session.add(new_setting)
             user_crud_control = UserCrudControl(user=current_user,
@@ -76,7 +76,7 @@ def delete_setting(setting_id):
         flash('Настройка не найдена.', 'error')
         return redirect(url_for('settings.list_settings'))
 
-    is_deleted_setting_active = setting_to_delete.is_activated_now
+    is_deleted_setting_active = setting_to_delete.is_active_now
 
     try:
         db.session.delete(setting_to_delete)
@@ -89,7 +89,7 @@ def delete_setting(setting_id):
             remaining_settings = AccessSetting.query.order_by(AccessSetting.id).first()
             if remaining_settings:
                 # Наш слушатель before_update позаботится о том, чтобы другие стали False
-                remaining_settings.is_activated_now = True
+                remaining_settings.is_active_now = True
                 user_crud_control = UserCrudControl(user=current_user,
                                                     db_object=db,
                                                     need_commit=False)
@@ -174,13 +174,13 @@ def activate_setting_no_js():
         # Шаг 1: Деактивировать все остальные активные настройки
         # Это та же логика, что мы отлаживали ранее.
         db.session.query(AccessSetting).filter(
-            AccessSetting.is_activated_now == True,
+            AccessSetting.is_active_now == True,
             AccessSetting.id != selected_setting_id
-        ).update({AccessSetting.is_activated_now: False},
+        ).update({AccessSetting.is_active_now: False},
                  synchronize_session=False)
 
         # Шаг 2: Активировать выбранную настройку
-        setting_to_activate.is_activated_now = True
+        setting_to_activate.is_active_now = True
         setting_to_activate.updated_at = get_current_nsk_time()
         setting_to_activate.updated_by_user_id = current_user.id
         db.session.add(setting_to_activate)  # Убедимся, что объект отслеживается сессией

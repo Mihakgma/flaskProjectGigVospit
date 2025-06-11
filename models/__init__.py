@@ -13,7 +13,9 @@ __all__ = [
     'Contract',
     'Applicant',
     'TableDb',
-    'Vizit'
+    'Vizit',
+    'BackupSetting',
+    'BackupLog'
 ]
 
 from .models import (
@@ -31,4 +33,6 @@ from .models import (
                      Contract,
                      Applicant,
                      TableDb,
-                     Vizit)
+                     Vizit,
+                     BackupSetting,
+                     BackupLog)

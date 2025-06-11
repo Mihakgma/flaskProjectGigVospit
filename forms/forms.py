@@ -1,3 +1,5 @@
+import os
+
 from flask_wtf import FlaskForm
 from wtforms import (StringField,
                      SelectField,
@@ -457,24 +459,68 @@ class EditVisitForm(FlaskForm):
     contract = QuerySelectField(
         'Выберите контракт',
         query_factory=lambda: Contract.query.all(),
-        get_label='show_info', # Метод или атрибут вашей модели Contract, который возвращает отображаемое имя
+        get_label='show_info',  # Метод или атрибут вашей модели Contract, который возвращает отображаемое имя
         allow_blank=True,
         blank_text='-- Не выбрано --',
         validators=[Optional()]
     )
 
-    submit = SubmitField('Сохранить изменения') # Имя кнопки для редактирования
+    submit = SubmitField('Сохранить изменения')  # Имя кнопки для редактирования
 
     def __init__(self, *args, **kwargs):
         super(EditVisitForm, self).__init__(*args, **kwargs)
         # Динамическое заполнение вариантов для SelectField
         self.contingent_id.choices = [(c.id, c.name) for c in Contingent.query.order_by(Contingent.name).all()]
-        self.attestation_type_id.choices = [(a.id, a.name) for a in AttestationType.query.order_by(AttestationType.name).all()]
+        self.attestation_type_id.choices = [(a.id, a.name) for a in
+                                            AttestationType.query.order_by(AttestationType.name).all()]
         self.work_field_id.choices = [(w.id, w.name) for w in WorkField.query.order_by(WorkField.name).all()]
-        self.applicant_type_id.choices = [(a.id, a.name) for a in ApplicantType.query.order_by(ApplicantType.name).all()]
+        self.applicant_type_id.choices = [(a.id, a.name) for a in
+                                          ApplicantType.query.order_by(ApplicantType.name).all()]
 
         # QuerySelectField `contract` будет автоматически заполнен, если вы передадите `obj=visit`
         # и у вашей модели Visit есть атрибут `contract`, который является объектом Contract.
         # Если ваша модель Visit хранит только `contract_id`, то вам, возможно, придется
         # изменить тип поля `contract` на `SelectField` и вручную заполнять его `choices`.
         # Но если есть relationship, QuerySelectField - более элегантное решение.
+
+
+# Если вы хотите валидировать существование директории на уровне формы,
+# а не только модели, добавьте эту функцию:
+def validate_directory_exists_form(form, field):
+    if field.data:  # Проверяем, только если поле не пустое
+        if not os.path.isdir(field.data.strip()):
+            raise ValidationError(f"Директория '{field.data}' не существует.")
+
+
+class BackupSettingForm(FlaskForm):
+    name = StringField('Название настройки', validators=[DataRequired(), Length(max=100)])
+    period_secs = IntegerField('Периодичность бэкапа (секунды)',
+                               validators=[DataRequired(), NumberRange(min=300, max=86400 * 3)])
+    check_period_secs = IntegerField('Таймаут между проверками (секунды)',
+                                     validators=[DataRequired(), NumberRange(min=90, max=3600 * 3)])
+    check_times = IntegerField('Количество проверок возможности бэкапа',
+                               validators=[DataRequired(), NumberRange(min=1, max=10)])
+
+    backup_local_dir = StringField('Локальная директория бэкапа',
+                                   validators=[Optional(), validate_directory_exists_form, Length(max=255)])
+    backup_lan_dir = StringField('Сетевая директория бэкапа (LAN)',
+                                 validators=[Optional(), validate_directory_exists_form, Length(max=255)])
+
+    # is_active_now не будет полем формы для ввода, оно будет управляться
+    # отдельной кнопкой/радиокнопкой на HTML-странице.
+
+    lifespan_days = IntegerField('Период хранения бэкапов (дней)',
+                                 validators=[DataRequired(message="Период хранения обязателен."),
+                                             NumberRange(min=7, max=30, message="Период должен быть от 7 до 30 дней.")])
+
+    submit = SubmitField('Сохранить настройку')
+
+    # Дополнительная валидация на уровне формы для сложных зависимостей полей
+    def validate_check_times(self, field):
+        if self.period_secs.data is not None and self.check_period_secs.data is not None and field.data is not None:
+            period_secs_half = self.period_secs.data // 2
+            if field.data * self.check_period_secs.data > period_secs_half:
+                raise ValidationError("Произведение количества чекаутов на продолжительность таймаута "
+                                      "между проверками возможности бэкапа "
+                                      f"не может быть более ПОЛОВИНЫ ({period_secs_half} (округл. до целого числа)) "
+                                      f"от значения периодичности бэкапа ({self.period_secs.data}) секунд.")
