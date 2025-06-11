@@ -3,7 +3,7 @@ from sqlalchemy.exc import IntegrityError
 
 from models import (Role, Status, Department, ApplicantType,
                     Contingent, WorkField, AttestationType,
-                    Organization, Applicant, Vizit, User, TableDb, AccessSetting)
+                    Organization, Applicant, Vizit, User, TableDb, AccessSetting, BackupSetting)
 
 import json
 import os
@@ -34,6 +34,7 @@ def load_initial_data(data_dir, db):
         "applicant.json": Applicant,
         # "vizit.json": Vizit,
         "table_db.json": TableDb,
+        "backup_settings.json": BackupSetting,
     }
 
     for filename, Model in model_map.items():

@@ -1,0 +1,52 @@
+{
+  "1": {
+    "name": "Ежедневный бэкап (рабочий)",
+    "period_secs": 86400,
+    "check_period_secs": 300,
+    "check_times": 5,
+    "backup_local_dir": "C:\\Users\\Имя\\Desktop\\ПРОГИ",
+    "backup_lan_dir": "C:\\Users\\Имя\\Desktop\\ПРОГИ",
+    "is_active_now": true,
+    "lifespan_days": 14
+  },
+  "2": {
+    "name": "Еженедельный бэкап (архив)",
+    "period_secs": 259200,
+    "check_period_secs": 1800,
+    "check_times": 3,
+    "backup_local_dir": "C:\\Users\\Имя\\Desktop\\ПРОГИ",
+    "backup_lan_dir": "C:\\Users\\Имя\\Desktop\\ПРОГИ",
+    "is_active_now": false,
+    "lifespan_days": 30
+  },
+  "3": {
+    "name": "Быстрый бэкап (частые проверки)",
+    "period_secs": 7200,
+    "check_period_secs": 90,
+    "check_times": 10,
+    "backup_local_dir": "C:\\Users\\Имя\\Desktop\\ПРОГИ",
+    "backup_lan_dir": "C:\\Users\\Имя\\Desktop\\ПРОГИ",
+    "is_active_now": false,
+    "lifespan_days": 7
+  },
+  "4": {
+    "name": "Редкий бэкап (долгое хранение)",
+    "period_secs": 259200,
+    "check_period_secs": 3600,
+    "check_times": 1,
+    "backup_local_dir": "C:\\Users\\Имя\\Desktop\\ПРОГИ",
+    "backup_lan_dir": "C:\\Users\\Имя\\Desktop\\ПРОГИ",
+    "is_active_now": false,
+    "lifespan_days": 28
+  },
+  "5": {
+    "name": "Тестовая настройка бэкапа",
+    "period_secs": 1200,
+    "check_period_secs": 90,
+    "check_times": 5,
+    "backup_local_dir": "C:\\Users\\Имя\\Desktop\\ПРОГИ",
+    "backup_lan_dir": "C:\\Users\\Имя\\Desktop\\ПРОГИ",
+    "is_active_now": false,
+    "lifespan_days": 10
+  }
+}

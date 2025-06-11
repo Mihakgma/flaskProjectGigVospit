@@ -1,4 +1,4 @@
-{# templates/backup/backup_settings.html #}
+{# templates/backup_settings.html #}
 {% extends 'base.html' %}
 
 {% block content %}
@@ -21,13 +21,9 @@
     <h2 class="mt-4">{{ 'Редактирование настройки' if current_setting else 'Добавить новую настройку' }}</h2>
     <form method="POST" novalidate
           action="{{ url_for('backup_settings.manage_backup_settings', setting_id=current_setting.id if current_setting else None) }}">
-        {# Скрытое поле для определения типа формы #}
         <input type="hidden" name="form_type" value="create_edit">
 
-        {{ form.hidden_tag() }} {# Это включает CSRF-токен автоматически #}
-
-        {# Если редактируем, добавляем ID настройки #}
-        {% if current_setting %}<input type="hidden" name="setting_id" value="{{ current_setting.id }}">{% endif %}
+        {{ form.hidden_tag() }}
 
         {% for field in form if field.name not in ['csrf_token', 'submit'] %}
             <div class="form-group mb-3">
@@ -35,13 +31,11 @@
                 {{ field(class="form-control") }}
                 {% for error in field.errors %}
                     <div class="invalid-feedback d-block">{{ error }}</div>
-                    {# d-block для отображения ошибок Bootstrap #}
                 {% endfor %}
             </div>
         {% endfor %}
 
         {{ form.submit(class="btn btn-primary") }}
-        {# Кнопка отмены, если мы в режиме редактирования #}
         {% if current_setting %}
             <a href="{{ url_for('backup_settings.manage_backup_settings') }}" class="btn btn-secondary ms-2">Отменить
                 редактирование</a>
@@ -65,6 +59,7 @@
                             <code>{{ setting.backup_local_dir }}</code>{% endif %}
                         {% if setting.backup_lan_dir %}<br>Сетевой путь:
                             <code>{{ setting.backup_lan_dir }}</code>{% endif %}
+                        <br>Период хранения: {{ setting.lifespan_days }} дней. {# НОВОЕ ПОЛЕ ДЛЯ ОТОБРАЖЕНИЯ #}
                     </div>
                     <div class="btn-group" role="group" aria-label="Действия с настройкой">
                         {# Форма для Активации #}
@@ -73,7 +68,6 @@
                             <input type="hidden" name="form_type" value="activate">
                             <input type="hidden" name="setting_id" value="{{ setting.id }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            {# Явное добавление CSRF-токена #}
                             <button type="submit" class="btn btn-sm btn-outline-success"
                                     {% if setting.is_active_now %}disabled{% endif %}>
                                 Активировать
@@ -90,7 +84,6 @@
                             <input type="hidden" name="form_type" value="delete">
                             <input type="hidden" name="setting_id" value="{{ setting.id }}">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            {# Явное добавление CSRF-токена #}
                             <button type="submit" class="btn btn-sm btn-danger"
                                     onclick="return confirm('Вы уверены, что хотите удалить настройку &quot;{{ setting.name }}&quot;?')">
                                 Удалить
