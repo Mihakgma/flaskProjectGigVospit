@@ -20,6 +20,7 @@ class PageLocker:
     __TIMEOUT_SECONDS = 60  # 60 * 15 - for prod - get from DB table access_setting
     __PAGES_LOCKED_TOTAL = 0
     __PAGES_UNLOCKED_TOTAL = 0
+    # кратность количества заблокированных страниц, при которой происходит очистка основного контейнера класса
     __PERIOD_CONTAINER_CLEAN = 30
 
     @staticmethod
@@ -110,7 +111,7 @@ class PageLocker:
                 if is_time_out:
                     pages_to_purge.append(locked_page)
             [PageLocker.unlock_page(page) for page in pages_to_purge]
-            flash(f'Проведена успешная очистка памяти от данных о <{len(pages_to_purge)}> страниц редактирования.',
+            flash(f'Контейнер класса PageLocker очищен на <{len(pages_to_purge)}> элементов.',
                   'success')
         # перезаход на редактирование (обновил страницу) одним и тем же пользователем,
         # обновляется таймаут на доступ к странице для пользователя...
