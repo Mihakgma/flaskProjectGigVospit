@@ -1,11 +1,10 @@
 # project/routes/backup_settings.py
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from flask_login import login_required  # Если используете Flask-Login
-# from flask_login import current_user # Если нужны роли
+from flask_login import login_required
 from database import db
 from forms.forms import BackupSettingForm
 from functions.access_control import role_required
-from models import BackupSetting  # Ваша модель BackupSetting
+from models import BackupSetting
 
 backup_settings_bp = Blueprint('backup_settings', __name__)
 

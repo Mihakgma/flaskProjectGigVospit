@@ -276,6 +276,22 @@ class Contract(BaseModel, CrudInfoModel):
                     f"(Организация: {self.organization.show_info})")
         return out_info
 
+    @validates('expiration_date')
+    def validate_expiration_date(self, key, expiration_date):
+        contract_date = self.contract_date
+        if expiration_date is None:
+            return expiration_date
+        try:
+            expiration_date_str = expiration_date.strftime("%d.%m.%Y")
+            contract_date_str = contract_date.strftime("%d.%m.%Y")
+        except AttributeError:
+            # Обработка случая, когда contract_date или expiration_date не datetime
+            raise ValueError("Некорректный формат даты в контракте или дате истечения.")
+        if expiration_date < contract_date:
+            raise ValueError(f'Дата истечения срока действия договора ({expiration_date_str}) '
+                             f'не может быть раньше даты его подписания ({contract_date_str})')
+        return expiration_date
+
 
 user_roles = Table('user_roles', db.metadata,
                    # Указываем user_id как часть первичного ключа

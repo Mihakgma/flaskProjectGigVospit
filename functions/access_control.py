@@ -22,14 +22,22 @@ def role_required(*role_names):
                 flash('Вы не авторизованы. Пожалуйста, войдите, чтобы получить доступ.', 'warning')
                 return redirect(url_for('auth.login'))
             # 3. Если пользователь не найден в БД (был удален).
-            if not user_from_db:
+            elif not user_from_db:
                 flash('Ваш аккаунт не найден или был удален. Пожалуйста, войдите снова.', 'danger')
                 logout_user()
                 return redirect(url_for('auth.login'))
-
+            # 5. Проверка статуса блокировки пользователя.
+            elif user_from_db.status.code == "blocked" or user_from_db.status.code == "block":
+                flash('Ваш аккаунт заблокирован. Свяжитесь с администратором.', 'danger')
+                logout_user()
+                user_crud = UserCrudControl(user=user_from_db,
+                                            need_commit=True,
+                                            db_object=db)
+                user_crud.logout()
+                return redirect(url_for('auth.login'))
             # 4. Синхронизируем статус is_logged_in в БД.
             # ЭТОТ БЛОК РАЗЛОГИНИВАЕТ current_user, ЕСЛИ НЕ УДАЕТСЯ СОХРАНИТЬ ЕГО СТАТУС В БД.
-            if not user_from_db.is_logged_in:
+            elif not user_from_db.is_logged_in:
                 user_from_db.is_logged_in = True
                 user_from_db.logged_in_at = get_current_nsk_time()
                 user_from_db.valid_ip = get_ip_address()
@@ -44,12 +52,6 @@ def role_required(*role_names):
                     flash(f'Произошла ошибка при восстановлении сессии. Пожалуйста, попробуйте еще раз.', 'danger')
                     logout_user()  # Намеренный разлогин, если синхронизация не удалась
                     return redirect(url_for('auth.login'))
-
-            # 5. Проверка статуса блокировки пользователя.
-            if user_from_db.status and (user_from_db.status.code == "blocked" or user_from_db.status.code == "block"):
-                flash('Ваш аккаунт заблокирован. Свяжитесь с администратором.', 'danger')
-                logout_user()
-                return redirect(url_for('auth.login'))
 
             # 6. Обновляем время последней активности текущего пользователя и проверяем других.
             UserCrudControl.check_all_users_last_activity(current_user=user_from_db)

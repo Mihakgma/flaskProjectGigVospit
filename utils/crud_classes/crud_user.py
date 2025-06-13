@@ -146,6 +146,8 @@ class UserCrudControl:
         need_commit = self.get_need_commit()
         try:
             PageLocker.unlock_all_user_pages(user_id=user.id)
+            # flash(f'Разблокированы все заблокированные страницы юзером с id = <{user.id}> ',
+            #       'warning')
             user.is_logged_in = False
             user.valid_ip = ""
             user.last_activity_at = get_current_nsk_time()
