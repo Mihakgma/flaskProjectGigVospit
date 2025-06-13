@@ -52,9 +52,12 @@ def add_contract():
                                         contract_id=new_contract.id))
             except ValidationError as e:
                 db.session.rollback()
-                # flash(e)
+                flash(e)
                 flash('Договор уже добавлен в БД.'
                       'Пожалуйста, попробуйте внести другой номер, дату подписания или организацию.')
+            except ValueError as ve:
+                db.session.rollback()
+                flash(ve, 'danger')
             except Exception as e:
                 db.session.rollback()
                 print(f"Ошибка при добавлении контракта: {e}")
