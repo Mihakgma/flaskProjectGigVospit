@@ -1,3 +1,5 @@
+# database.db_manager.py
+
 from sqlalchemy_utils import database_exists, create_database
 
 from models import User, BackupSetting
@@ -21,10 +23,9 @@ def init_app(app, db):
         PageLocker.clear_all_lock_info()
 
         # Запуск BackupManager в фоне
-        # setting = BackupSetting.get_activated_setting()
-        # if setting:
-        #     backup_manager = BackupManager(active_backup_setting=setting,
-        #                                    flask_app=app,
-        #                                    testing=True)
-        #     backup_manager.start()
-        #     app.extensions['backup_manager'] = backup_manager
+        setting = BackupSetting.get_activated_setting()
+        if setting:
+            backup_manager = BackupManager(active_backup_setting=setting,
+                                           testing=True)
+            backup_manager.start()
+            app.extensions['backup_manager'] = backup_manager

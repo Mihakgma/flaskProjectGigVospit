@@ -17,14 +17,15 @@ def thread(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        current_thread = Thread(
-            target=func,
-            args=args,
-            kwargs=kwargs,
-            name=func.__name__,
-            daemon=True)
-        current_thread.start()
-        return func(*args, **kwargs)
+        with current_app.app_context():
+            current_thread = Thread(
+                target=func,
+                args=args,
+                kwargs=kwargs,
+                name=func.__name__,
+                daemon=True)
+            current_thread.start()
+            return func(*args, **kwargs)
 
     return wrapper
 
