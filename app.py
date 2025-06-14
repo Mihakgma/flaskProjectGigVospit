@@ -2,7 +2,7 @@ from waitress import serve
 
 from flask import Flask
 from database import db, init_app
-from models import User, BackupSetting
+from models import User
 from routers import (auth_bp,
                      routes_bp,
                      users_bp,
@@ -19,7 +19,8 @@ from flask_migrate import Migrate
 
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 
-from utils.backup_management.backup_manager import BackupManager
+
+# from utils.backup_management.backup_manager import BackupManager
 
 
 def create_app():
@@ -57,6 +58,12 @@ def create_app():
     app.register_blueprint(backup_settings_bp, url_prefix='/backup_settings')
     app.register_blueprint(routes_bp, url_prefix='/')
 
+    # @app.teardown_appcontext
+    # def shutdown_backup_manager(exception=None):
+    #     """Останавливает BackupManager при завершении приложения."""
+    #     if 'backup_manager' in app.extensions:
+    #         app.extensions['backup_manager'].stop()
+
     # app.config['WTF_CSRF_TIME_LIMIT'] = None
     return app
 
@@ -65,12 +72,8 @@ if __name__ == '__main__':
     app = create_app()
     # serve(app, host='0.0.0.0', port=5000)
     # ДЛЯ ОТЛАДКИ ПРИЛОЖЕНИЯ ЗАПУСКАЕМ В РЕЖИМЕ ДЕБАГГИНГА!!!
-
-    print('Trying to get active backup obj')
-    setting = BackupSetting.get_activated_setting()
-    print(f'Active backup obj has been got: <{setting}>!')
-    manager = BackupManager(active_backup_setting=setting)
-    manager.run()
-
-    app.run(debug=True)
-
+    try:
+        app.run(debug=True)
+    finally:
+        if 'backup_manager' in app.extensions:
+            app.extensions['backup_manager'].stop()

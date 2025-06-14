@@ -1,8 +1,8 @@
 from sqlalchemy_utils import database_exists, create_database
-from models import User
-from functions.default_db_data.default_data_autofill import db_load_data
-# from utils.backup_management.backup_manager import BackupManager
 
+from models import User, BackupSetting
+from functions.default_db_data.default_data_autofill import db_load_data
+from utils.backup_management.backup_manager import BackupManager
 from utils.crud_classes import UserCrudControl
 from utils.pages_lock.lock_management import PageLocker
 
@@ -19,3 +19,12 @@ def init_app(app, db):
         users = User.query.all()
         UserCrudControl.sessions_restart(db_obj=db, users=users, need_commit=True)
         PageLocker.clear_all_lock_info()
+
+        # Запуск BackupManager в фоне
+        # setting = BackupSetting.get_activated_setting()
+        # if setting:
+        #     backup_manager = BackupManager(active_backup_setting=setting,
+        #                                    flask_app=app,
+        #                                    testing=True)
+        #     backup_manager.start()
+        #     app.extensions['backup_manager'] = backup_manager

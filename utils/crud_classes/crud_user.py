@@ -201,7 +201,7 @@ class UserCrudControl:
             try:
                 user.is_logged_in = False
                 user.valid_ip = ""
-                user.last_activity_at = get_current_nsk_time()
+                # user.last_activity_at = get_current_nsk_time()
                 db_obj.session.add(user)
                 if need_commit:
                     db_obj.session.commit()

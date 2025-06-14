@@ -6,7 +6,7 @@ import time
 import json
 import threading
 from datetime import datetime, timedelta
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 from flask import flash
 from sqlalchemy import text, inspect, func
@@ -18,7 +18,7 @@ from models.models import get_current_nsk_time
 from utils.backup_management import Singleton
 
 
-class BackupManager(Singleton, threading.Thread):  # Наследование от Singleton и threading.Thread
+class BackupManager(Singleton):  # Наследование от Singleton и threading.Thread
     """
     Осуществляет сохранение таблиц БД и их восстановление из сохраненных файлов.
 
@@ -29,15 +29,13 @@ class BackupManager(Singleton, threading.Thread):  # Наследование о
 
     def __init__(self,
                  active_backup_setting,
-                 *args,
-                 **kwargs):
-        # Инициализация потока, daemon=True чтобы поток завершался вместе с основным приложением
-        threading.Thread.__init__(self,
-                                  *args,
-                                  daemon=True,
-                                  **kwargs)
+                 flask_app,
+                 testing:bool = False):
+        self.testing = testing
+        self.flask_app = flask_app
         self.__active_backup_setting: BackupSetting | None = active_backup_setting
         self.is_running = False  # Флаг для управления потоком
+        self._thread: Optional[threading.Thread] = None
 
     def get_active_backup_setting(self) -> BackupSetting | None:
         """
@@ -61,7 +59,7 @@ class BackupManager(Singleton, threading.Thread):  # Наследование о
 
     active_backup_setting = property(get_active_backup_setting, set_active_backup_setting)
 
-    def run(self):
+    def _run_loop(self):
         """
         Метод для обработки событий в отдельном потоке, а именно
         сохранение бэкапов в заданные (backup_local_dir, backup_lan_dir) каталоги (если они не существуют,
@@ -112,14 +110,15 @@ class BackupManager(Singleton, threading.Thread):  # Наследование о
                 time.sleep(60)
                 continue
             try:
-                print('Trying check users last activity...')
-                if self._check_users_activity():
-                    print('Checked: users last activity > 1 hour ago.')
-                    self._perform_backup()
-                    print('Backup has been performed.')
-                else:
-                    print('Checked: users last activity < 1 hour ago. Waiting...')
-                    self._wait_for_activity()
+                with self.flask_app.app_context():
+                    print('Trying check users last activity...')
+                    if self._check_users_activity():
+                        print('Checked: users last activity > 1 hour ago.')
+                        self._perform_backup()
+                        print('Backup has been performed.')
+                    else:
+                        print('Checked: users last activity < 1 hour ago. Waiting...')
+                        self._wait_for_activity()
             except Exception as e:
                 print(f"An error occurred in BackupManager: {e}")
             finally:
@@ -147,10 +146,16 @@ class BackupManager(Singleton, threading.Thread):  # Наследование о
         """
         Проверяет, все ли пользователи неактивны более 1 часа назад, используя ORM.
         """
-        one_hour_ago = get_current_nsk_time() - timedelta(hours=1)
-        inactive_users_count = db.session.query(func.count(User.id)).filter(  # Исправлено здесь
-            User.last_activity_at > one_hour_ago).scalar()  # Используем scalar() для получения одного значения
-        return inactive_users_count == 0
+        with self.flask_app.app_context():
+            if self.testing:
+                five_minutes_ago = get_current_nsk_time() - timedelta(minutes=5)
+                inactive_users_count = db.session.query(func.count(User.id)).filter(  # Исправлено здесь
+                    User.last_activity_at > five_minutes_ago).scalar()  # Используем scalar() для получения одного значения
+            else:
+                one_hour_ago = get_current_nsk_time() - timedelta(hours=1)
+                inactive_users_count = db.session.query(func.count(User.id)).filter(  # Исправлено здесь
+                    User.last_activity_at > one_hour_ago).scalar()  # Используем scalar() для получения одного значения
+            return inactive_users_count == 0
 
     def _wait_for_activity(self):
         """
@@ -163,40 +168,41 @@ class BackupManager(Singleton, threading.Thread):  # Наследование о
         """
         Выполняет резервное копирование.
         """
-        setting = BackupSetting.get_activated_setting()
-        self.active_backup_setting = setting
-        backup_setting = self.active_backup_setting
-        flash(f'Backup setting: {backup_setting}', 'success')
-        started_at = get_current_nsk_time()
-        is_successful = False
-        total_size_mb = 0
-        try:
-            backup_paths = self._prepare_backup_directories()
-            if not backup_paths:
-                raise OSError("Не удалось подготовить ни одну из директорий для бэкапа.")
+        with self.flask_app.app_context():
+            setting = BackupSetting.get_activated_setting()
+            self.active_backup_setting = setting
+            backup_setting = self.active_backup_setting
+            flash(f'Backup setting: {backup_setting}', 'success')
+            started_at = get_current_nsk_time()
+            is_successful = False
+            total_size_mb = 0
+            try:
+                backup_paths = self._prepare_backup_directories()
+                if not backup_paths:
+                    raise OSError("Не удалось подготовить ни одну из директорий для бэкапа.")
 
-            # Получаем имена таблиц
-            table_names = self._get_table_names()
+                # Получаем имена таблиц
+                table_names = self._get_table_names()
 
-            # Бэкапим в каждую директорию, где это возможно
-            backup_results: List[Tuple[str, bool, int]] = []  # Список кортежей (путь_к_директории, success, размер_мб)
-            for backup_dir in backup_paths:
-                try:
-                    backup_success, size_mb = self._backup_tables_to_directory(backup_dir, table_names)
-                    backup_results.append((backup_dir, backup_success, size_mb))
-                except Exception as e:
-                    print(f"Ошибка при создании бэкапа в {backup_dir}: {e}")
-                    backup_results.append((backup_dir, False, 0))
+                # Бэкапим в каждую директорию, где это возможно
+                backup_results: List[Tuple[str, bool, int]] = []  # Список кортежей (путь_к_директории, success, размер_мб)
+                for backup_dir in backup_paths:
+                    try:
+                        backup_success, size_mb = self._backup_tables_to_directory(backup_dir, table_names)
+                        backup_results.append((backup_dir, backup_success, size_mb))
+                    except Exception as e:
+                        print(f"Ошибка при создании бэкапа в {backup_dir}: {e}")
+                        backup_results.append((backup_dir, False, 0))
 
-            # Определяем общий успех и размер
-            is_successful = any(result[1] for result in backup_results)  # Если хоть один успешен, то общий успех
-            total_size_mb = sum(result[2] for result in backup_results)  # Суммируем размеры
+                # Определяем общий успех и размер
+                is_successful = any(result[1] for result in backup_results)  # Если хоть один успешен, то общий успех
+                total_size_mb = sum(result[2] for result in backup_results)  # Суммируем размеры
 
-        except Exception as e:
-            print(f"An error occurred during the backup process: {e}")
-        finally:
-            self._log_backup(started_at, is_successful, total_size_mb, backup_setting.id)
-            self._cleanup_old_backups()
+            except Exception as e:
+                print(f"An error occurred during the backup process: {e}")
+            finally:
+                self._log_backup(started_at, is_successful, total_size_mb, backup_setting.id)
+                self._cleanup_old_backups()
 
     def _prepare_backup_directories(self) -> List[str]:
         """
@@ -267,109 +273,122 @@ class BackupManager(Singleton, threading.Thread):  # Наследование о
         Returns:
             Tuple[bool, int]: (Успех операции, размер_в_мб)
         """
-        total_size_mb = 0
-        success = True
-        # session: Session = db.session  # Получаем сессию SQLAlchemy
+        with self.flask_app.app_context():
+            total_size_mb = 0
+            success = True
+            # session: Session = db.session  # Получаем сессию SQLAlchemy
 
-        for table_name in table_names:
-            try:
-                # Получаем данные из таблицы
-                query = text(f"SELECT * FROM {table_name}")
-                result = db.execute(query)
-                data = [dict(row) for row in result.mappings().all()]  # Получаем данные в формате list of dicts
+            for table_name in table_names:
+                try:
+                    # Получаем данные из таблицы
+                    query = text(f"SELECT * FROM {table_name}")
+                    result = db.execute(query)
+                    data = [dict(row) for row in result.mappings().all()]  # Получаем данные в формате list of dicts
 
-                # Сохраняем данные в JSON-файл
-                file_path = os.path.join(directory, f"{table_name}.json")
-                with open(file_path, "w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=4, ensure_ascii=False)
+                    # Сохраняем данные в JSON-файл
+                    file_path = os.path.join(directory, f"{table_name}.json")
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        json.dump(data, f, indent=4, ensure_ascii=False)
 
-                # Подсчитываем размер файла
-                file_size_bytes = os.path.getsize(file_path)
-                total_size_mb += file_size_bytes / (1024 * 1024)
+                    # Подсчитываем размер файла
+                    file_size_bytes = os.path.getsize(file_path)
+                    total_size_mb += file_size_bytes / (1024 * 1024)
 
-                print(f"Backup of table '{table_name}' saved to {file_path}")
+                    print(f"Backup of table '{table_name}' saved to {file_path}")
 
-            except Exception as e:
-                print(f"Error backing up table '{table_name}': {e}")
-                success = False
-        return success, int(total_size_mb)
+                except Exception as e:
+                    print(f"Error backing up table '{table_name}': {e}")
+                    success = False
+            return success, int(total_size_mb)
 
     def _log_backup(self, started_at: datetime, is_successful: bool, total_size_mb: int, backup_setting_id: int):
         """
         Создает запись в таблице backup_log.
         """
-        ended_at = get_current_nsk_time()
-        backup_log = BackupLog(
-            started_at=started_at,
-            ended_at=ended_at,
-            is_successful=is_successful,
-            total_size_mb=total_size_mb,
-            backup_setting_id=backup_setting_id,
-        )
-        try:
-            db.session.add(backup_log)
-            db.session.commit()
-            print(f"Backup log created. Success: {is_successful}, Size: {total_size_mb}MB")
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error creating backup log: {e}")
+        with self.flask_app.app_context():
+            ended_at = get_current_nsk_time()
+            backup_log = BackupLog(
+                started_at=started_at,
+                ended_at=ended_at,
+                is_successful=is_successful,
+                total_size_mb=total_size_mb,
+                backup_setting_id=backup_setting_id,
+            )
+            try:
+                db.session.add(backup_log)
+                db.session.commit()
+                print(f"Backup log created. Success: {is_successful}, Size: {total_size_mb}MB")
+            except Exception as e:
+                db.session.rollback()
+                print(f"Error creating backup log: {e}")
 
     def _cleanup_old_backups(self):
         """
         Удаляет старые резервные копии в соответствии с параметром lifespan_days.
         Также удаляет соответствующие записи из backup_log.
         """
-        backup_setting = self.active_backup_setting
-        if not backup_setting or backup_setting.lifespan_days is None:
-            print("No active backup setting or lifespan_days not set. Skipping cleanup.")
-            return
+        with self.flask_app.app_context():
+            backup_setting = self.active_backup_setting
+            if not backup_setting or backup_setting.lifespan_days is None:
+                print("No active backup setting or lifespan_days not set. Skipping cleanup.")
+                return
 
-        lifespan_days = backup_setting.lifespan_days
-        cutoff_date = get_current_nsk_time() - timedelta(
-            days=lifespan_days)  # Вычисляем дату, после которой файлы удаляются
+            lifespan_days = backup_setting.lifespan_days
+            cutoff_date = get_current_nsk_time() - timedelta(
+                days=lifespan_days)  # Вычисляем дату, после которой файлы удаляются
 
-        # Получаем все логи бэкапов, которые необходимо удалить
-        # with db.session.begin() as session:
-        old_backup_logs = BackupLog.query.filter(BackupLog.started_at < cutoff_date,
-                                                 BackupLog.backup_setting_id == backup_setting.id).all()
-        backup_log_ids_to_delete = [log.id for log in old_backup_logs]
+            # Получаем все логи бэкапов, которые необходимо удалить
+            # with db.session.begin() as session:
+            old_backup_logs = BackupLog.query.filter(BackupLog.started_at < cutoff_date,
+                                                     BackupLog.backup_setting_id == backup_setting.id).all()
+            backup_log_ids_to_delete = [log.id for log in old_backup_logs]
 
-        # Удаляем соответствующие записи из backup_log
-        with db.session.begin() as session:
-            for log in old_backup_logs:
-                session.delete(log)
-            session.commit()
-            print(f"Removed {len(old_backup_logs)} old backup logs.")
+            # Удаляем соответствующие записи из backup_log
+            with db.session.begin() as session:
+                for log in old_backup_logs:
+                    session.delete(log)
+                session.commit()
+                print(f"Removed {len(old_backup_logs)} old backup logs.")
 
-        # Удаляем директории и файлы
-        for base_dir in [backup_setting.backup_local_dir, backup_setting.backup_lan_dir]:
-            if not base_dir or not os.path.isdir(base_dir):
-                continue  # Пропускаем некорректные пути или несуществующие директории
+            # Удаляем директории и файлы
+            for base_dir in [backup_setting.backup_local_dir, backup_setting.backup_lan_dir]:
+                if not base_dir or not os.path.isdir(base_dir):
+                    continue  # Пропускаем некорректные пути или несуществующие директории
 
+                try:
+                    for item in os.listdir(base_dir):
+                        item_path = os.path.join(base_dir, item)
+                        if os.path.isdir(item_path):
+                            try:
+                                # Пытаемся преобразовать имя папки в дату
+                                date_obj = datetime.strptime(item, "%d.%m.%Y")
+                                if date_obj < cutoff_date:  # Если дата папки старше, чем cutoff_date
+                                    try:
+                                        shutil.rmtree(item_path)  # Удаляем директорию и все ее содержимое
+                                        print(f"Removed directory: {item_path}")
+                                    except OSError as e:
+                                        print(f"Error removing directory {item_path}: {e}")
+                            except ValueError:
+                                # Обрабатываем случаи, когда имя папки не соответствует формату даты
+                                print(f"Skipping directory {item_path} - invalid date format.")
+                except OSError as e:
+                    print(f"Error listing directory {base_dir}: {e}")
+
+    def start(self):
+        """Запускает бэкап в фоновом режиме."""
+        if not self.is_running:
+            self.is_running = True
             try:
-                for item in os.listdir(base_dir):
-                    item_path = os.path.join(base_dir, item)
-                    if os.path.isdir(item_path):
-                        try:
-                            # Пытаемся преобразовать имя папки в дату
-                            date_obj = datetime.strptime(item, "%d.%m.%Y")
-                            if date_obj < cutoff_date:  # Если дата папки старше, чем cutoff_date
-                                try:
-                                    shutil.rmtree(item_path)  # Удаляем директорию и все ее содержимое
-                                    print(f"Removed directory: {item_path}")
-                                except OSError as e:
-                                    print(f"Error removing directory {item_path}: {e}")
-                        except ValueError:
-                            # Обрабатываем случаи, когда имя папки не соответствует формату даты
-                            print(f"Skipping directory {item_path} - invalid date format.")
-            except OSError as e:
-                print(f"Error listing directory {base_dir}: {e}")
+                self._thread = threading.Thread(target=self._run_loop, daemon=True)
+                self._thread.start()
+            except BaseException as e:
+                print(f'Error has been happened during starting backup manager object: {e}')
 
     def stop(self):
-        """
-        Останавливает поток.
-        """
+        """Останавливает бэкап-менеджер."""
         self.is_running = False
+        if self._thread:
+            self._thread.join(timeout=1)
         print("BackupManager is stopping...")
 
 

@@ -6,7 +6,8 @@ from flask import (Blueprint,
                    request,
                    redirect,
                    url_for,
-                   flash, send_file)
+                   flash,
+                   send_file)
 from flask_login import login_required, current_user
 from sqlalchemy.orm import joinedload
 
