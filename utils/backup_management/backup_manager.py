@@ -8,6 +8,7 @@ import threading
 from datetime import datetime, timedelta
 from typing import List, Tuple
 
+from flask import flash
 from sqlalchemy import text, inspect, func
 from sqlalchemy.orm import Session
 
@@ -150,7 +151,10 @@ class BackupManager(Singleton, threading.Thread):  # Наследование о
         """
         Выполняет резервное копирование.
         """
+        setting = BackupSetting.query.get(self.active_backup_setting.id)
+        self.set_active_backup_setting(active_backup_setting=setting)
         backup_setting = self.active_backup_setting
+        flash(f'Backup setting: {backup_setting}', 'success')
         started_at = get_current_nsk_time()
         is_successful = False
         total_size_mb = 0

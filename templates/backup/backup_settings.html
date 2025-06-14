@@ -1,4 +1,4 @@
-{# templates/backup_settings.html #}
+{# templates/backup/backup_settings.html #}
 {% extends 'base.html' %}
 
 {% block content %}
@@ -27,8 +27,23 @@
 
         {% for field in form if field.name not in ['csrf_token', 'submit'] %}
             <div class="form-group mb-3">
-                {{ field.label(class="form-label") }}
-                {{ field(class="form-control") }}
+                {{ field.label(class="form-label") }} <!-- Добавили label -->
+                {% if field.name in ['backup_local_dir', 'backup_lan_dir'] %}
+                    <label for="{{ field.id }}"></label><input type="text" class="form-control" id="{{ field.id }}" name="{{ field.name }}"
+                                                               value="{{ field.data or '' }}">
+                    <input type="file"
+                           webkitdirectory directory
+                           class="form-control-file mt-2"
+                           onchange="setDirectory('{{ field.id }}')"
+                           style="display: none;">
+                    <button type="button" class="btn btn-secondary mt-2"
+                            onclick="document.querySelector('input[name=\'{{ field.name }}\'][type=\'file\']').click()">
+                        Выбрать папку
+                    </button>
+
+                {% else %}
+                    {{ field(class="form-control") }}
+                {% endif %}
                 {% for error in field.errors %}
                     <div class="invalid-feedback d-block">{{ error }}</div>
                 {% endfor %}
@@ -59,7 +74,7 @@
                             <code>{{ setting.backup_local_dir }}</code>{% endif %}
                         {% if setting.backup_lan_dir %}<br>Сетевой путь:
                             <code>{{ setting.backup_lan_dir }}</code>{% endif %}
-                        <br>Период хранения: {{ setting.lifespan_days }} дней. {# НОВОЕ ПОЛЕ ДЛЯ ОТОБРАЖЕНИЯ #}
+                        <br>Период хранения: {{ setting.lifespan_days }} дней.
                     </div>
                     <div class="btn-group" role="group" aria-label="Действия с настройкой">
                         {# Форма для Активации #}
@@ -75,8 +90,8 @@
                         </form>
 
                         {# Ссылка для Редактирования (просто загружает форму выше) #}
-{#                        <a href="{{ url_for('backup_settings.manage_backup_settings', setting_id=setting.id) }}"#}
-{#                           class="btn btn-sm btn-info ms-2">Редактировать</a>#}
+                        {#                        <a href="{{ url_for('backup_settings.manage_backup_settings', setting_id=setting.id) }}"#}
+                        {#                           class="btn btn-sm btn-info ms-2">Редактировать</a>#}
 
                         {# Форма для Удаления #}
                         <form method="POST" action="{{ url_for('backup_settings.manage_backup_settings') }}"
@@ -97,4 +112,7 @@
         <p>Настроек бэкапа пока нет. Добавьте первую!</p>
     {% endif %}
 
+{% endblock %}
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/set_directory.js') }}"></script>
 {% endblock %}
