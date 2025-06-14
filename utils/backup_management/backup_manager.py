@@ -10,11 +10,11 @@ from typing import List, Tuple
 
 from flask import flash
 from sqlalchemy import text, inspect, func
-from sqlalchemy.orm import Session
+# from sqlalchemy.orm import Session
 
 from database import db
 from models import BackupSetting, User, BackupLog
-from models.models import get_current_nsk_time  # Убедитесь, что импорт корректен
+from models.models import get_current_nsk_time
 from utils.backup_management import Singleton
 
 
@@ -27,23 +27,17 @@ class BackupManager(Singleton, threading.Thread):  # Наследование о
     2) наследовать класс от Treading для работы с объектом класса (Singleton) в отдельном потоке.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self,
+                 active_backup_setting,
+                 *args,
+                 **kwargs):
         # Инициализация потока, daemon=True чтобы поток завершался вместе с основным приложением
-        threading.Thread.__init__(self, *args, daemon=True,
+        threading.Thread.__init__(self,
+                                  *args,
+                                  daemon=True,
                                   **kwargs)
-        self.__active_backup_setting: BackupSetting | None = None
+        self.__active_backup_setting: BackupSetting | None = active_backup_setting
         self.is_running = False  # Флаг для управления потоком
-
-    def init(self,
-             active_backup_setting: BackupSetting,
-             ):
-        """
-        Инициализирует объект BackupManager.
-        """
-        if active_backup_setting is None and self.__active_backup_setting:
-            pass
-        else:
-            self.__active_backup_setting = active_backup_setting
 
     def get_active_backup_setting(self) -> BackupSetting | None:
         """
@@ -101,21 +95,36 @@ class BackupManager(Singleton, threading.Thread):  # Наследование о
         total_size_mb = db.Column(Integer, default=0, nullable=False)
         backup_setting_id = db.Column(Integer, db.ForeignKey('backup_settings.id'), nullable=False)
         """
-        self.is_running = True  # Устанавливаем флаг, что поток запущен
+        self.is_running = True
+        print('Backup manager starting ...')
+        counter = -1
         while self.is_running:
-            if not self.active_backup_setting:
-                time.sleep(60)  # Ждем немного, если нет активной настройки, чтобы не нагружать процессор
+            counter += 1
+            if counter == 0:
+                time.sleep(10)  # Даем время на инициализацию БД и настроек
+                # try:
+                #     self.active_backup_setting = BackupSetting.get_active_backup_setting()
+                # except Exception as e:
+                #     print(f"Error loading backup settings: {e}")
+                #     self.active_backup_setting = None  # Если не удалось загрузить, сбрасываем настройку
+            elif not self.active_backup_setting:
+                print('Active backup setting is disabled or has been removed...')
+                time.sleep(60)
                 continue
-
             try:
+                print('Trying check users last activity...')
                 if self._check_users_activity():
+                    print('Checked: users last activity > 1 hour ago.')
                     self._perform_backup()
+                    print('Backup has been performed.')
                 else:
+                    print('Checked: users last activity < 1 hour ago. Waiting...')
                     self._wait_for_activity()
             except Exception as e:
                 print(f"An error occurred in BackupManager: {e}")
             finally:
-                time.sleep(self.active_backup_setting.period_secs)
+                if self.active_backup_setting:  # setting == None
+                    time.sleep(self.active_backup_setting.period_secs)
 
     def _check_users_activity(self) -> bool:
         """
@@ -123,9 +132,13 @@ class BackupManager(Singleton, threading.Thread):  # Наследование о
         """
         check_times = self.active_backup_setting.check_times
         check_period_secs = self.active_backup_setting.check_period_secs
-
+        print('Activity variables have been successfully got from BackupSetting obj')
+        i = 0
         for _ in range(check_times):
+            i += 1
+            print(f'Checking users last activity N = <{i}>.')
             if self._is_all_users_inactive():
+                print(f'All users are inactive for 1 hour ago.')
                 return True
             time.sleep(check_period_secs)
         return False
@@ -135,9 +148,8 @@ class BackupManager(Singleton, threading.Thread):  # Наследование о
         Проверяет, все ли пользователи неактивны более 1 часа назад, используя ORM.
         """
         one_hour_ago = get_current_nsk_time() - timedelta(hours=1)
-        with db.session.begin() as session:  # Use db.session
-            inactive_users_count = session.query(func.count(User.id)).filter(
-                User.last_activity_at > one_hour_ago).scalar()  # Используем scalar() для получения одного значения
+        inactive_users_count = db.session.query(func.count(User.id)).filter(  # Исправлено здесь
+            User.last_activity_at > one_hour_ago).scalar()  # Используем scalar() для получения одного значения
         return inactive_users_count == 0
 
     def _wait_for_activity(self):
@@ -151,8 +163,8 @@ class BackupManager(Singleton, threading.Thread):  # Наследование о
         """
         Выполняет резервное копирование.
         """
-        setting = BackupSetting.query.get(self.active_backup_setting.id)
-        self.set_active_backup_setting(active_backup_setting=setting)
+        setting = BackupSetting.get_activated_setting()
+        self.active_backup_setting = setting
         backup_setting = self.active_backup_setting
         flash(f'Backup setting: {backup_setting}', 'success')
         started_at = get_current_nsk_time()
@@ -257,13 +269,13 @@ class BackupManager(Singleton, threading.Thread):  # Наследование о
         """
         total_size_mb = 0
         success = True
-        session: Session = db.session  # Получаем сессию SQLAlchemy
+        # session: Session = db.session  # Получаем сессию SQLAlchemy
 
         for table_name in table_names:
             try:
                 # Получаем данные из таблицы
                 query = text(f"SELECT * FROM {table_name}")
-                result = session.execute(query)
+                result = db.execute(query)
                 data = [dict(row) for row in result.mappings().all()]  # Получаем данные в формате list of dicts
 
                 # Сохраняем данные в JSON-файл
@@ -317,10 +329,10 @@ class BackupManager(Singleton, threading.Thread):  # Наследование о
             days=lifespan_days)  # Вычисляем дату, после которой файлы удаляются
 
         # Получаем все логи бэкапов, которые необходимо удалить
-        with db.session.begin() as session:
-            old_backup_logs = session.query(BackupLog).filter(BackupLog.started_at < cutoff_date,
-                                                              BackupLog.backup_setting_id == backup_setting.id).all()
-            backup_log_ids_to_delete = [log.id for log in old_backup_logs]
+        # with db.session.begin() as session:
+        old_backup_logs = BackupLog.query.filter(BackupLog.started_at < cutoff_date,
+                                                 BackupLog.backup_setting_id == backup_setting.id).all()
+        backup_log_ids_to_delete = [log.id for log in old_backup_logs]
 
         # Удаляем соответствующие записи из backup_log
         with db.session.begin() as session:
@@ -403,12 +415,10 @@ if __name__ == '__main__':
                 exit()
 
     # 5. Создание и запуск BackupManager
-    manager = BackupManager()
+    manager = BackupManager(active_backup_setting=active_setting)
     with app.app_context():
-        manager.init(active_setting)
         manager.start()
         print("BackupManager started.")
-
         # --- Чтобы остановить BackupManager (например, через некоторое время) ---
         time.sleep(60)  # Run for 60 seconds (example)
         manager.stop()

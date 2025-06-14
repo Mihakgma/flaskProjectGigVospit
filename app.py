@@ -2,7 +2,7 @@ from waitress import serve
 
 from flask import Flask
 from database import db, init_app
-from models import User
+from models import User, BackupSetting
 from routers import (auth_bp,
                      routes_bp,
                      users_bp,
@@ -18,6 +18,8 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 
 from flask_wtf.csrf import CSRFProtect, generate_csrf
+
+from utils.backup_management.backup_manager import BackupManager
 
 
 def create_app():
@@ -63,4 +65,12 @@ if __name__ == '__main__':
     app = create_app()
     # serve(app, host='0.0.0.0', port=5000)
     # ДЛЯ ОТЛАДКИ ПРИЛОЖЕНИЯ ЗАПУСКАЕМ В РЕЖИМЕ ДЕБАГГИНГА!!!
+
+    print('Trying to get active backup obj')
+    setting = BackupSetting.get_activated_setting()
+    print(f'Active backup obj has been got: <{setting}>!')
+    manager = BackupManager(active_backup_setting=setting)
+    manager.run()
+
     app.run(debug=True)
+

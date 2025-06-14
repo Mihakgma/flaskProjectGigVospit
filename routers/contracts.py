@@ -88,7 +88,7 @@ def contract_details(contract_id):
 
     num_unique_applicants = len(unique_applicant_ids)
 
-    return render_template('contracts/contract_details.html',  # Имя вашего шаблона деталей контракта
+    return render_template('contracts/contract_details.html',
                            contract=contract,
                            num_related_vizits=num_related_vizits,
                            num_unique_applicants=num_unique_applicants)

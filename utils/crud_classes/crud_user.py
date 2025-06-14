@@ -191,11 +191,11 @@ class UserCrudControl:
         __ACTIVITY_TIMEOUT_SECONDS = activated_setting.activity_timeout_seconds
         __ACTIVITY_PERIOD_COUNTER = activated_setting.activity_period_counter
         __ACTIVITY_COUNTER_MAX_THRESHOLD = activated_setting.activity_counter_max_threshold
-        print(f"Параметр __ACTIVITY_TIMEOUT_SECONDS установлен из сеттинга: <{activated_setting_name}>: "
+        print(f"Attribute __ACTIVITY_TIMEOUT_SECONDS has been set from setting: <{activated_setting_name}>: "
               f"<{__ACTIVITY_TIMEOUT_SECONDS}>")
-        print(f"Параметр __ACTIVITY_PERIOD_COUNTER установлен из сеттинга: <{activated_setting_name}>: "
+        print(f"Attribute __ACTIVITY_PERIOD_COUNTER has been set from setting: <{activated_setting_name}>: "
               f"<{__ACTIVITY_PERIOD_COUNTER}>")
-        print(f"Параметр __ACTIVITY_COUNTER_MAX_THRESHOLD установлен из сеттинга: <{activated_setting_name}>: "
+        print(f"Attribute __ACTIVITY_COUNTER_MAX_THRESHOLD has been set from setting: <{activated_setting_name}>: "
               f"<{__ACTIVITY_COUNTER_MAX_THRESHOLD}>")
         for user in users:
             try:

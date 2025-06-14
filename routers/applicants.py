@@ -187,7 +187,8 @@ def edit_applicant(applicant_id):
 def search_applicants():
     roles_all_records_access = [
         'admin',
-        'moder'
+        'moder',
+        'dload'
     ]
     up_limit_rows = 100
     form = ApplicantSearchForm(request.form)  # Используем request.form для POST

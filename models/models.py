@@ -707,6 +707,10 @@ class BackupSetting(BaseModel):
             raise ValueError(f"Период хранения бэкапов должен быть от {min_days} до {max_days} дней.")
         return lifespan_days
 
+    @staticmethod
+    def get_activated_setting():
+        return BackupSetting.query.filter_by(is_active_now=True).first()
+
 
 class BackupLog(BaseModel):
     """

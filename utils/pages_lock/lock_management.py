@@ -91,7 +91,7 @@ class PageLocker:
         activated_setting = AccessSetting.get_activated_setting()
         activated_setting_name = activated_setting.name
         PageLocker.__TIMEOUT_SECONDS = activated_setting.page_lock_seconds
-        print(f"Параметр __TIMEOUT_SECONDS установлен из сеттинга: <{activated_setting_name}>: "
+        print(f"Attribute __TIMEOUT_SECONDS has been set from setting: <{activated_setting_name}>: "
               f"<{activated_setting.page_lock_seconds}>")
 
     @staticmethod
